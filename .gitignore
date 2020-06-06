@@ -1,0 +1,21 @@
+# Standard
+*.d
+*.slo
+*.lo
+*.o
+*.obj
+*.gch
+*.pch
+
+# compiled libraries
+*.so
+*.la
+*.lib
+*.a
+
+# exe
+*.out
+
+# build
+build/
+assets/
