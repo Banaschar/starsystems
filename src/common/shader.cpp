@@ -13,7 +13,7 @@ using namespace std;
 
 #include "shader.hpp"
 
-Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath) {
+Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type) : type_(type) {
 	if (!openShaders(vertexShaderPath, fragmentShaderPath))
 		std::cout << "ERROR: SHADER COMPILATION FAILED!\n" << std::endl;
 }
@@ -118,12 +118,28 @@ void Shader::uniform(const std::string &name, glm::mat4 value) {
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramId_, name.c_str()), 1, GL_FALSE, &value[0][0]);
 }
 
+void Shader::uniform(const std::string &name, glm::mat3 value) {
+	glUniformMatrix3fv(glGetUniformLocation(shaderProgramId_, name.c_str()), 1, GL_FALSE, &value[0][0]);
+}
+
 void Shader::uniform(const std::string &name, glm::vec3 value) {
 	glUniform3f(glGetUniformLocation(shaderProgramId_, name.c_str()), value.x, value.y, value.z);
 }
 
+void Shader::uniform(const std::string &name, glm::vec4 value) {
+	glUniform4f(glGetUniformLocation(shaderProgramId_, name.c_str()), value.x, value.y, value.z, value.w);
+}
+
 void Shader::uniform(const std::string &name, int value) {
 	glUniform1i(glGetUniformLocation(shaderProgramId_, name.c_str()), value);
+}
+
+void Shader::uniform(const std::string &name, float value) {
+	glUniform1f(glGetUniformLocation(shaderProgramId_, name.c_str()), value);
+}
+
+std::string Shader::type() {
+	return type_;
 }
 
 

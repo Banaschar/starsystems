@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include "view.hpp"
+#include "global.hpp"
 
 View::View(GLFWwindow *window, glm::vec3 camPos) : 
             View(window, camPos, glm::vec3(0,0,0)) {}
@@ -19,44 +20,44 @@ View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float angleH,
     //fprintf(stdout, "width: %i, height: %i\n", windowWidth, windowHeight);
     camUp_ = glm::vec3(0,1,0);
     // projection matrix
-    ProjectionMatrix_ = glm::perspective(glm::radians(fov_), 16.0f / 9.0f, 0.1f, 100.0f);
+    projectionMatrix_ = glm::perspective(glm::radians(fov_), 16.0f / 9.0f, 0.1f, 100.0f);
 
     // camera matrix
-    CameraMatrix_ = glm::lookAt(
+    cameraMatrix_ = glm::lookAt(
         camPosition_,
         camDirection_,
         camUp_);
+
+    camPositionOriginal_ = camPosition_;
+    cameraSpeed_ = 1.0;
+    camRotateVal_ = 0.0;
 }
 
 glm::mat4 View::getCameraMatrix() {
-    return CameraMatrix_;
+    return cameraMatrix_;
 }
 
 glm::mat4 View::getProjectionMatrix() {
-    return ProjectionMatrix_;
+    return projectionMatrix_;
+}
+
+glm::vec3 View::getCameraPosition() {
+    return camPosition_;
 }
 
 void View::rotateCamera() {
-    if (camPosition_.z < 0 && camPosition_.x <= 0) {
-         camPosition_.x -= 0.02;
-         camPosition_.z += 0.02;
-    } else if (camPosition_.z >= 0 && camPosition_.x < 0) {
-        camPosition_.x += 0.02;
-        camPosition_.z += 0.02;
-    } else if (camPosition_.z > 0 && camPosition_.x >= 0) {
-        camPosition_.x += 0.02;
-        camPosition_.z -= 0.02;
-    } else if (camPosition_.z <= 0 && camPosition_.x > 0) {
-        camPosition_.x -= 0.02;
-        camPosition_.z -=0.02;
-    } else {
-        fprintf(stderr, "Something is wrong in rotation housen!\n");
-    }
+    camRotateVal_ += cameraSpeed_ * deltaTime;
+
+    if (camRotateVal_ > 360)
+        camRotateVal_ = camRotateVal_ - 360;
+
+    camPosition_.x = sin(camRotateVal_) * abs(camPositionOriginal_.z);
+    camPosition_.z = cos(camRotateVal_) * abs(camPositionOriginal_.z);
     
-    CameraMatrix_ = glm::lookAt(
-        camPosition_,
-        camDirection_,
-        camUp_);
+    cameraMatrix_ = glm::lookAt(
+    camPosition_,
+    camDirection_,
+    camUp_);
 }
 
 void View::updateFromInputs() {
@@ -102,8 +103,8 @@ void View::updateFromInputs() {
         camPosition_ -= right * deltaTime * speed_;
     }
 
-    CameraMatrix_ = glm::lookAt(
-        camPosition_, camPosition_+camDirection_, camUp_);
+    cameraMatrix_ = glm::lookAt(
+        camPosition_, camPosition_+ camDirection_, camUp_);
 
     lastTime = currentTime;
 }

@@ -1,25 +1,30 @@
+#include <iostream>
+
 #include "scene.hpp"
 
-Scene::Scene(View view, Shader shader) : view_(view), shader_(shader) {
-    lightPos_ = glm::vec3(4,4,4);
+Scene::Scene(View view, Model light) : view_(view), lightSource_(light) {
+    autoRotate_ = false;
 }
 
-void Scene::addModel(Model model) {
+void Scene::addModel(Drawable *model) {
     models_.push_back(model);
 }
 
 void Scene::update() {
-    view_.rotateCamera();
+    if (autoRotate_)
+        view_.rotateCamera();
+    //view_.updateFromInputs();
 }
 
 void Scene::render() {
-
-    shader_.use();
-    shader_.uniform("V", view_.getCameraMatrix());
-    shader_.uniform("LightPosition_worldspace", lightPos_);
-
+    lightSource_.update(view_);
+    lightSource_.draw(view_, lightSource_.getPosition());
     for (int i = 0; i < models_.size(); i++) {
-        models_[i].update(view_);
-        models_[i].draw(shader_);
+        models_[i]->update(view_);
+        models_[i]->draw(view_, lightSource_.getPosition());
     }
+}
+
+void Scene::setAutoRotate(bool value) {
+    autoRotate_ = value;
 }

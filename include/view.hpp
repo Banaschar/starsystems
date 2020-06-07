@@ -12,20 +12,24 @@ public:
         float speed, float mouseSpeed);
     glm::mat4 getCameraMatrix();
     glm::mat4 getProjectionMatrix();
+    glm::vec3 getCameraPosition();
     void updateFromInputs();
     void rotateCamera();
 private:
     GLFWwindow *window_;
     int windowWidth_, windowHeight_;
-    glm::mat4 CameraMatrix_;
-    glm::mat4 ProjectionMatrix_;
+    glm::mat4 cameraMatrix_;
+    glm::mat4 projectionMatrix_;
     glm::vec3 camPosition_;
     glm::vec3 camDirection_;
     glm::vec3 camUp_;
+    glm::vec3 camPositionOriginal_;
     float horizontalAngle_;
     float verticalAngle_;
     float fov_;
     float speed_;
     float mouseSpeed_;
+    float cameraSpeed_;
+    float camRotateVal_;
 };
 #endif

@@ -19,7 +19,7 @@ struct Texture {
     char *path;
 };
 
-class Mesh: public Drawable {
+class Mesh {
 private:
     std::vector<Vertex> vertices_;
     std::vector<unsigned int> indices_;

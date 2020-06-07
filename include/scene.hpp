@@ -4,19 +4,20 @@
 #include <glm/glm.hpp>
 
 #include "view.hpp"
+#include "drawable.hpp"
 #include "model.hpp"
-#include "shader.hpp"
 
 class Scene {
 public:
-    Scene(View view, Shader shader);
+    Scene(View view, Model light);
     void update();
     void render();
-    void addModel(Model model);
+    void addModel(Drawable *model);
+    void setAutoRotate(bool value);
 private:
     View view_;
-    std::vector<Model> models_;
-    Shader shader_;
-    glm::vec3 lightPos_;
+    std::vector<Drawable*> models_;
+    Model lightSource_;
+    bool autoRotate_;
 };
 #endif

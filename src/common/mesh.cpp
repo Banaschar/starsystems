@@ -42,7 +42,6 @@ void Mesh::initMesh() {
 
 void Mesh::draw(Shader shader) {
     
-    
     glBindVertexArray(vao_);
     glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

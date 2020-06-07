@@ -2,12 +2,11 @@
 #define DRAWABLE_H
 
 #include <glm/glm.hpp>
-
 #include "view.hpp"
-#include "shader.hpp"
 
 class Drawable {
     public:
-        virtual void draw(Shader shader) = 0;
+        virtual void draw(View view, glm::vec3 lightPos) = 0;
+        virtual void update(View view) = 0;
 };
 #endif
