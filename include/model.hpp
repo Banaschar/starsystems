@@ -3,6 +3,8 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <stdlib.h>
+#include <functional>
 
 #include <GLFW/glfw3.h>
 
@@ -11,15 +13,21 @@
 #include "view.hpp"
 #include "shader.hpp"
 
+typedef std::function<void(Drawable*, Shader*, View*, glm::vec3)> callback_t;
+
 class Model: public Drawable {
 public:
-    Model(const char *path, Shader shader);
-    Model(Mesh mesh, Shader shader);
+    Model(const char *path, Shader shader, const callback_t cb);
+    Model(Mesh mesh, Shader shader, const callback_t cb);
     void draw(View view, glm::vec3 lightPos);
     void update(View view);
     void transform(glm::vec3 *scaleVec, glm::vec3 *translateVec, 
                     glm::vec3 *rotationAxis, float degree = 0.0f);
     glm::vec3 getPosition();
+    glm::mat3 getNormalMatrix();
+    glm::mat4 getModelMatrix();
+    //void register_callback(const callback_t &cb);
+    //void test();
 private:
     Shader shader_;
     std::vector<Mesh> meshes_;
@@ -30,5 +38,6 @@ private:
     void initModel();
     void loadModel(const char *path);
     bool needsUpdate_;
+    callback_t drawCallback_;
 };
 #endif

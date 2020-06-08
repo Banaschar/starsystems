@@ -24,6 +24,39 @@ using namespace glm;
 
 float deltaTime = 0.0f;
 
+/*
+Architecture:
+Create a game class -> game object holds all the initial initialization (and memory!)
+-> Can switch out game objects to test different things (e.g. follow the tutorials)
+--> Need to move the shader options (uniforms etc.) out of the model class.
+--> Or somehow initialize it with the necessary function calls.
+-----> Maybe have a callback function in Model, that gets registered during initialization 
+
+*/
+
+void standardShadingCb(Drawable *drawable, Shader *shader, View *view, glm::vec3 lightPos) {
+    //std::cout << "Test: " << shader->type() << std::endl;
+    //std::cout << "Test: " << dynamic_cast<Model*>(model)->getPosition().x << std::endl;
+    Model *model = dynamic_cast<Model*>(drawable);
+    shader->uniform("lightPosition", lightPos);
+    shader->uniform("modelMatrix", model->getModelMatrix());
+    shader->uniform("normalMatrix", model->getNormalMatrix());
+    shader->uniform("cameraMatrix", view->getCameraMatrix());
+
+    //shader_.uniform("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
+    shader->uniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+    shader->uniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+    shader->uniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+    shader->uniform("material.shininess", 32.0f);
+    shader->uniform("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+    shader->uniform("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));  
+    shader->uniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f)); 
+}
+
+void sunShaderCb(Drawable *drawable, Shader *shader, View *view, glm::vec3 lightPos) {
+    shader->uniform("color", glm::vec4(1.0f, 1.0f, 0.2f, 0.7f));
+}
+
 int main() 
 {
     glewExperimental = true;
@@ -76,23 +109,24 @@ int main()
 
     View view = View(window, glm::vec3(0,12,-60));
 
-    Model sun = Model("PlanetFirstTry.obj", shaderSun);
+    Model sun = Model("PlanetFirstTry.obj", shaderSun, sunShaderCb);
 
     Scene scene = Scene(view, sun);
 
     // Add planets
+    
     glm::vec3 trans;
     glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
-    Model tmp1 = Model("PlanetFirstTry.obj", shaderPlanet);
+    Model tmp1 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
     trans = glm::vec3(10, 0, 0);
     tmp1.transform(&scale, &trans, NULL);
     
-    Model tmp2 = Model("PlanetFirstTry.obj", shaderPlanet);
+    Model tmp2 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
     trans = glm::vec3(20, 0, 20);
     tmp2.transform(&scale, &trans, NULL);
 
     
-    Model tmp3 = Model("PlanetFirstTry.obj", shaderPlanet);
+    Model tmp3 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
     trans = glm::vec3(30, 0, 40);
     tmp3.transform(&scale, &trans, NULL);
 
@@ -102,7 +136,7 @@ int main()
     scene.addModel(&planet);
     scene.addModel(&planet2);
     scene.addModel(&planet3);
-
+    
     //scene.setAutoRotate(true);
 
     int nbFrames = 0;

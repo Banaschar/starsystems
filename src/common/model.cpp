@@ -10,12 +10,14 @@
 #include "model.hpp"
 #include "assetloader.hpp"
 
-Model::Model(Mesh mesh, Shader shader) : shader_(shader) {
+Model::Model(Mesh mesh, Shader shader, const callback_t cb) : 
+                shader_(shader), drawCallback_(cb) {
     meshes_.push_back(mesh);
     initModel();
 }
 
-Model::Model(const char *path, Shader shader) : shader_(shader) {
+Model::Model(const char *path, Shader shader, const callback_t cb) : 
+                shader_(shader), drawCallback_(cb) {
     loadModel(path);
     initModel();
 }
@@ -34,24 +36,8 @@ void Model::loadModel(const char *path) {
 void Model::draw(View view, glm::vec3 lightPos) {
     shader_.use();
     shader_.uniform("MVP", mvp_);
+    drawCallback_(this, &shader_, &view, lightPos);
 
-    if (shader_.type() != "light") {
-        shader_.uniform("lightPosition", lightPos);
-        shader_.uniform("modelMatrix", modelMatrix_);
-        shader_.uniform("normalMatrix", normalMatrix_);
-        shader_.uniform("cameraMatrix", view.getCameraMatrix());
-
-        //shader_.uniform("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-        shader_.uniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-        shader_.uniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
-        shader_.uniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
-        shader_.uniform("material.shininess", 32.0f);
-        shader_.uniform("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
-        shader_.uniform("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));  
-        shader_.uniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));     
-    } else {
-        shader_.uniform("color", glm::vec4(1.0f, 1.0f, 0.2f, 0.7f));
-    }
     for (unsigned int i = 0; i < meshes_.size(); i++) {
         meshes_[i].draw(shader_);
     }
@@ -87,3 +73,21 @@ void Model::update(View view) {
 glm::vec3 Model::getPosition() {
     return modelPosition_;
 }
+
+glm::mat3 Model::getNormalMatrix() {
+    return normalMatrix_;
+}
+
+glm::mat4 Model::getModelMatrix() {
+    return modelMatrix_;
+}
+
+/*
+void Model::register_callback(const callback_t &cb) {
+    drawCallback_ = cb;
+}
+
+void Model::test() {
+    drawCallback_(this, &shader_);
+}
+*/
