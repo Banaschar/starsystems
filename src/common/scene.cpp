@@ -2,26 +2,35 @@
 
 #include "scene.hpp"
 
-Scene::Scene(View view, Model light) : view_(view), lightSource_(light) {
+Scene::Scene(Game game) : game_(game), lightSources_(game_.getLightSources()),
+                            models_(game_.getDrawables()) {
     autoRotate_ = false;
 }
 
-void Scene::addModel(Drawable *model) {
-    models_.push_back(model);
+Scene::~Scene() {
+    for (Drawable *m : models_) {
+        delete m;
+    }
+    for (Drawable *m : lightSources_) {
+        delete m;
+    }
 }
 
 void Scene::update() {
     if (autoRotate_)
-        view_.rotateCamera();
+        game_.getView().rotateCamera();
     //view_.updateFromInputs();
 }
 
 void Scene::render() {
-    lightSource_.update(view_);
-    lightSource_.draw(view_, lightSource_.getPosition());
+    for (int i = 0; i < lightSources_.size(); i++) {
+        lightSources_[i]->update(game_);
+        lightSources_[i]->draw(game_);
+    }
+
     for (int i = 0; i < models_.size(); i++) {
-        models_[i]->update(view_);
-        models_[i]->draw(view_, lightSource_.getPosition());
+        models_[i]->update(game_);
+        models_[i]->draw(game_);
     }
 }
 

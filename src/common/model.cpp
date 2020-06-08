@@ -33,10 +33,10 @@ void Model::loadModel(const char *path) {
         fprintf(stdout, "Could not load model.\n");
 }
 
-void Model::draw(View view, glm::vec3 lightPos) {
+void Model::draw(Game &game) {
     shader_.use();
     shader_.uniform("MVP", mvp_);
-    drawCallback_(this, &shader_, &view, lightPos);
+    drawCallback_(this, shader_, game);
 
     for (unsigned int i = 0; i < meshes_.size(); i++) {
         meshes_[i].draw(shader_);
@@ -65,9 +65,9 @@ void Model::transform(glm::vec3 *scaleVec, glm::vec3 *translateVec,
     needsUpdate_ = true;
 }
 
-void Model::update(View view) {
-    mvp_ = view.getProjectionMatrix() * view.getCameraMatrix() * modelMatrix_;
-    normalMatrix_ = glm::mat3(glm::transpose(glm::inverse(view.getCameraMatrix() * modelMatrix_)));
+void Model::update(Game &game) {
+    mvp_ = game.getView().getProjectionMatrix() * game.getView().getCameraMatrix() * modelMatrix_;
+    normalMatrix_ = glm::mat3(glm::transpose(glm::inverse(game.getView().getCameraMatrix() * modelMatrix_)));
 }
 
 glm::vec3 Model::getPosition() {
@@ -81,13 +81,3 @@ glm::mat3 Model::getNormalMatrix() {
 glm::mat4 Model::getModelMatrix() {
     return modelMatrix_;
 }
-
-/*
-void Model::register_callback(const callback_t &cb) {
-    drawCallback_ = cb;
-}
-
-void Model::test() {
-    drawCallback_(this, &shader_);
-}
-*/

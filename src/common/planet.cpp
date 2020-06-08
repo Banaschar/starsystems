@@ -5,7 +5,7 @@ Planet::Planet(Model model, float orbitSpeed): model_(model), orbitSpeed_(orbitS
     rotationVal_ = 0.0;
 }
 
-void Planet::update(View view) {
+void Planet::update(Game &game) {
     
     rotationVal_ += orbitSpeed_ * deltaTime;
 
@@ -15,9 +15,13 @@ void Planet::update(View view) {
     trans = trans - model_.getPosition();
     model_.transform(NULL, &trans, NULL);
 
-    model_.update(view);
+    model_.update(game);
 }
 
-void Planet::draw(View view, glm::vec3 lightPos) {
-    model_.draw(view, lightPos);
+void Planet::draw(Game &game) {
+    model_.draw(game);
+}
+
+glm::vec3 Planet::getPosition() {
+    return model_.getPosition();
 }

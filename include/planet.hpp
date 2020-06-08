@@ -4,15 +4,16 @@
 #include <glm/glm.hpp>
 
 #include "model.hpp"
-#include "view.hpp"
+#include "game.hpp"
 #include "drawable.hpp"
 #include "global.hpp"
 
 class Planet : public Drawable {
 public:
     Planet(Model model, float orbitSpeed);
-    void draw(View view, glm::vec3 lightPos);
-    void update(View view);
+    void draw(Game &game);
+    void update(Game &game);
+    glm::vec3 getPosition();
 private:
     Model model_;
     float orbitSpeed_;

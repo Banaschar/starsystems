@@ -20,7 +20,7 @@ using namespace glm;
 #include "assetloader.hpp"
 #include "global.hpp"
 #include "planet.hpp"
-#include "stargame.hpp"
+#include "game.hpp"
 
 float deltaTime = 0.0f;
 
@@ -34,27 +34,68 @@ Create a game class -> game object holds all the initial initialization (and mem
 
 */
 
-void standardShadingCb(Drawable *drawable, Shader *shader, View *view, glm::vec3 lightPos) {
+void standardShadingCb(Drawable *drawable, Shader &shader, Game &game) {
     //std::cout << "Test: " << shader->type() << std::endl;
     //std::cout << "Test: " << dynamic_cast<Model*>(model)->getPosition().x << std::endl;
     Model *model = dynamic_cast<Model*>(drawable);
-    shader->uniform("lightPosition", lightPos);
-    shader->uniform("modelMatrix", model->getModelMatrix());
-    shader->uniform("normalMatrix", model->getNormalMatrix());
-    shader->uniform("cameraMatrix", view->getCameraMatrix());
+    shader.uniform("lightPosition", game.getLightSource()->getPosition());
+    shader.uniform("modelMatrix", model->getModelMatrix());
+    shader.uniform("normalMatrix", model->getNormalMatrix());
+    shader.uniform("cameraMatrix", game.getView().getCameraMatrix());
 
     //shader_.uniform("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    shader->uniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-    shader->uniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
-    shader->uniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
-    shader->uniform("material.shininess", 32.0f);
-    shader->uniform("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
-    shader->uniform("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));  
-    shader->uniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f)); 
+    shader.uniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
+    shader.uniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
+    shader.uniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+    shader.uniform("material.shininess", 32.0f);
+    shader.uniform("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
+    shader.uniform("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));  
+    shader.uniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f)); 
 }
 
-void sunShaderCb(Drawable *drawable, Shader *shader, View *view, glm::vec3 lightPos) {
-    shader->uniform("color", glm::vec4(1.0f, 1.0f, 0.2f, 0.7f));
+void sunShaderCb(Drawable *drawable, Shader &shader, Game &game) {
+    shader.uniform("color", glm::vec4(1.0f, 1.0f, 0.2f, 0.7f));
+}
+
+Scene createStarSystems(GLFWwindow* window) {
+    // Create and compile shaders
+    Shader shaderPlanet = Shader("StandardShading.vs", "StandardShading.fs", "planet");
+    Shader shaderSun = Shader("sun.vs", "sun.fs", "light");
+
+    View view = View(window, glm::vec3(0,12,-60));
+
+    Model *sun = new Model("PlanetFirstTry.obj", shaderSun, sunShaderCb);
+
+    // Add planets
+    
+    glm::vec3 trans;
+    glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
+    Model tmp1 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
+    trans = glm::vec3(10, 0, 0);
+    tmp1.transform(&scale, &trans, NULL);
+    
+    Model tmp2 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
+    trans = glm::vec3(20, 0, 20);
+    tmp2.transform(&scale, &trans, NULL);
+
+    
+    Model tmp3 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
+    trans = glm::vec3(30, 0, 40);
+    tmp3.transform(&scale, &trans, NULL);
+
+    Planet *planet = new Planet(tmp1, 0.7f);
+    Planet *planet2 = new Planet(tmp2, 0.5f);
+    Planet *planet3 = new Planet(tmp3, 0.2f);
+
+    Game game = Game(view);
+    game.addLight(sun);
+    game.addModel(planet);
+    game.addModel(planet2);
+    game.addModel(planet3);
+
+    Scene scene = Scene(game);
+
+    return scene;
 }
 
 int main() 
@@ -100,45 +141,10 @@ int main()
     // Don't render triangles which normal is not torwards the camera
     glEnable(GL_CULL_FACE);
 
-    // Create and compile shaders
-    Shader shaderPlanet = Shader("StandardShading.vs", "StandardShading.fs", "planet");
-    Shader shaderSun = Shader("sun.vs", "sun.fs", "light");
-
-    GLuint Texture = loadDds("uvmap.DDS");
-    //GLuint TextureID  = glGetUniformLocation(programID, "myTextureSampler");
-
-    View view = View(window, glm::vec3(0,12,-60));
-
-    Model sun = Model("PlanetFirstTry.obj", shaderSun, sunShaderCb);
-
-    Scene scene = Scene(view, sun);
-
-    // Add planets
-    
-    glm::vec3 trans;
-    glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
-    Model tmp1 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
-    trans = glm::vec3(10, 0, 0);
-    tmp1.transform(&scale, &trans, NULL);
-    
-    Model tmp2 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
-    trans = glm::vec3(20, 0, 20);
-    tmp2.transform(&scale, &trans, NULL);
-
-    
-    Model tmp3 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
-    trans = glm::vec3(30, 0, 40);
-    tmp3.transform(&scale, &trans, NULL);
-
-    Planet planet = Planet(tmp1, 0.7f);
-    Planet planet2 = Planet(tmp2, 0.5f);
-    Planet planet3 = Planet(tmp3, 0.2f);
-    scene.addModel(&planet);
-    scene.addModel(&planet2);
-    scene.addModel(&planet3);
+    // create starsystem scene
+    Scene scene = createStarSystems(window);
     
     //scene.setAutoRotate(true);
-
     int nbFrames = 0;
     float lastFrame = glfwGetTime();
     float lastTime = lastFrame;
