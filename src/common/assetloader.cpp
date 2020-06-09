@@ -1,15 +1,22 @@
 #include <vector>
-#include <string.h>
+#include <string>
 #include <glm/glm.hpp>
 #include <iostream>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "assetloader.hpp"
 #include "mesh.hpp"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 // Macros for DDS loader
 #define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
@@ -18,6 +25,25 @@
 
 void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh> *meshes);
 Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::string typeName);
+unsigned int loadTextureFromFile(const char *path);
+
+/*
+unsigned int loadPngTexture(const char *path) {
+    int width, height, nrChannels;
+    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(data);
+
+    return texture;
+}
+*/
 
 bool loadObj(const char* path, std::vector<Mesh> *meshes) {
 
@@ -45,11 +71,16 @@ void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh> *meshes)
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         meshes->push_back(processMesh(mesh, scene));
     }
+
+    for (unsigned int i = 0; i < node->mNumChildren; i++) {
+        createMeshes(node->mChildren[i], scene, meshes);
+    }
 }
 
 Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
+    std::vector<Texture> textures;
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
@@ -86,12 +117,120 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
         }
     }
 
-    // TODO: process materials
+    //process materials
+    aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
-    return Mesh(vertices, indices);
+    std::vector<Texture> diffuseMaps = loadMatTexture(material, aiTextureType_DIFFUSE, "tex_diffuse");
+    textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+
+    std::vector<Texture> specularMaps = loadMatTexture(material, aiTextureType_SPECULAR, "tex_specular");
+    textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+
+    std::vector<Texture> normalMaps = loadMatTexture(material, aiTextureType_HEIGHT, "tex_normal");
+    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+    std::vector<Texture> heightMaps = loadMatTexture(material, aiTextureType_AMBIENT, "tex_height");
+    textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
+
+    return Mesh(vertices, textures, indices);
 }
 
-GLuint loadDds(const char *path) {
+// TODO: Make sure not to load textures that have already been loaded
+std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::string typeName) {
+    std::vector<Texture> textures;
+    for (unsigned int i = 0; i < mat->GetTextureCount(type); i++) {
+        aiString str;
+        mat->GetTexture(type, i, &str);
+        Texture texture;
+        texture.id = loadTextureFromFile(str.C_Str());
+        texture.type = typeName;
+        texture.path = str.C_Str();
+        textures.push_back(texture);
+    }
+
+    return textures;
+}
+
+/*
+ * TODO: 
+ * directory in texture path
+ * glTex parameter -> define more variable somewhere else
+ */
+unsigned int loadTextureFromFile(const char *path) {
+    return 1;
+    /*
+    int width, height, nrChannels;
+    unsigned int ret;
+    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
+
+    if (data) {
+        unsigned int texture;
+        glGenTextures(1, &texture);
+
+        GLenum format;
+        if (nrChannels == 1)
+            format = GL_RED;
+        else if (nrChannels == 3)
+            format = GL_RGB;
+        else if (nrChannels == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+
+        ret = texture;
+    } else {
+        std::cout << "Could not load texture at: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return ret;
+    */
+}
+
+/*
+ * TODO: glTex parameters
+ */
+Texture loadCubeMap(std::vector<std::string> textures) {
+    unsigned char *data;
+    int width, height, nrChannels;
+    Texture texture;
+    unsigned int textureId;
+
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, textureId);
+
+    for (unsigned int i = 0; i < textures.size(); i++) {
+        data = stbi_load(textures[i].c_str(), &width, &height, &nrChannels, 0);
+        if (data) {
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+            stbi_image_free(data);
+        } else {
+            std::cout << "Could not load cube map texture from: " << textures[i] << std::endl;
+            stbi_image_free(data);
+        }
+    }
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    texture.id = textureId;
+    texture.type = "cubemap";
+    return texture;
+}
+
+unsigned int loadDds(const char *path) {
     unsigned char header[124];
 
     FILE *fp; 
@@ -149,7 +288,7 @@ GLuint loadDds(const char *path) {
     }
 
     // Create one OpenGL texture
-    GLuint textureID;
+    unsigned int textureID;
     glGenTextures(1, &textureID);
 
     // "Bind" the newly created texture : all future texture functions will modify this texture

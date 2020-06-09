@@ -29,7 +29,7 @@ View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float angleH,
         camUp_);
 
     camPositionOriginal_ = camPosition_;
-    cameraSpeed_ = 1.0;
+    cameraSpeed_ = 0.5;
     camRotateVal_ = 0.0;
 }
 

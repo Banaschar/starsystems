@@ -21,6 +21,10 @@ public:
         lightSources_.push_back(model);
     }
 
+    void addSkyBox(Drawable *model) {
+        skybox_ = model;
+    }
+
     View& getView() {
         return view_;
     }
@@ -37,8 +41,13 @@ public:
         return lightSources_[0];
     }
 
+    Drawable* getSkyBox() {
+        return skybox_;
+    }
+
 private:
     View view_;
+    Drawable *skybox_ = NULL;
     std::vector<Drawable*> lightSources_;
     std::vector<Drawable*> drawables_;
 };

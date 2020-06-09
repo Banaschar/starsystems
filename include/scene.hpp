@@ -20,6 +20,7 @@ private:
     Game game_;
     std::vector<Drawable*> &lightSources_;
     std::vector<Drawable*> &models_;
+    Drawable *skybox_;
     bool autoRotate_;
 };
 #endif

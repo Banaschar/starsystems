@@ -10,7 +10,6 @@
 
 #include "drawable.hpp"
 #include "mesh.hpp"
-#include "view.hpp"
 #include "shader.hpp"
 #include "game.hpp"
 
@@ -27,6 +26,7 @@ public:
     glm::vec3 getPosition();
     glm::mat3 getNormalMatrix();
     glm::mat4 getModelMatrix();
+    glm::mat4 getMvp();
     //void register_callback(const callback_t &cb);
     //void test();
 private:

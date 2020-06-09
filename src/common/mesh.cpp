@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <string>
 
 #include <iostream>
 
@@ -10,14 +11,42 @@
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) :
             vertices_(vertices), indices_(indices) {
+
+    if (indices_.size() == 0)
+        generateIndices();
     initMesh();
 }
 
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices) :
+            vertices_(vertices), textures_(textures), indices_(indices) {
+    if (indices_.size() == 0)
+        generateIndices();
+    initMesh();
+}
+
+void Mesh::generateIndices() {
+    for (int i = 0; i < vertices_.size(); i++) {
+        indices_.push_back(i);
+    }
+}
+
+/*
+ * TODO: Only use vertex attrib pointer of stuff we actually have
+ * TODO: add flag if indices_ is empty, so we draw with glDrawArrays instead of glDrawElements
+ */
 void Mesh::initMesh() {
+
     glGenVertexArrays(1, &vao_);
     glGenBuffers(1, &vbo_);
+
     glGenBuffers(1, &ebo_);
 
+    updateMesh();
+    // break existing binding!
+    glBindVertexArray(0);
+}
+
+void Mesh::updateMesh() {
     glBindVertexArray(vao_);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
@@ -36,30 +65,68 @@ void Mesh::initMesh() {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, textureCoords));
 
-    // break existing binding!
-    glBindVertexArray(0);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 }
 
 void Mesh::draw(Shader shader) {
-    
     glBindVertexArray(vao_);
-    glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-    
-    /*
-    // Vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer_);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
-    
-    // Color
-    glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, colorbuffer_);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    bool depthMask = false;
 
-    // Draw
-    glDrawArrays(GL_TRIANGLES, 0, vertSize_/sizeof(GLfloat)/3);
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
-    */
+    // bind appropriate textures
+    unsigned int diffuseNr  = 1;
+    unsigned int specularNr = 1;
+    unsigned int normalNr   = 1;
+    unsigned int heightNr   = 1;
+
+    for (int i = 0; i < textures_.size(); i++) {
+        std::string number;
+        std::string type = textures_[i].type;
+        if (type == "cubemap") {
+            glDepthFunc(GL_LEQUAL);
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, textures_[i].id);
+            depthMask = true;
+            break;
+        }
+        glActiveTexture(GL_TEXTURE0 + i);
+
+        if(type == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if(type == "texture_specular")
+            number = std::to_string(specularNr++);
+        else if(type == "texture_normal")
+            number = std::to_string(normalNr++);
+        else if(type == "texture_height")
+            number = std::to_string(heightNr++);
+        else {
+            std::cout << "Texture with unknown type: " << type << std::endl;
+            break;
+        }
+
+        shader.uniform((type + number).c_str(), i);
+        glBindTexture(GL_TEXTURE_2D, textures_[i].id);
+    }
+    
+
+    glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+
+    glBindVertexArray(0);
+
+    if (depthMask)
+        glDepthFunc(GL_LESS);
+
+    glActiveTexture(GL_TEXTURE0); // Set back to defaults
+}
+
+void Mesh::addTexture(Texture tex) {
+    textures_.push_back(tex);
+}
+
+std::vector<Vertex>& Mesh::getVertices() {
+    return vertices_;
+}
+
+std::vector<unsigned int>& Mesh::getIndices() {
+    return indices_;
 }

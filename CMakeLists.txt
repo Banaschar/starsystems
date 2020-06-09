@@ -14,6 +14,7 @@ include_directories(
         deps/glew-2.2.0/include/
         deps/assimp-5.0.1/include/
         deps/glm-master/
+        deps/stb_image/
         include/
         )
 

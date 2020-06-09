@@ -21,6 +21,8 @@ using namespace glm;
 #include "global.hpp"
 #include "planet.hpp"
 #include "game.hpp"
+#include "primitives.hpp"
+#include "generator.hpp"
 
 float deltaTime = 0.0f;
 
@@ -35,9 +37,10 @@ Create a game class -> game object holds all the initial initialization (and mem
 */
 
 void standardShadingCb(Drawable *drawable, Shader &shader, Game &game) {
-    //std::cout << "Test: " << shader->type() << std::endl;
-    //std::cout << "Test: " << dynamic_cast<Model*>(model)->getPosition().x << std::endl;
     Model *model = dynamic_cast<Model*>(drawable);
+
+    shader.use();
+    shader.uniform("MVP", model->getMvp());
     shader.uniform("lightPosition", game.getLightSource()->getPosition());
     shader.uniform("modelMatrix", model->getModelMatrix());
     shader.uniform("normalMatrix", model->getNormalMatrix());
@@ -54,20 +57,51 @@ void standardShadingCb(Drawable *drawable, Shader &shader, Game &game) {
 }
 
 void sunShaderCb(Drawable *drawable, Shader &shader, Game &game) {
+    Model *model = dynamic_cast<Model*>(drawable);
+
+    shader.use();
+    shader.uniform("MVP", model->getMvp());
     shader.uniform("color", glm::vec4(1.0f, 1.0f, 0.2f, 0.7f));
 }
 
+void skyBoxShaderCb(Drawable *drawable, Shader &shader, Game &game) {
+    Model *model = dynamic_cast<Model*>(drawable);
+    
+    shader.use();
+    // remove translation, so skybox is not changed by moving around
+    glm::mat4 mvp = game.getView().getProjectionMatrix() *
+        glm::mat4(glm::mat3(game.getView().getCameraMatrix())) * 
+        model->getModelMatrix();
+    
+    shader.uniform("MVP", mvp);
+}
+
 Scene createStarSystems(GLFWwindow* window) {
+    std::vector<std::string> cubetex = {
+        "skyboxSpace/right.jpg",
+        "skyboxSpace/left.jpg",
+        "skyboxSpace/top.jpg",
+        "skyboxSpace/bottom.jpg",
+        "skyboxSpace/front.jpg",
+        "skyboxSpace/back.jpg"
+    };
+    Texture cubemapTexture = loadCubeMap(cubetex);
     // Create and compile shaders
     Shader shaderPlanet = Shader("StandardShading.vs", "StandardShading.fs", "planet");
     Shader shaderSun = Shader("sun.vs", "sun.fs", "light");
+    Shader shaderSkyBox = Shader("skybox.vs", "skybox.fs", "skybox");
 
     View view = View(window, glm::vec3(0,12,-60));
 
+    // Sun
     Model *sun = new Model("PlanetFirstTry.obj", shaderSun, sunShaderCb);
 
-    // Add planets
+    // Skybox
+    Mesh box = createCube(1);
+    box.addTexture(cubemapTexture);
+    Model *skybox = new Model(box, shaderSkyBox, skyBoxShaderCb);
     
+    // Add planets
     glm::vec3 trans;
     glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
     Model tmp1 = Model("PlanetFirstTry.obj", shaderPlanet, standardShadingCb);
@@ -89,11 +123,58 @@ Scene createStarSystems(GLFWwindow* window) {
 
     Game game = Game(view);
     game.addLight(sun);
+    game.addSkyBox(skybox);
     game.addModel(planet);
     game.addModel(planet2);
     game.addModel(planet3);
 
     Scene scene = Scene(game);
+
+    return scene;
+}
+
+Scene createTutorial(GLFWwindow *window) {
+    Shader obShader = Shader("lightmaps.vs", "lightmaps.fs", "object");
+    Shader lightShader = Shader("sun.vs", "sun.fs", "light");
+
+}
+
+void planeShaderCb(Drawable *drawable, Shader &shader, Game &game) {
+    Model *model = dynamic_cast<Model*>(drawable);
+    
+    shader.use();
+    shader.uniform("MVP", model->getMvp());
+}
+
+Scene createPlane(GLFWwindow *window) {
+    std::vector<std::string> cubetex = {
+        "skyboxSky/right.jpg",
+        "skyboxSky/left.jpg",
+        "skyboxSky/top.jpg",
+        "skyboxSky/bottom.jpg",
+        "skyboxSky/front.jpg",
+        "skyboxSky/back.jpg"
+    };
+    Texture cubemapTexture = loadCubeMap(cubetex);
+
+    Shader planeShader = Shader("plane.vs", "plane.fs", "light");
+    Shader skyBoxShader = Shader("skybox.vs", "skybox.fs", "skybox");
+    View view = View(window, glm::vec3(0,40,-90));
+    Game game = Game(view);
+
+    Model *plane = new Model(createLandscape(), planeShader, planeShaderCb);
+    game.addModel(plane);
+
+    //Model *cube = new Model("cube.obj", planeShader, planeShaderCb);
+    //game.addModel(cube);
+
+    Mesh box = createCube(1);
+    box.addTexture(cubemapTexture);
+    Model *skybox = new Model(box, skyBoxShader, skyBoxShaderCb);
+    game.addSkyBox(skybox);
+
+    Scene scene = Scene(game);
+    //scene.setAutoRotate(true);
 
     return scene;
 }
@@ -142,9 +223,11 @@ int main()
     glEnable(GL_CULL_FACE);
 
     // create starsystem scene
-    Scene scene = createStarSystems(window);
-    
-    //scene.setAutoRotate(true);
+    //Scene scene = createStarSystems(window);
+
+    //create plane
+    Scene scene = createPlane(window);
+
     int nbFrames = 0;
     float lastFrame = glfwGetTime();
     float lastTime = lastFrame;

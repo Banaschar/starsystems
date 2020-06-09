@@ -7,6 +7,10 @@
 
 bool loadObj(const char *path, std::vector<Mesh> *meshes);
 
-GLuint loadDds(const char *path);
+unsigned int loadDds(const char *path);
+
+unsigned int loadPngTexture(const char *path);
+
+Texture loadCubeMap(std::vector<std::string> textures);
 
 #endif

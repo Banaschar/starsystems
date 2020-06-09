@@ -34,8 +34,6 @@ void Model::loadModel(const char *path) {
 }
 
 void Model::draw(Game &game) {
-    shader_.use();
-    shader_.uniform("MVP", mvp_);
     drawCallback_(this, shader_, game);
 
     for (unsigned int i = 0; i < meshes_.size(); i++) {
@@ -80,4 +78,8 @@ glm::mat3 Model::getNormalMatrix() {
 
 glm::mat4 Model::getModelMatrix() {
     return modelMatrix_;
+}
+
+glm::mat4 Model::getMvp() {
+    return mvp_;
 }
