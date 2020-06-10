@@ -2,26 +2,17 @@
 
 #include "scene.hpp"
 
-Scene::Scene(Game game) : game_(game), lightSources_(game_.getLightSources()),
-                            models_(game_.getDrawables()), skybox_(game_.getSkyBox()) {
+Scene::Scene(Game *game) : game_(game), lightSources_(game_->getLightSources()),
+                            models_(game_->getDrawables()), skybox_(game_->getSkyBox()) {
     autoRotate_ = false;
 }
 
 Scene::~Scene() {
-    for (Drawable *m : models_) {
-        delete m;
-    }
-    for (Drawable *m : lightSources_) {
-        delete m;
-    }
-
-    delete skybox_;
+    delete game_;
 }
 
 void Scene::update() {
-    if (autoRotate_)
-        game_.getView().rotateCamera();
-    //view_.updateFromInputs();
+    game_->getView().update();
 }
 
 void Scene::render() {
@@ -42,5 +33,5 @@ void Scene::render() {
 }
 
 void Scene::setAutoRotate(bool value) {
-    autoRotate_ = value;
+    game_->getView().setAutoRotate(value);
 }

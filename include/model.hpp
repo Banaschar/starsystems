@@ -13,14 +13,14 @@
 #include "shader.hpp"
 #include "game.hpp"
 
-typedef std::function<void(Drawable*, Shader&, Game&)> callback_t;
+typedef std::function<void(Drawable*, Shader&, Game*)> callback_t;
 
 class Model: public Drawable {
 public:
     Model(const char *path, Shader shader, const callback_t cb);
     Model(Mesh mesh, Shader shader, const callback_t cb);
-    void draw(Game &game);
-    void update(Game &game);
+    void draw(Game *game);
+    void update(Game *game);
     void transform(glm::vec3 *scaleVec, glm::vec3 *translateVec, 
                     glm::vec3 *rotationAxis, float degree = 0.0f);
     glm::vec3 getPosition();

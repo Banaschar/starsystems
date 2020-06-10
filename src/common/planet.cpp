@@ -5,7 +5,7 @@ Planet::Planet(Model model, float orbitSpeed): model_(model), orbitSpeed_(orbitS
     rotationVal_ = 0.0;
 }
 
-void Planet::update(Game &game) {
+void Planet::update(Game *game) {
     
     rotationVal_ += orbitSpeed_ * deltaTime;
 
@@ -18,7 +18,7 @@ void Planet::update(Game &game) {
     model_.update(game);
 }
 
-void Planet::draw(Game &game) {
+void Planet::draw(Game *game) {
     model_.draw(game);
 }
 

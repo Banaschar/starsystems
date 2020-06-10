@@ -11,13 +11,13 @@
 
 class Scene {
 public:
-    Scene(Game game);
+    Scene(Game *game);
     ~Scene();
     void update();
     void render();
     void setAutoRotate(bool value);
 private:
-    Game game_;
+    Game *game_;
     std::vector<Drawable*> &lightSources_;
     std::vector<Drawable*> &models_;
     Drawable *skybox_;

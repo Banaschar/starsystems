@@ -10,7 +10,24 @@
 class Game {
 public:
     Game(View view) : view_(view) {
-        ;
+        /* TODO: rethink this
+         * This is only here because I copy the view object in here,
+         * and therefore the callback for glfw points to the wrong view object.
+         * Could be solved by just getting a pointer to view instead of copying the 
+         * object. Would also be more harmonic, as the all passed around objects would need
+         * the "->" accessor. 
+         */
+        view_.setupInput();
+    }
+    ~Game() {
+        for (Drawable *m : drawables_) {
+            delete m;
+        }
+        for (Drawable *m : lightSources_) {
+            delete m;
+        }
+
+        delete skybox_;
     }
 
     void addModel(Drawable *model) {

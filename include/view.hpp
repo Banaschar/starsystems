@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
+#include <functional>
 
 class View {
 public:
@@ -13,9 +14,18 @@ public:
     glm::mat4 getCameraMatrix();
     glm::mat4 getProjectionMatrix();
     glm::vec3 getCameraPosition();
-    void updateFromInputs();
-    void rotateCamera();
+    void update();
+    void setAutoRotate(bool value);
+    void mouseCallback(GLFWwindow *window, double xpos, double ypos);
+    void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
+    void setupInput();
+    //std::function<void(GLFWwindow*, double, double)> mCb;
+    //std::function<void(GLFWwindow*, double, double)> sCb;
+    void (*mCb)(GLFWwindow*, double, double);
+    void (*sCb)(GLFWwindow*, double, double);
 private:
+    void rotateCamera();
+    void processInputs();
     GLFWwindow *window_;
     int windowWidth_, windowHeight_;
     glm::mat4 cameraMatrix_;
@@ -24,12 +34,21 @@ private:
     glm::vec3 camDirection_;
     glm::vec3 camUp_;
     glm::vec3 camPositionOriginal_;
-    float horizontalAngle_;
-    float verticalAngle_;
+    glm::vec3 worldUp_;
+    glm::vec3 camRight_;
+    bool autoRotate_;
+    bool firstMouseMove_ = true;
+    bool flagUpdate_ = true;
+    bool constrainPitch_;
+    double lastX_;
+    double lastY_;
     float fov_;
     float speed_;
-    float mouseSpeed_;
     float cameraSpeed_;
     float camRotateVal_;
+    float zoom_;
+    float mouseSensitivity_;
+    float yaw_;
+    float pitch_;
 };
 #endif

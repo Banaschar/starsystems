@@ -11,8 +11,8 @@
 class Planet : public Drawable {
 public:
     Planet(Model model, float orbitSpeed);
-    void draw(Game &game);
-    void update(Game &game);
+    void draw(Game *game);
+    void update(Game *game);
     glm::vec3 getPosition();
 private:
     Model model_;

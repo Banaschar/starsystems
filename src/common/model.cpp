@@ -33,7 +33,7 @@ void Model::loadModel(const char *path) {
         fprintf(stdout, "Could not load model.\n");
 }
 
-void Model::draw(Game &game) {
+void Model::draw(Game *game) {
     drawCallback_(this, shader_, game);
 
     for (unsigned int i = 0; i < meshes_.size(); i++) {
@@ -63,9 +63,9 @@ void Model::transform(glm::vec3 *scaleVec, glm::vec3 *translateVec,
     needsUpdate_ = true;
 }
 
-void Model::update(Game &game) {
-    mvp_ = game.getView().getProjectionMatrix() * game.getView().getCameraMatrix() * modelMatrix_;
-    normalMatrix_ = glm::mat3(glm::transpose(glm::inverse(game.getView().getCameraMatrix() * modelMatrix_)));
+void Model::update(Game *game) {
+    mvp_ = game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() * modelMatrix_;
+    normalMatrix_ = glm::mat3(glm::transpose(glm::inverse(game->getView().getCameraMatrix() * modelMatrix_)));
 }
 
 glm::vec3 Model::getPosition() {
