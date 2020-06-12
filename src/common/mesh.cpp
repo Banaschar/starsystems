@@ -11,41 +11,60 @@
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) :
             vertices_(vertices), indices_(indices) {
-
-    if (indices_.size() == 0)
-        generateIndices();
     initMesh();
 }
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices) :
             vertices_(vertices), textures_(textures), indices_(indices) {
-    if (indices_.size() == 0)
-        generateIndices();
     initMesh();
 }
 
 void Mesh::generateIndices() {
     for (int i = 0; i < vertices_.size(); i++) {
         indices_.push_back(i);
+        indices_.push_back(i+1);
+        indices_.push_back(i+2);
     }
 }
 
-/*
- * TODO: Only use vertex attrib pointer of stuff we actually have
- * TODO: add flag if indices_ is empty, so we draw with glDrawArrays instead of glDrawElements
- */
 void Mesh::initMesh() {
-
+    drawInstances_ = 0;
+    if (indices_.size() == 0)
+        generateIndices();
     glGenVertexArrays(1, &vao_);
     glGenBuffers(1, &vbo_);
-
     glGenBuffers(1, &ebo_);
 
     updateMesh();
-    // break existing binding!
-    glBindVertexArray(0);
 }
 
+/*
+ * TODO: Internally, create a Vertex struct that only holds the data types we actually 
+ * have and use
+ * Also check if the vertices array contains any entries that are overlapping, e.g. any
+ * vertices no index in the indices array is pointing to. Remove these and shrink the array
+ * appropriately.
+ * --> Can't create a struct dynamically. So the best possibilty would be
+ * to create one char buffer and put everything inside interleaved
+ * 
+ */
+void optimize() {
+    /*
+    char buffer[] = new char[sizeOfEverything]
+    for (int i = 0; i < vertices_.size(); i++) {
+        memcpy(buffer + (i * sizeOfOneTriangleData), vertices_[i].position, sizeof(glm::vec3));
+        memcpy(buffer + (i * sizeOfOneTriangleData) + sizeof(glm::vec3), vertices_[i].normal, sizeof(glm::vec3));
+        etc.
+    }
+    */
+    ;
+}
+
+/*
+ * TODO: Either implement the optimize solution,
+ * or simply use a different buffer object for each attribute
+ *
+ */
 void Mesh::updateMesh() {
     glBindVertexArray(vao_);
 
@@ -67,6 +86,36 @@ void Mesh::updateMesh() {
 
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+
+    glBindVertexArray(0);
+}
+
+void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
+    instanceMatrices_ = instanceMatrices;
+
+    drawInstances_ = instanceMatrices_->size();
+
+    glGenBuffers(1, &ibo_);
+    glBindBuffer(GL_ARRAY_BUFFER, ibo_);
+    glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+
+    glBindVertexArray(vao_);
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)sizeof(glm::vec4));
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+    glEnableVertexAttribArray(7);
+    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+
+    glVertexAttribDivisor(4, 1);
+    glVertexAttribDivisor(5, 1);
+    glVertexAttribDivisor(6, 1);
+    glVertexAttribDivisor(7, 1);
+
+    glBindVertexArray(0);
 }
 
 void Mesh::draw(Shader shader) {
@@ -108,16 +157,33 @@ void Mesh::draw(Shader shader) {
         glBindTexture(GL_TEXTURE_2D, textures_[i].id);
     }
     
-
-    glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+    if (drawInstances_) {
+        updateIbo();
+        glDrawElementsInstanced(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0, drawInstances_);
+    }
+    else
+        glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
 
     if (depthMask)
         glDepthFunc(GL_LESS);
 
-    glActiveTexture(GL_TEXTURE0); // Set back to defaults
+    glActiveTexture(GL_TEXTURE0);
 }
+
+/*
+ * Update the ibo attribute buffer that holds the matrices 
+ * for instanced draw calls
+ */
+void Mesh::updateIbo() {
+    drawInstances_ = instanceMatrices_->size();
+    glBindBuffer(GL_ARRAY_BUFFER, ibo_);
+    glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), &instanceMatrices_->front());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
 
 void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);

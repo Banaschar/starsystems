@@ -17,28 +17,32 @@ typedef std::function<void(Drawable*, Shader&, Game*)> callback_t;
 
 class Model: public Drawable {
 public:
-    Model(const char *path, Shader shader, const callback_t cb);
-    Model(Mesh mesh, Shader shader, const callback_t cb);
+    Model(const char *path, Shader shader, const callback_t cb, std::vector<glm::vec3> instancePositions = {});
+    Model(Mesh mesh, Shader shader, const callback_t cb, std::vector<glm::vec3> instancePositions = {});
     void draw(Game *game);
     void update(Game *game);
+    void transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, 
+                    glm::vec3 *rotationAxis, float degree = 0.0f);
     void transform(glm::vec3 *scaleVec, glm::vec3 *translateVec, 
                     glm::vec3 *rotationAxis, float degree = 0.0f);
-    glm::vec3 getPosition();
-    glm::mat3 getNormalMatrix();
-    glm::mat4 getModelMatrix();
-    glm::mat4 getMvp();
+    glm::vec3 getPosition(int index = 0);
+    glm::mat3 getNormalMatrix(int index = 0);
+    glm::mat4 getModelMatrix(int index = 0);
+    std::vector<glm::mat4>& getInstanceModels();
+    glm::mat4 getMvp(int index = 0);
     //void register_callback(const callback_t &cb);
     //void test();
 private:
     Shader shader_;
     std::vector<Mesh> meshes_;
-    glm::vec3 modelPosition_;
-    glm::mat4 modelMatrix_; 
-    glm::mat3 normalMatrix_;
-    glm::mat4 mvp_; // model-view-projection matrix
+    std::vector<glm::vec3> modelPositions_;
+    std::vector<glm::mat4> modelMatrices_;
+    std::vector<glm::mat4> mvps_;
+    std::vector<glm::mat3> normalMatrices_;
+    bool calcNormalMatrix_ = false;
+
     void initModel();
     void loadModel(const char *path);
-    bool needsUpdate_;
     callback_t drawCallback_;
 };
 #endif

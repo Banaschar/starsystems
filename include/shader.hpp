@@ -9,6 +9,7 @@ public:
     Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type);
     void use();
     std::string type();
+    unsigned int id();
     void uniform(const std::string &name, glm::mat4 value);
     void uniform(const std::string &name, glm::mat3 value);
     void uniform(const std::string &name, glm::vec3 value);

@@ -11,12 +11,18 @@
 #include "mesh.hpp"
 #include "primitives.hpp"
 
+/*
+ * Based on the improved Perlin Noise
+ * https://mrl.nyu.edu/~perlin/noise/
+ *
+ * With basic fractional brownian motion 
+ */
 class PerlinNoise {
 public:
     PerlinNoise() : PerlinNoise(3, 4, 0.35) {}
-    PerlinNoise(int octaves, float amplitude, float roughness, bool randomPerm = false) :
-        octaves_(octaves), amplitude_(amplitude), roughness_(roughness), randomPerm_(randomPerm) {
-            if (randomPerm_)
+    PerlinNoise(int octaves, float amplitude, float roughness, unsigned int seed = 0) :
+        octaves_(octaves), amplitude_(amplitude), roughness_(roughness), seed_(seed) {
+            if (seed_)
                 p = generateRandomPerm();
             else
                 p = perm_;
@@ -40,10 +46,12 @@ private:
     int octaves_;
     float amplitude_;
     float roughness_;
-    bool randomPerm_;
+    unsigned int seed_;
 
     std::vector<int> generateRandomPerm() {
-        std::default_random_engine eng{static_cast<unsigned int>(time(0))};
+        std::cout << "[PerlinNoise] Generating random permutation Vector. Seed: " << seed_ << std::endl;
+        
+        std::default_random_engine eng{seed_};
         std::uniform_int_distribution<> distrib(0, 255);
         
         std::vector<int> perms(512);
@@ -214,16 +222,16 @@ private:
 };
 */
 
-class ColorGen {
+class ColorGenerator {
 public:
-    ColorGen() {
+    ColorGenerator() {
         initRandom();
         spread_ = getRandF();
         for (int i = 0; i < 5; i++) {
             colorPalette_.push_back(getRandomColor());
         }
     }
-    ColorGen(std::vector<glm::vec4> colorPalette, float spread) :
+    ColorGenerator(std::vector<glm::vec4> colorPalette, float spread) :
                 colorPalette_(colorPalette), spread_(spread) {
         halfSpread_ = spread_ / 2.0f;
         part_ = 1.0f / (colorPalette_.size() - 1);
@@ -280,128 +288,93 @@ private:
     }
 };
 
-float getHeightN(int x, int z, std::vector<float> &heights, int dim) {
-    x = x < 0 ? 0 : x;
-    z = z < 0 ? 0 : z;
-    x = x >= dim ? dim - 1 : x;
-    z = z >= dim ? dim - 1 : z;
-    return heights[z * dim + x];
-}
+class TerrainGenerator {
+public:
+    TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise) : colorGen_(colorGen), pNoise_(pNoise) {};
 
-glm::vec3 calcNormal(int x, int z, std::vector<float> &heights, int dim) {
-    float heightL = getHeightN(x - 1, z, heights, dim);
-    float heightR = getHeightN(x + 1, z, heights, dim);
-    float heightD = getHeightN(x, z - 1, heights, dim);
-    float heightU = getHeightN(x, z + 1, heights, dim);
+    Mesh generateTerrain(int dimension) {
+        std::vector<float> heights = generateHeights(dimension, pNoise_);
+        std::vector<glm::vec4> colors = colorGen_.genColors(heights, dimension, pNoise_.getAmplitude());
 
-    return glm::normalize(glm::vec3(heightL - heightR, 2.0f, heightD - heightU));
-}
+        return generateMesh(heights, colors, dimension);
+    }
 
-std::vector<glm::vec3> generateNormalVector(std::vector<float> &heights, int dimension) {
-    std::vector<glm::vec3> normals(dimension * dimension);
-    for (int z = 0; z < dimension; z++) {
-        for (int x = 0; x < dimension; x++) {
-            normals[z * dimension + x] = calcNormal(x, z, heights, dimension);
+private:
+    ColorGenerator colorGen_;
+    PerlinNoise pNoise_;
+
+    float getHeightN(int x, int z, std::vector<float> &heights, int dim) {
+        x = x < 0 ? 0 : x;
+        z = z < 0 ? 0 : z;
+        x = x >= dim ? dim - 1 : x;
+        z = z >= dim ? dim - 1 : z;
+        return heights[z * dim + x];
+    }
+
+    glm::vec3 calcNormal(int x, int z, std::vector<float> &heights, int dim) {
+        float heightL = getHeightN(x - 1, z, heights, dim);
+        float heightR = getHeightN(x + 1, z, heights, dim);
+        float heightD = getHeightN(x, z - 1, heights, dim);
+        float heightU = getHeightN(x, z + 1, heights, dim);
+
+        return glm::normalize(glm::vec3(heightL - heightR, 2.0f, heightD - heightU));
+    }
+
+    std::vector<glm::vec3> generateNormalVector(std::vector<float> &heights, int dimension) {
+        std::vector<glm::vec3> normals(dimension * dimension);
+        for (int z = 0; z < dimension; z++) {
+            for (int x = 0; x < dimension; x++) {
+                normals[z * dimension + x] = calcNormal(x, z, heights, dimension);
+            }
         }
+        return normals;
     }
 
-    return normals;
-}
-
-std::vector<float> generateHeights(int dimension, PerlinNoise pNoise) {
-    std::vector<float> heights(dimension * dimension);
-    for (int z = 0; z < dimension; z++) {
-        for (int x = 0; x < dimension; x++) {
-            heights[z * dimension + x] = pNoise.getNoise2d(x, z);
+    std::vector<float> generateHeights(int dimension, PerlinNoise pNoise) {
+        std::vector<float> heights(dimension * dimension);
+        for (int z = 0; z < dimension; z++) {
+            for (int x = 0; x < dimension; x++) {
+                heights[z * dimension + x] = pNoise.getNoise2d(x, z);
+            }
         }
+        return heights;
     }
-    return heights;
-}
 
-std::vector<unsigned int> generateIndexVector(int dimension) {
-    std::vector<unsigned int> indices ((dimension-1) * (dimension-1) * 6);
-    int cnt = 0;
-    for (int row = 0; row < dimension - 1; row++) {
-        for (int col = 0; col < dimension - 1; col++) {
-            indices[cnt++] = dimension * row + col;
-            indices[cnt++] = dimension * row + col + dimension;
-            indices[cnt++] = dimension * row + col + dimension + 1;
+    std::vector<unsigned int> generateIndexVector(int dimension) {
+        std::vector<unsigned int> indices ((dimension-1) * (dimension-1) * 6);
+        int cnt = 0;
+        for (int row = 0; row < dimension - 1; row++) {
+            for (int col = 0; col < dimension - 1; col++) {
+                indices[cnt++] = dimension * row + col;
+                indices[cnt++] = dimension * row + col + dimension;
+                indices[cnt++] = dimension * row + col + dimension + 1;
 
-            indices[cnt++] = dimension * row + col;
-            indices[cnt++] = dimension * row + col + dimension + 1;
-            indices[cnt++] = dimension * row + col + 1;
+                indices[cnt++] = dimension * row + col;
+                indices[cnt++] = dimension * row + col + dimension + 1;
+                indices[cnt++] = dimension * row + col + 1;
+            }
         }
+
+        return indices;
     }
 
-    return indices;
-}
-
-Mesh generateMesh(std::vector<float> heights, std::vector<glm::vec4> colors, int dimension) {
-    std::vector<Vertex> vertices (dimension * dimension);
-    std::vector<glm::vec3> normals = generateNormalVector(heights, dimension);
-    int half = dimension / 2;
-    for (int z = 0; z < dimension; z++) {
-        for (int x = 0; x < dimension; x++) {
-            Vertex vertex;
-            vertex.position.x = x - half;
-            vertex.position.y = heights[z * dimension + x];
-            vertex.position.z = z - half;
-            vertex.normal = normals[z * dimension + x];
-            vertex.color = colors[z * dimension + x];
-            vertices[z * dimension + x] = vertex;
+    Mesh generateMesh(std::vector<float> heights, std::vector<glm::vec4> colors, int dimension) {
+        std::vector<Vertex> vertices (dimension * dimension);
+        std::vector<glm::vec3> normals = generateNormalVector(heights, dimension);
+        int half = dimension / 2;
+        for (int z = 0; z < dimension; z++) {
+            for (int x = 0; x < dimension; x++) {
+                Vertex vertex;
+                vertex.position.x = x - half;
+                vertex.position.y = heights[z * dimension + x];
+                vertex.position.z = z - half;
+                vertex.normal = normals[z * dimension + x];
+                vertex.color = colors[z * dimension + x];
+                vertices[z * dimension + x] = vertex;
+            }
         }
+        return Mesh(vertices, generateIndexVector(dimension));
     }
-    return Mesh(vertices, generateIndexVector(dimension));
-}
-
-Mesh createLandscape() {
-    int dimension = 100;
-    Mesh mesh = createPlane(dimension);
-    std::vector<Vertex> &vertices = mesh.getVertices(); 
-
-    std::vector<glm::vec4> colorPalette = {
-        glm::vec4(201, 178, 99, 1),
-        glm::vec4(135, 184, 82, 1),
-        glm::vec4(80, 171, 93, 1),
-        glm::vec4(120, 120, 120, 1),
-        glm::vec4(200, 200, 210, 1)
-    };
-    //PerlinNoise pNoise = PerlinNoise(12345, 3, 6, 0.7f); // octaves, amplitude, roughness
-    PerlinNoise pNoise = PerlinNoise();
-    ColorGen colorGen = ColorGen(colorPalette, 0.45f);
-    std::vector<float> heights = generateHeights(dimension, pNoise);
-    std::vector<glm::vec4> colors = colorGen.genColors(heights, dimension, pNoise.getAmplitude());
-
-    
-    for (int i = 0; i < vertices.size(); i++) {
-        vertices[i].position.y = heights[i];
-        vertices[i].color = colors[i];
-        //std::cout << "color: " << glm::to_string(colors[i]) << std::endl;
-    }
-
-    mesh.updateMesh();
-    
-    return mesh;
-    
-}
-
-Mesh createTest() {
-    int dimension = 500;
-    std::vector<glm::vec4> colorPalette = {
-        glm::vec4(201, 178, 99, 1),
-        glm::vec4(135, 184, 82, 1),
-        glm::vec4(80, 171, 93, 1),
-        glm::vec4(120, 120, 120, 1),
-        glm::vec4(200, 200, 210, 1)
-    };
-
-    ColorGen colorGen = ColorGen(colorPalette, 0.45f);
-    PerlinNoise pNoise = PerlinNoise(7, 15, 0.5f, false);
-    std::vector<float> heights = generateHeights(dimension, pNoise);
-    std::vector<glm::vec4> colors = colorGen.genColors(heights, dimension, pNoise.getAmplitude());
-
-    return generateMesh(heights, colors, dimension);
-
-}
+};
 
 #endif

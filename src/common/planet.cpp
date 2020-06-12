@@ -22,6 +22,6 @@ void Planet::draw(Game *game) {
     model_.draw(game);
 }
 
-glm::vec3 Planet::getPosition() {
-    return model_.getPosition();
+glm::vec3 Planet::getPosition(int index) {
+    return model_.getPosition(index);
 }

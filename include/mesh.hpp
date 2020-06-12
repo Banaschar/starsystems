@@ -26,7 +26,9 @@ private:
     std::vector<Vertex> vertices_;
     std::vector<unsigned int> indices_;
     std::vector<Texture> textures_;
-    unsigned int vao_, vbo_, ebo_;
+    std::vector<glm::mat4> *instanceMatrices_;
+    unsigned int drawInstances_;
+    unsigned int vao_, vbo_, ebo_, ibo_;
     void generateIndices();
 
     void initMesh();
@@ -36,7 +38,10 @@ public:
         std::vector<unsigned int> indices = {});
     void draw(Shader shader);
     void updateMesh();
+    void updateIbo();
+    void optimize();
     void addTexture(Texture tex);
+    void makeInstances(std::vector<glm::mat4> *instanceMatrices);
     std::vector<Vertex>& getVertices();
     std::vector<unsigned int>& getIndices(); 
 };

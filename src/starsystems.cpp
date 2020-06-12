@@ -152,6 +152,12 @@ void flatColorCb(Drawable *drawable, Shader &shader, Game *game) {
     shader.uniform("MVP", model->getMvp());
 }
 
+void instanceShaderCb(Drawable *drawable, Shader &shader, Game *game) {
+    shader.use();
+    shader.uniform("projection", game->getView().getProjectionMatrix());
+    shader.uniform("camera", game->getView().getCameraMatrix());
+}
+
 Scene* createPlane(GLFWwindow *window) {
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
@@ -166,22 +172,42 @@ Scene* createPlane(GLFWwindow *window) {
     Shader planeShader = Shader("plane.vs", "plane.fs", "plane");
     Shader skyBoxShader = Shader("skybox.vs", "skybox.fs", "skybox");
     Shader flatShader = Shader("flatColor.vs", "flatColor.fs", "light");
+    Shader instanceShader = Shader("instanceShader.vs", "instanceShader.fs", "instance");
+
     View view = View(window, glm::vec3(0,20,0));
     Game *game = new Game(view);
 
-    //Model *plane = new Model(createLandscape(), planeShader, planeShaderCb);
-    //game.addModel(plane);
+    std::vector<glm::vec4> colorPalette = {
+        glm::vec4(201, 178, 99, 1),
+        glm::vec4(135, 184, 82, 1),
+        glm::vec4(80, 171, 93, 1),
+        glm::vec4(120, 120, 120, 1),
+        glm::vec4(200, 200, 210, 1)
+    };
 
-    //Model *cube = new Model("cube.obj", planeShader, planeShaderCb);
-    //game.addModel(cube);
+    ColorGenerator colorGen = ColorGenerator(colorPalette, 0.45f);
+    PerlinNoise pNoise = PerlinNoise(6, 10, 0.35f);
+    TerrainGenerator terrainGen = TerrainGenerator(colorGen, pNoise);
 
-    Model *test = new Model(createTest(), planeShader, planeShaderCb);
+    Model *test = new Model(terrainGen.generateTerrain(200), planeShader, planeShaderCb);
     game->addModel(test);
 
     Mesh box = createCube(1);
     box.addTexture(cubemapTexture);
     Model *skybox = new Model(box, skyBoxShader, skyBoxShaderCb);
     game->addSkyBox(skybox);
+
+    // draw instances
+    std::vector<glm::vec3> pos = {
+        glm::vec3(0,20,0),
+        glm::vec3(10,20,0),
+        glm::vec3(-10,20,0),
+        glm::vec3(-20,20,0),
+        glm::vec3(0,0,20)
+    };
+    Model instanceTest = Model("PlanetFirstTry.obj", instanceShader, instanceShaderCb, pos);
+    Planet instances
+    game->addModel(instanceTest);
 
     Scene *scene = new Scene(game);
     //scene.setAutoRotate(true);

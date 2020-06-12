@@ -142,4 +142,8 @@ std::string Shader::type() {
 	return type_;
 }
 
+unsigned int Shader::id() {
+	return shaderProgramId_;
+}
+
 

@@ -13,7 +13,7 @@ public:
     Planet(Model model, float orbitSpeed);
     void draw(Game *game);
     void update(Game *game);
-    glm::vec3 getPosition();
+    glm::vec3 getPosition(int index = 0);
 private:
     Model model_;
     float orbitSpeed_;

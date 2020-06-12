@@ -108,23 +108,33 @@ void View::update() {
 }
 
 void View::processInputs() {    
-    if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS){
+    if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
         camPosition_ += camDirection_ * deltaTime * speed_;
         flagUpdate_ = true;
     }
     
-    if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS){
+    if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
         camPosition_ -= camDirection_ * deltaTime * speed_;
         flagUpdate_ = true;
     }
     
-    if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS){
+    if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
         camPosition_ += camRight_ * deltaTime * speed_;
         flagUpdate_ = true;
     }
 
-    if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS){
+    if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) {
         camPosition_ -= camRight_ * deltaTime * speed_;
+        flagUpdate_ = true;
+    }
+
+    if (glfwGetKey(window_, GLFW_KEY_F) == GLFW_PRESS) {
+        camPosition_ -= glm::vec3(0, 1, 0) * deltaTime * speed_;
+        flagUpdate_ = true;
+    }
+
+    if (glfwGetKey(window_, GLFW_KEY_R) == GLFW_PRESS) {
+        camPosition_ += glm::vec3(0, 1, 0) * deltaTime * speed_;
         flagUpdate_ = true;
     }
 }
