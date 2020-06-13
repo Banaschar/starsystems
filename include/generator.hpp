@@ -320,6 +320,10 @@ private:
         return glm::normalize(glm::vec3(heightL - heightR, 2.0f, heightD - heightU));
     }
 
+    /*
+     * Switch out for the normal generator in primitives
+     *
+     */
     std::vector<glm::vec3> generateNormalVector(std::vector<float> &heights, int dimension) {
         std::vector<glm::vec3> normals(dimension * dimension);
         for (int z = 0; z < dimension; z++) {

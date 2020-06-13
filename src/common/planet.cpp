@@ -18,10 +18,14 @@ void Planet::update(Game *game) {
     model_.update(game);
 }
 
-void Planet::draw(Game *game) {
-    model_.draw(game);
+void Planet::draw(Shader *shader) {
+    model_.draw(shader);
 }
 
 glm::vec3 Planet::getPosition(int index) {
     return model_.getPosition(index);
+}
+
+std::string Planet::type() {
+    return model_.type();
 }

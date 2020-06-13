@@ -12,8 +12,12 @@ using namespace std;
 #include <string.h>
 
 #include "shader.hpp"
+#include "drawable.hpp"
+#include "game.hpp"
 
-Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type) : type_(type) {
+Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, 
+				const std::string type, const callback_t cb) : type_(type),
+				drawCallback_(cb) {
 	if (!openShaders(vertexShaderPath, fragmentShaderPath))
 		std::cout << "ERROR: SHADER COMPILATION FAILED!\n" << std::endl;
 }
@@ -114,6 +118,10 @@ void Shader::use() {
 	glUseProgram(shaderProgramId_);
 }
 
+void Shader::prepare(Drawable *drawable, Game *game) {
+	drawCallback_(this, drawable, game);
+}
+
 void Shader::uniform(const std::string &name, glm::mat4 value) {
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgramId_, name.c_str()), 1, GL_FALSE, &value[0][0]);
 }
@@ -145,5 +153,3 @@ std::string Shader::type() {
 unsigned int Shader::id() {
 	return shaderProgramId_;
 }
-
-

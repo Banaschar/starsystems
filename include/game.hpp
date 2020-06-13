@@ -27,6 +27,10 @@ public:
             delete m;
         }
 
+        for (Drawable *m : water_) {
+            delete m;
+        }
+
         delete skybox_;
     }
 
@@ -42,6 +46,10 @@ public:
         skybox_ = model;
     }
 
+    void addWater(Drawable *water) {
+        water_.push_back(water);
+    }
+
     View& getView() {
         return view_;
     }
@@ -52,6 +60,10 @@ public:
 
     std::vector<Drawable*>& getDrawables() {
         return drawables_;
+    }
+
+    std::vector<Drawable*>& getWater() {
+        return water_;
     }
 
     Drawable* getLightSource() {
@@ -66,6 +78,7 @@ private:
     View view_;
     Drawable *skybox_ = NULL;
     std::vector<Drawable*> lightSources_;
+    std::vector<Drawable*> water_;
     std::vector<Drawable*> drawables_;
 };
 #endif

@@ -36,6 +36,63 @@ Mesh createPlane(int dimension) {
     return Mesh(vertices, indices);
 }
 
+/*
+ * Create plane 6 times, with different coordinates set to 0
+ */
+Mesh createCubeLarge(int dimension) {
+    ;
+}
+
+std::vector<glm::vec3> calculateVertexNormalAverages(std::vector<glm::vec3> &pos,
+                                std::vector<unsigned int> &indices) {
+    std::vector<glm::vec3> normals(pos.size());
+
+    for (int i = 0; i < indices.size() / 3; i++) {
+        glm::vec3 v0 = pos[indices[i]];
+        glm::vec3 v1 = pos[indices[i+1]];
+        glm::vec3 v2 = pos[indices[i+2]];
+
+        glm::vec3 p1 = v1 - v0;
+        glm::vec3 p2 = v2 - v0;
+        glm::vec3 normal = glm::cross(p1, p2);
+        normal = glm::normalize(normal);
+
+        normals[indices[i]] += normal;
+        normals[indices[i+1]] += normal;
+        normals[indices[i+2]] += normal;
+    }
+
+    for (int i = 0; i < normals.size(); i++) {
+        normals[i] = glm::normalize(normals[i]);
+    }
+
+    return normals;
+}
+
+/*
+ * TODO: This is basically a 1-dimension plane
+ * -> So not really neccessary?
+ */
+Mesh createQuad() {
+    std::vector<Vertex> vertices(4);
+    std::vector<glm::vec3> pos = {
+        glm::vec3(-1, 0, -1),
+        glm::vec3(-1, 0, 1),
+        glm::vec3(1, 0, -1),
+        glm::vec3(1, 0, 1)
+    };
+    std::vector<unsigned int> indices = {0, 1, 2, 2, 1, 3};
+
+    std::vector<glm::vec3> normals = calculateVertexNormalAverages(pos, indices);
+
+    for (int i = 0; i < 4; i++) {
+        vertices[i].position = pos[i];
+        vertices[i].normal = normals[i];
+    }
+
+    return Mesh(vertices, indices);
+}
+
 Mesh createCube(int side) {
     
     glm::vec3 vertList[] = {

@@ -63,7 +63,7 @@ void optimize() {
 /*
  * TODO: Either implement the optimize solution,
  * or simply use a different buffer object for each attribute
- *
+ * 
  */
 void Mesh::updateMesh() {
     glBindVertexArray(vao_);
@@ -118,7 +118,7 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
     glBindVertexArray(0);
 }
 
-void Mesh::draw(Shader shader) {
+void Mesh::draw(Shader *shader) {
     glBindVertexArray(vao_);
     bool depthMask = false;
 
@@ -153,7 +153,7 @@ void Mesh::draw(Shader shader) {
             break;
         }
 
-        shader.uniform((type + number).c_str(), i);
+        shader->uniform((type + number).c_str(), i);
         glBindTexture(GL_TEXTURE_2D, textures_[i].id);
     }
     
