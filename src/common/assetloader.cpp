@@ -26,24 +26,6 @@
 void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh> *meshes);
 Mesh processMesh(aiMesh *mesh, const aiScene *scene);
 std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::string typeName);
-unsigned int loadTextureFromFile(const char *path);
-
-/*
-unsigned int loadPngTexture(const char *path) {
-    int width, height, nrChannels;
-    unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
-
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    stbi_image_free(data);
-
-    return texture;
-}
-*/
 
 bool loadObj(const char* path, std::vector<Mesh> *meshes) {
 
@@ -157,10 +139,8 @@ std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::st
  * glTex parameter -> define more variable somewhere else
  */
 unsigned int loadTextureFromFile(const char *path) {
-    return 1;
-    /*
     int width, height, nrChannels;
-    unsigned int ret;
+    unsigned int ret = 0;
     unsigned char *data = stbi_load(path, &width, &height, &nrChannels, 0);
 
     if (data) {
@@ -193,7 +173,6 @@ unsigned int loadTextureFromFile(const char *path) {
     }
 
     return ret;
-    */
 }
 
 /*

@@ -72,6 +72,8 @@ std::vector<glm::vec3> calculateVertexNormalAverages(std::vector<glm::vec3> &pos
 /*
  * TODO: This is basically a 1-dimension plane
  * -> So not really neccessary?
+ * This is a plane. Normal vectors simply always point in the y-direction, e.g.
+ * glm::vec3(0,1,0);
  */
 Mesh createQuad() {
     std::vector<Vertex> vertices(4);
@@ -81,6 +83,12 @@ Mesh createQuad() {
         glm::vec3(1, 0, -1),
         glm::vec3(1, 0, 1)
     };
+    std::vector<glm::vec2> texCoords = {
+        glm::vec2(0,0),
+        glm::vec2(0,1),
+        glm::vec2(1,0),
+        glm::vec2(1,1)
+    };
     std::vector<unsigned int> indices = {0, 1, 2, 2, 1, 3};
 
     std::vector<glm::vec3> normals = calculateVertexNormalAverages(pos, indices);
@@ -88,6 +96,7 @@ Mesh createQuad() {
     for (int i = 0; i < 4; i++) {
         vertices[i].position = pos[i];
         vertices[i].normal = normals[i];
+        vertices[i].textureCoords = texCoords[i];
     }
 
     return Mesh(vertices, indices);

@@ -9,7 +9,7 @@ struct Light {
 };
 
 in vec4 color;
-//in vec3 vertPos;
+//in vec3 vertPos_cameraSpace;
 in vec3 normal;
 
 //uniform vec3 viewPos;

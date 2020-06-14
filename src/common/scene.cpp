@@ -1,12 +1,14 @@
 #include <iostream>
 
 #include "scene.hpp"
+#include "waterframebuffer.hpp"
 
 Scene::Scene(Game *game, std::vector<Shader*> shaderList) : 
                             game_(game), lightSources_(game_->getLightSources()),
                             models_(game_->getDrawables()), skybox_(game_->getSkyBox()),
                             water_(game_->getWater()) {
     autoRotate_ = false;
+    setupScene();
     setupShaderMap(shaderList);
 }
 
@@ -15,6 +17,13 @@ Scene::~Scene() {
     for (const auto& kv : shaderMap_) {
         delete shaderMap_[kv.first];
     }
+    delete waterFrameBuffer_;
+}
+
+void Scene::setupScene() {
+    int width, height;
+    game_->getView().getWindowSize(&width, &height);
+    waterFrameBuffer_ = new WaterFrameBuffer(width, height);
 }
 
 /*
@@ -26,6 +35,8 @@ void Scene::setupShaderMap(std::vector<Shader*> shaderList) {
 
         if (shaderMap_.count(shader->type())) {
             continue;
+        } else if (shader->type() == "water") {
+            waterShader_ = shader;
         } else {
             shaderMap_[shader->type()] = shader;
             std::vector<Drawable*> tmp;
@@ -34,10 +45,6 @@ void Scene::setupShaderMap(std::vector<Shader*> shaderList) {
                     tmp.push_back(drawable);
             }
             for (Drawable *drawable : lightSources_) {
-                if (shader->type() == drawable->type())
-                    tmp.push_back(drawable);
-            }
-            for (Drawable *drawable : water_) {
                 if (shader->type() == drawable->type())
                     tmp.push_back(drawable);
             }

@@ -22,6 +22,7 @@ public:
     void setAutoRotate(bool value);
 private:
     void setupShaderMap(std::vector<Shader*> shaderList);
+    void setupScene();
     Game *game_;
     std::map<std::string, Shader*> shaderMap_;
     std::map<std::string, std::vector<Drawable*>> entityMap_;
@@ -29,6 +30,8 @@ private:
     std::vector<Drawable*> &models_;
     std::vector<Drawable*> &water_;
     Drawable *skybox_;
+    WaterFrameBuffer waterFrameBuffer_;
+    Shader *waterShader_;
     bool autoRotate_;
 };
 #endif

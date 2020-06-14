@@ -165,10 +165,14 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 
     shader->use();
     shader->uniform("MVP", model->getMvp());
+    shader->uniform("normalMatrix", model->getNormalMatrix());
+    shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+    shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
+    shader->uniform("light.diffuse", glm::vec3(1.0, 1.0, 1.0));
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "Ceat asasasdPlane" << std::endl;
+    std::cout << "Creat Plane" << std::endl;
 
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
@@ -183,7 +187,8 @@ Scene* createPlane(GLFWwindow *window) {
     std::vector<Shader*> shaders = {
         new Shader("plane.vs", "plane.fs", "plane", planeShaderCb),
         new Shader("skybox.vs", "skybox.fs", "skybox", skyBoxShaderCb),
-        new Shader("waterShader.vs", "waterShader.fs", "water", waterShaderCb)
+        new Shader("waterShader.vs", "waterShader.fs", "water", waterShaderCb),
+        new Shader("flatColor.vs", "flatColor.fs", "flat", flatColorCb)
     };
 
     //Shader instanceShader = Shader("instanceShader.vs", "instanceShader.fs", "instance");
@@ -203,8 +208,8 @@ Scene* createPlane(GLFWwindow *window) {
     PerlinNoise pNoise = PerlinNoise(6, 10, 0.35f);
     TerrainGenerator terrainGen = TerrainGenerator(colorGen, pNoise);
 
-    Model *test = new Model(terrainGen.generateTerrain(200), "plane");
-    game->addModel(test);
+    Model *terrain = new Model(terrainGen.generateTerrain(200), "plane");
+    game->addModel(terrain);
 
     // SKYBOX
     Mesh box = createCube(1);
@@ -224,13 +229,33 @@ Scene* createPlane(GLFWwindow *window) {
     Model instanceTest = Model("PlanetFirstTry.obj", instanceShader, instanceShaderCb, pos);
     game->addModel(instanceTest);
     */
+    // Test
+    
+    //unsigned int texCont = loadTextureFromFile("container2.png");
+    //Texture texContainer;
+    //texContainer.id = texCont;
+    //texContainer.type = "texture_diffuse";
+    Mesh t = createQuad();
+    //t.addTexture(texContainer);
+    t.addColor(glm::vec4(0.0,0.0,1.0,0.2));
+    Model *test = new Model(t, "flat");
+    game->addWater(test);
+    
 
     // WATER TEST
-    Model *waterTile = new Model(createQuad(), "water");
+    unsigned int texID = loadTextureFromFile("waternormals.jpg");
+    Texture waterNormal;
+    waterNormal.id = texID;
+    waterNormal.type = "texture_normal";
+    Mesh mesh = createQuad();
+    mesh.addColor(glm::vec4(0.0,0.0,1.0,0.3));
+    mesh.addTexture(waterNormal);
+    Model *waterTile = new Model(mesh, "water");
     glm::vec3 trans = glm::vec3(0, -5, 12);
     glm::vec3 scale = glm::vec3(8, 0, 8);
     waterTile->transform(&scale, &trans, NULL);
     game->addWater(waterTile);
+    
 
     Scene *scene = new Scene(game, shaders);
     //scene.setAutoRotate(true);
@@ -280,6 +305,10 @@ int main()
     glDepthFunc(GL_LESS);
     // Don't render triangles which normal is not torwards the camera
     glEnable(GL_CULL_FACE);
+
+    // BLENDING for transparency?
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // create starsystem scene
     //Scene *scene = createStarSystems(window);

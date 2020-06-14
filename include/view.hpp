@@ -19,6 +19,7 @@ public:
     void mouseCallback(GLFWwindow *window, double xpos, double ypos);
     void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
     void setupInput();
+    void getWindowSize(int *width, int *height);
     //std::function<void(GLFWwindow*, double, double)> mCb;
     //std::function<void(GLFWwindow*, double, double)> sCb;
     void (*mCb)(GLFWwindow*, double, double);

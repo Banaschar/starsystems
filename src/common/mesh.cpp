@@ -189,6 +189,13 @@ void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);
 }
 
+void Mesh::addColor(glm::vec4 color) {
+    for (Vertex &vert : vertices_) {
+        vert.color = color;
+    }
+    updateMesh();
+}
+
 std::vector<Vertex>& Mesh::getVertices() {
     return vertices_;
 }

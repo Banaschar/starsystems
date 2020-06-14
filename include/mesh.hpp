@@ -41,6 +41,7 @@ public:
     void updateIbo();
     void optimize();
     void addTexture(Texture tex);
+    void addColor(glm::vec4 color);
     void makeInstances(std::vector<glm::mat4> *instanceMatrices);
     std::vector<Vertex>& getVertices();
     std::vector<unsigned int>& getIndices(); 

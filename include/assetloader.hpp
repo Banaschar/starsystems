@@ -11,6 +11,8 @@ unsigned int loadDds(const char *path);
 
 unsigned int loadPngTexture(const char *path);
 
+unsigned int loadTextureFromFile(const char *path);
+
 Texture loadCubeMap(std::vector<std::string> textures);
 
 #endif

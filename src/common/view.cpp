@@ -66,6 +66,10 @@ glm::vec3 View::getCameraPosition() {
     return camPosition_;
 }
 
+void View::getWindowSize(int *width, int *height) {
+    glfwGetWindowSize(window_, width, height);
+}
+
 void View::setAutoRotate(bool value) {
     autoRotate_ = value;
 }

@@ -16,5 +16,5 @@ void main()
     gl_Position = MVP * vec4(vertexPosition, 1.0);
     color = vertexColor;
     normal = normalMatrix * vertexNormal;
-    //vertPos = vec3(modelMat * vec4(vertexPosition, 1.0));
+    //vertPos_cameraSpace = vec3(modelMat * vec4(vertexPosition, 1.0));
 } 
