@@ -40,16 +40,16 @@ Create a game class -> game object holds all the initial initialization (and mem
 
 void standardShadingCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("MVP", drawable->getMvp());
-    shader->uniform("lightPosition", game->getLightSource()->getPosition());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
-    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
+    shader->uniform("cameraPos", game->getView().getCameraPosition());
 
     //shader_.uniform("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
     shader->uniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
     shader->uniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
     shader->uniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
     shader->uniform("material.shininess", 32.0f);
+    shader->uniform("light.position", game->getLightSource()->getPosition());
     shader->uniform("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
     shader->uniform("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));  
     shader->uniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f)); 
@@ -158,7 +158,7 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "Creat Plane" << std::endl;
+    std::cout << "Create Plane" << std::endl;
 
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",

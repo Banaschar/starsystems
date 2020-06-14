@@ -9,15 +9,12 @@ out vec3 lightPos;
 
 uniform mat4 MVP;
 uniform mat4 modelMatrix;
-uniform mat4 cameraMatrix;
 uniform mat3 normalMatrix;
-uniform vec3 lightPosition;
 
 void main(){
 
 	gl_Position =  MVP * vec4(vertexPosition, 1);
-	FragPos = vec3(cameraMatrix * modelMatrix * vec4(vertexPosition, 1.0));
+	FragPos = vec3(modelMatrix * vec4(vertexPosition, 1.0));
 	Normal = normalMatrix * vertexNormal;
-	lightPos = vec3(cameraMatrix * vec4(lightPosition, 1.0)); // world space light position to camera(view) space
 }
 
