@@ -20,30 +20,37 @@ public:
         view_.setupInput();
     }
     ~Game() {
-        for (Drawable *m : drawables_) {
+        for (Drawable *m : terrain_) {
             delete m;
         }
-        for (Drawable *m : lightSources_) {
+        for (Drawable *m : entities_) {
             delete m;
         }
-
+        for (Drawable *m : lights_) {
+            delete m;
+        }
         for (Drawable *m : water_) {
             delete m;
         }
-
-        delete skybox_;
+        for (Drawable *m : sky_) {
+            delete m;
+        }
     }
 
-    void addModel(Drawable *model) {
-        drawables_.push_back(model);
+    void addEntity(Drawable *entity) {
+        entities_.push_back(entity);
     }
 
-    void addLight(Drawable *model) {
-        lightSources_.push_back(model);
+    void addLight(Drawable *light) {
+        lights_.push_back(light);
     }
 
-    void addSkyBox(Drawable *model) {
-        skybox_ = model;
+    void addSky(Drawable *sky) {
+        sky_.push_back(sky);
+    }
+
+    void addTerrain(Drawable *terrain) {
+        terrain_.push_back(terrain);
     }
 
     void addWater(Drawable *water) {
@@ -54,12 +61,16 @@ public:
         return view_;
     }
 
-    std::vector<Drawable*>& getLightSources() {
-        return lightSources_;
+    std::vector<Drawable*>& getLights() {
+        return lights_;
     }
 
-    std::vector<Drawable*>& getDrawables() {
-        return drawables_;
+    std::vector<Drawable*>& getEntities() {
+        return entities_;
+    }
+
+    std::vector<Drawable*>& getTerrain() {
+        return terrain_;
     }
 
     std::vector<Drawable*>& getWater() {
@@ -67,18 +78,19 @@ public:
     }
 
     Drawable* getLightSource() {
-        return lightSources_[0];
+        return lights_[0];
     }
 
-    Drawable* getSkyBox() {
-        return skybox_;
+    std::vector<Drawable*>& getSky() {
+        return sky_;
     }
 
 private:
     View view_;
-    Drawable *skybox_ = NULL;
-    std::vector<Drawable*> lightSources_;
+    std::vector<Drawable*> sky_;
+    std::vector<Drawable*> lights_;
+    std::vector<Drawable*> terrain_;
+    std::vector<Drawable*> entities_;
     std::vector<Drawable*> water_;
-    std::vector<Drawable*> drawables_;
 };
 #endif

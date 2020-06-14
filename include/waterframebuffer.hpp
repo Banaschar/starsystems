@@ -1,12 +1,12 @@
 #ifndef WATERFRAMEBUFFER_H
 #define WATERFRAMEBUFFER_H
 
+#include "global.hpp"
+
 #define REFLECTION_WIDTH 320
 #define REFLECTION_HEIGHT 180
 #define REFRACTION_WIDTH 1280
 #define REFRACTION_HEIGHT 720
-
-#include <GL/glew.h>
 
 class WaterFrameBuffer {
 public:
@@ -24,8 +24,8 @@ public:
         glDeleteTextures(1, &reflectionTexture_);
         glDeleteRenderbuffers(1, &reflectionDepthBuffer_);
         glDeleteFramebuffers(1, &refractionFb_);
-        glDeleteTextures(refractionTexture_);
-        glDeleteTextures(refractionDepthTexture_);
+        glDeleteTextures(1, &refractionTexture_);
+        glDeleteTextures(1, &refractionDepthTexture_);
     }
 
     unsigned int getReflectionTexture() {
@@ -67,7 +67,7 @@ private:
     void initReflectionFrameBuffer() {
         reflectionFb_ = createFrameBuffer();
         reflectionTexture_ = createTextureAttachment(reflectionWidth_, reflectionHeight_);
-        reflectionDepthBuffer_ createDepthBufferAttachment(reflectionWidth_, reflectionHeight_);
+        reflectionDepthBuffer_ = createDepthBufferAttachment(reflectionWidth_, reflectionHeight_);
         unbindActiveFb();
     }
 
@@ -87,16 +87,16 @@ private:
     unsigned int createFrameBuffer() {
         unsigned int id;
         glGenFramebuffers(1, &id);
-        glBindFramebuffer(GL_FRAMEBUFFER, fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, id);
         glDrawBuffer(GL_COLOR_ATTACHMENT0);
-        return fb;
+        return id;
     }
 
     unsigned int createTextureAttachment(int width, int height) {
         unsigned int textureId;
         glGenTextures(1, &textureId);
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
                         GL_RGB, GL_UNSIGNED_BYTE, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -127,5 +127,5 @@ private:
 
         return depthBuf;
     }
-}
+};
 #endif

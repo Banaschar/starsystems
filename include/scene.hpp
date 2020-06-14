@@ -1,37 +1,28 @@
 #ifndef SCENE_H
 #define SCENE_H
 
-#include <glm/glm.hpp>
 #include <vector>
-#include <map>
-#include <string>
 
-#include "view.hpp"
 #include "drawable.hpp"
-#include "model.hpp"
 #include "game.hpp"
-#include "shader.hpp"
+#include "renderer.hpp"
 
 class Scene {
 public:
-    Scene(Game *game, std::vector<Shader*> shaderList);
+    Scene(Game *game, Renderer *renderer);
     ~Scene();
     void update();
     void render();
-    void insertDrawable(Drawable *drawable);
     void setAutoRotate(bool value);
 private:
-    void setupShaderMap(std::vector<Shader*> shaderList);
     void setupScene();
     Game *game_;
-    std::map<std::string, Shader*> shaderMap_;
-    std::map<std::string, std::vector<Drawable*>> entityMap_;
-    std::vector<Drawable*> &lightSources_;
-    std::vector<Drawable*> &models_;
+    Renderer *renderer_;
+    std::vector<Drawable*> &lights_;
+    std::vector<Drawable*> &terrain_;
+    std::vector<Drawable*> &entities_;
     std::vector<Drawable*> &water_;
-    Drawable *skybox_;
-    WaterFrameBuffer waterFrameBuffer_;
-    Shader *waterShader_;
+    std::vector<Drawable*> &sky_;
     bool autoRotate_;
 };
 #endif

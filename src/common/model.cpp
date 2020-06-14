@@ -24,8 +24,11 @@ Model::Model(const char *path, std::string type, std::vector<glm::vec3> instance
 }
 
 /*
- * TODO: The check for uniforms here is ugly. Is calculating the normal matrix
- * really expensive?
+ * TODO:
+ * Split in multiple classes:
+ * Entitiy (main class, only contains the transformation code)
+ * model -> base sub class
+ * instance -> instance sub class
  */
 void Model::initModel() {
     if (modelPositions_.size()) {
@@ -33,8 +36,14 @@ void Model::initModel() {
         mvps_.resize(modelPositions_.size());
         modelMatrices_.resize(modelPositions_.size());
         normalMatrices_.resize(modelPositions_.size());
+        scale_.resize(modelPositions_.size());
+        rotationAxis_.resize(modelPositions_.size());
+        rotationDegree_.resize(modelPositions_.size());
         for (int i = 0; i < modelPositions_.size(); i++) {
             mvps_[i] = modelMatrices_[i] = glm::translate(baseModel, modelPositions_[i]);
+            scale_[i] = glm::vec3(1.0f);
+            rotationAxis_[i] = glm::vec3(1.0f);
+            rotationDegree_[i] = 0.0f;
         }
 
         for (Mesh &mesh : meshes_)
@@ -44,6 +53,9 @@ void Model::initModel() {
         modelMatrices_.push_back(glm::mat4(1.0));
         mvps_.resize(1);
         normalMatrices_.resize(1);
+        scale_.push_back(glm::vec3(1.0f));
+        rotationAxis_.push_back(glm::vec3(1.0f));
+        rotationDegree_.push_back(0.0f);
     }
 }
 
@@ -65,8 +77,13 @@ void Model::transform(glm::vec3 *scaleVec, glm::vec3 *translateVec,
     transform(0, scaleVec, translateVec, rotationAxis, degree);
 }
 
+/*
 void Model::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, 
                     glm::vec3 *rotationAxis, float degree) {
+
+    if (scaleVec)
+        modelMatrices_[index] = glm::scale(modelMatrices_[index], *scaleVec);
+
     if (rotationAxis) {
         if (degree == 0.0f) {
             fprintf(stderr, "Rotation axis specified but no degree\n");
@@ -79,9 +96,35 @@ void Model::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec,
         modelPositions_[index] = modelPositions_[index] + *translateVec;
         modelMatrices_[index] = glm::translate(modelMatrices_[index], *translateVec);
     }
+}
+*/
 
-    if (scaleVec)
-        modelMatrices_[index] = glm::scale(modelMatrices_[index], *scaleVec);
+void Model::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, 
+                    glm::vec3 *rotationAxis, float degree) {
+
+    if (translateVec) {
+        modelPositions_[index] += *translateVec;
+    }
+    
+    if (scaleVec) {
+        scale_[index].x *= scaleVec->x;
+        scale_[index].y *= scaleVec->y;
+        scale_[index].z *= scaleVec->z;
+    }
+
+    if (rotationAxis) {
+        if (degree == 0.0f) {
+            fprintf(stderr, "Rotation axis specified but no degree\n");
+        } else {
+            rotationAxis_[index] = *rotationAxis;
+            rotationDegree_[index] = degree;
+        }
+    }
+    glm::mat4 tmp = glm::mat4(1.0f);
+    tmp = glm::scale(tmp, scale_[index]);
+    tmp = glm::rotate(tmp, glm::radians(rotationDegree_[index]), rotationAxis_[index]);
+    tmp = glm::translate(tmp, modelPositions_[index]);
+    modelMatrices_[index] = tmp;
 }
 
 void Model::update(Game *game) {
@@ -100,19 +143,19 @@ std::vector<glm::mat4>& Model::getInstanceModels() {
 }
 
 glm::vec3 Model::getPosition(int index) {
-    return modelPositions_[index];
+    return modelPositions_.at(index);
 }
 
 glm::mat3 Model::getNormalMatrix(int index) {
-    return normalMatrices_[index];
+    return normalMatrices_.at(index);
 }
 
 glm::mat4 Model::getModelMatrix(int index) {
-    return modelMatrices_[index];
+    return modelMatrices_.at(index);
 }
 
 glm::mat4 Model::getMvp(int index) {
-    return mvps_[index];
+    return mvps_.at(index);
 }
 
 std::string Model::type() {

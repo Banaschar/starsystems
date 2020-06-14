@@ -6,7 +6,6 @@
 #include <iostream>
 
 #include "mesh.hpp"
-#include "view.hpp"
 
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) :

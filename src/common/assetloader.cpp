@@ -190,8 +190,16 @@ Texture loadCubeMap(std::vector<std::string> textures) {
     for (unsigned int i = 0; i < textures.size(); i++) {
         data = stbi_load(textures[i].c_str(), &width, &height, &nrChannels, 0);
         if (data) {
+            GLenum format;
+            if (nrChannels == 1)
+                format = GL_RED;
+            else if (nrChannels == 3)
+                format = GL_RGB;
+            else if (nrChannels == 4)
+                format = GL_RGBA;
+
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
-                0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
             stbi_image_free(data);
         } else {
             std::cout << "Could not load cube map texture from: " << textures[i] << std::endl;

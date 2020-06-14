@@ -14,7 +14,7 @@ void Planet::update(Game *game) {
     trans.z = cos(rotationVal_) * orbitRadius_;
     trans = trans - model_.getPosition();
     model_.transform(NULL, &trans, NULL);
-
+    
     model_.update(game);
 }
 
@@ -24,6 +24,18 @@ void Planet::draw(Shader *shader) {
 
 glm::vec3 Planet::getPosition(int index) {
     return model_.getPosition(index);
+}
+
+glm::mat4 Planet::getMvp(int index) {
+    return model_.getMvp(index);
+}
+
+glm::mat4 Planet::getModelMatrix(int index) {
+    return model_.getModelMatrix(index);
+}
+
+glm::mat3 Planet::getNormalMatrix(int index) {
+    return model_.getNormalMatrix(index);
 }
 
 std::string Planet::type() {

@@ -6,7 +6,7 @@
 #include <string>
 #include <stdlib.h>
 
-#include <GLFW/glfw3.h>
+//#include <GLFW/glfw3.h>
 
 #include "drawable.hpp"
 #include "mesh.hpp"
@@ -39,7 +39,10 @@ private:
     std::vector<glm::mat4> modelMatrices_;
     std::vector<glm::mat4> mvps_;
     std::vector<glm::mat3> normalMatrices_;
-
+    // Model translations
+    std::vector<glm::vec3> scale_;
+    std::vector<glm::vec3> rotationAxis_;
+    std::vector<float> rotationDegree_;
     void initModel();
     void loadModel(const char *path);
 };

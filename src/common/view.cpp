@@ -1,15 +1,14 @@
-#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <GLFW/glfw3.h>
 #include <stdio.h>
 #include <iostream>
 
 #include "view.hpp"
-#include "global.hpp"
 
 // default camera values
-const float YAW = -90.0f;
-const float PITCH = 0.0f;
+//const float YAW = -90.0f;
+//const float PITCH = 0.0f;
+const float YAW = 90.0f;
+const float PITCH = -30.0f;
 const float SPEED = 10.0f;
 const float SENSITIVITY = 0.1f;
 const float FOV = 45.0f;
@@ -17,7 +16,7 @@ const bool CONSTRAIN_PITCH = true;
 const bool AUTO_ROTATE = false;
 
 View::View(GLFWwindow *window, glm::vec3 camPos) : 
-            View(window, camPos, glm::vec3(0,0,0)) {}
+            View(window, camPos, glm::vec3(-camPos.x, -camPos.y, -camPos.z)) {}
 
 View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir) :
             View(window, camPos, camDir, YAW, PITCH, FOV, SPEED, SENSITIVITY) {}
@@ -90,6 +89,11 @@ void View::rotateCamera() {
 }
 
 void View::update() {
+    /*
+    projectionMatrix_ = glm::perspective(glm::radians(zoom_), 
+                            (float)windowWidth_ / (float)windowHeight_, 0.1f, 200.0f);
+    cameraMatrix_ = glm::lookAt(camPosition_, camPosition_ + camDirection_, camUp_);
+    */
     processInputs();
 
     if (flagUpdate_) {
@@ -104,7 +108,7 @@ void View::update() {
         camUp_ = glm::normalize(glm::cross(camRight_, camDirection_));
 
         projectionMatrix_ = glm::perspective(glm::radians(zoom_), 
-                            (float)windowWidth_ / (float)windowHeight_, 0.1f, 200.0f);
+                    (float)windowWidth_ / (float)windowHeight_, 0.1f, 200.0f);
         cameraMatrix_ = glm::lookAt(camPosition_, camPosition_ + camDirection_, camUp_);
 
         flagUpdate_ = false;

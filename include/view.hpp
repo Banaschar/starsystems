@@ -1,6 +1,7 @@
 #ifndef VIEW_H
 #define VIEW_H
 
+#include "global.hpp"
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
 #include <functional>
