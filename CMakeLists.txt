@@ -16,6 +16,7 @@ include_directories(
         deps/glm-master/
         deps/stb_image/
         include/
+        include/terrain/
         )
 
 file(GLOB SOURCES "src/common/*.cpp")

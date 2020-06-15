@@ -11,6 +11,17 @@
 #include "mesh.hpp"
 #include "primitives.hpp"
 
+#define DEFAULT_COLOR_PALETTE std::vector<glm::vec4> {       \
+                                glm::vec4(201, 178, 99, 1),  \
+                                glm::vec4(135, 184, 82, 1),  \
+                                glm::vec4(80, 171, 93, 1),   \
+                                glm::vec4(120, 120, 120, 1), \
+                                glm::vec4(200, 200, 210, 1)} 
+#define DEFAULT_OCTAVES 6
+#define DEFAULT_AMPLITUDE 10
+#define DEFAULT_ROUGHNESS 0.35f
+#define DEFAULT_COLOR_SPREAD 0.45f
+
 /*
  * Based on the improved Perlin Noise
  * https://mrl.nyu.edu/~perlin/noise/
@@ -19,7 +30,7 @@
  */
 class PerlinNoise {
 public:
-    PerlinNoise() : PerlinNoise(3, 4, 0.35) {}
+    PerlinNoise() : PerlinNoise(DEFAULT_OCTAVES, DEFAULT_AMPLITUDE, DEFAULT_ROUGHNESS) {}
     PerlinNoise(int octaves, float amplitude, float roughness, unsigned int seed = 0) :
         octaves_(octaves), amplitude_(amplitude), roughness_(roughness), seed_(seed) {
             if (seed_)
@@ -136,101 +147,23 @@ private:
     };
 };
 
-/*
-class PerlinNoise {
-public:
-    PerlinNoise(int octaves, float amplitude, float roughness) :
-        octaves_(octaves), amplitude_(amplitude), roughness_(roughness) {
-            seed_ = getRandomInt(1000000000);
-            std::cout << "random seed: " << seed_ << std::endl;
-        }
-    PerlinNoise(int seed, int octaves, float amplitude, float roughness) :
-        seed_(seed), octaves_(octaves), amplitude_(amplitude), roughness_(roughness) {
-            
-    }
-
-    float getPerlinNoise(int x, int y) {
-        float total = 0;
-        float d = (float) glm::pow(2, octaves_ - 1);
-        for (int i = 0; i < octaves_; i++) {
-            float freq = (float) (glm::pow(2, i) / d);
-            float amp = (float) glm::pow(roughness_, i) * amplitude_;
-            total += getInterpolatedNoise(x * freq, y * freq) * amp;
-        }
-        return total;
-    }
-
-    int getSeed() {
-        return seed_;
-    }
-
-    float getAmplitude() {
-        return amplitude_;
-    }
-
-private:
-    int seed_;
-    int octaves_;
-    float amplitude_;
-    float roughness_;
-    int getRandomInt(int max) {
-        std::default_random_engine eng{static_cast<unsigned int>(time(0))};
-        std::uniform_int_distribution<> distrib(0, INT_MAX);
-        return distrib(eng);
-    }
-
-    float getRandomFloat(unsigned int seed) {
-        std::default_random_engine eng{seed};
-        std::uniform_real_distribution<> dis(0.0, 1.0);
-        float ran = dis(eng);
-        return ran;
-    }
-
-    float getNoise(int x, int y) {
-        return getRandomFloat(x * 49632 + y * 325176 + seed_) * 2.0f - 1.0f;
-    }
-
-    float getSmoothNoise(int x, int y) {
-        float corners = (getNoise(x - 1, y - 1) + getNoise(x + 1, y - 1) + getNoise(x - 1, y + 1) +
-                            getNoise(x + 1, y + 1)) / 16.0f;
-        float sides = (getNoise(x - 1, y) + getNoise(x + 1, y) + getNoise(x, y - 1) + getNoise(x, y + 1)) / 8.0f;
-        float center = getNoise(x, y) / 4.0f;
-        return corners + sides + center;
-    }
-
-    float getInterpolatedNoise(float x, float y) {
-        int aX = (int) x;
-        int aY = (int) y;
-        float fracX = x - aX;
-        float fracY = y - aY;
-
-        float v1 = getSmoothNoise(aX, aY);
-        float v2 = getSmoothNoise(aX + 1, aY);
-        float v3 = getSmoothNoise(aX, aY + 1);
-        float v4 = getSmoothNoise(aX + 1, aY + 1);
-        float i1 = interpolate(v1, v2, fracX);
-        float i2 = interpolate(v3, v4, fracX);
-
-        return interpolate(i1, i2, fracY);
-    }
-
-    float interpolate(float a, float b, float blend) {
-        double theta = blend * glm::pi<float>();
-        float f = (float) ((1.0f - glm::cos(theta)) * 0.5f);
-        return a * (1 - f) + b * f;
-    }
-};
-*/
-
 class ColorGenerator {
 public:
-    ColorGenerator() {
-        initRandom();
-        spread_ = getRandF();
-        for (int i = 0; i < 5; i++) {
-            colorPalette_.push_back(getRandomColor());
+    ColorGenerator(bool random = false) {
+        if (random) {
+            initRandom();
+            spread_ = getRandF();
+            for (int i = 0; i < 5; i++) {
+                colorPalette_.push_back(getRandomColor());
+            }
+        } else {
+            colorPalette_ = DEFAULT_COLOR_PALETTE;
         }
+        spread_ = DEFAULT_COLOR_SPREAD;
+        halfSpread_ = spread_ / 2.0f;
+        part_ = 1.0f / (colorPalette_.size() - 1);
     }
+
     ColorGenerator(std::vector<glm::vec4> colorPalette, float spread) :
                 colorPalette_(colorPalette), spread_(spread) {
         halfSpread_ = spread_ / 2.0f;
@@ -290,15 +223,22 @@ private:
 
 class TerrainGenerator {
 public:
-    TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise) : colorGen_(colorGen), pNoise_(pNoise) {};
+    TerrainGenerator() : colorGen_(ColorGenerator()), pNoise_(PerlinNoise()) {}
+    TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise) : colorGen_(colorGen), pNoise_(pNoise) {}
 
     Mesh generateTerrain(int dimension) {
         std::vector<float> heights = generateHeights(dimension, pNoise_);
         std::vector<glm::vec4> colors = colorGen_.genColors(heights, dimension, pNoise_.getAmplitude());
-
         return generateMesh(heights, colors, dimension);
     }
 
+    ColorGenerator& getColorGenerator() {
+        return colorGen_;
+    }
+
+    PerlinNoise& getPerlinNoise() {
+        return pNoise_;
+    }
 private:
     ColorGenerator colorGen_;
     PerlinNoise pNoise_;
@@ -373,6 +313,8 @@ private:
                 vertex.position.y = heights[z * dimension + x];
                 vertex.position.z = z - half;
                 vertex.normal = normals[z * dimension + x];
+                vertex.textureCoords.x = (float)x / ((float)dimension - 1);
+                vertex.textureCoords.y = (float)z / ((float)dimension - 1); 
                 vertex.color = colors[z * dimension + x];
                 vertices[z * dimension + x] = vertex;
             }

@@ -12,6 +12,7 @@
 #include "global.hpp"
 #include "waterframebuffer.hpp"
 #include "gui.hpp"
+#include "terrain.hpp"
 
 class Shader;
 
@@ -36,8 +37,8 @@ public:
         if (lightShader_)
             delete lightShader_;
 
-        if (terrainShader_)
-            delete terrainShader_;
+        //if (terrainShader_)
+        //    delete terrainShader_;
 
         if (skyShader_)
             delete skyShader_;
@@ -54,6 +55,9 @@ public:
 
         if (guiRenderer_)
             delete guiRenderer_;
+
+        if (terrainRenderer_)
+            delete terrainRenderer_;
     }
 
     void render(DrawableList &lights, DrawableList &terrain,
@@ -93,11 +97,12 @@ private:
     ShaderMap shaderMap_;
     EntityMap entityMap_;
     Shader *lightShader_ = NULL;
-    Shader *terrainShader_ = NULL;
+    //Shader *terrainShader_ = NULL;
     Shader *waterShader_ = NULL;
     Shader *skyShader_ = NULL;
     WaterFrameBuffer *waterFrameBuffer_ = NULL;
     GuiRenderer *guiRenderer_ = NULL;
+    TerrainRenderer *terrainRenderer_ = NULL;
 
     void setupRenderer(std::vector<Shader*> shaders) {
         
@@ -105,7 +110,7 @@ private:
             if (shader->type() == SHADER_TYPE_LIGHT)
                 lightShader_ = shader;
             else if (shader->type() == SHADER_TYPE_TERRAIN)
-                terrainShader_ = shader;
+                terrainRenderer_ = new TerrainRenderer(shader);
             else if (shader->type() == SHADER_TYPE_SKY)
                 skyShader_ = shader;
             else if (shader->type() == SHADER_TYPE_WATER)
@@ -143,7 +148,8 @@ private:
     void renderScene(DrawableList &lights, DrawableList &terrain,
                      DrawableList &sky, Game *game) {
         renderList(lightShader_, lights, game);         // render lights
-        renderList(terrainShader_, terrain, game);      // render terrain
+        if (terrainRenderer_)
+            terrainRenderer_->render(terrain, game);      // render terrain
         renderEntities(game);                           // render models
         renderList(skyShader_, sky, game);              // render skybox
     }

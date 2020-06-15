@@ -161,3 +161,7 @@ glm::mat4 Model::getMvp(int index) {
 std::string Model::type() {
     return type_;
 }
+
+Mesh& Model::getMesh(int index) {
+    return meshes_.at(index);
+}

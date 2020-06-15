@@ -25,6 +25,8 @@ using namespace glm;
 #include "generator.hpp"
 #include "renderer.hpp"
 #include "gui.hpp"
+#include "light.hpp"
+#include "terrain.hpp"
 
 float deltaTime = 0.0f;
 
@@ -119,6 +121,19 @@ Scene* createStarSystems(GLFWwindow* window) {
     Planet *planet2 = new Planet(tmp2, 0.5f);
     Planet *planet3 = new Planet(tmp3, 0.2f);
 
+    // INSTANCES TEST, load asteroids
+    /*
+    std::vector<glm::vec3> pos = {
+        glm::vec3(0,20,0),
+        glm::vec3(10,20,0),
+        glm::vec3(-10,20,0),
+        glm::vec3(-20,20,0),
+        glm::vec3(0,0,20)
+    };
+    Model instanceTest = Model("PlanetFirstTry.obj", instanceShader, instanceShaderCb, pos);
+    game->addModel(instanceTest);
+    */
+
     Game *game = new Game(view);
     game->addLight(sun);
     game->addSky(skybox);
@@ -170,7 +185,7 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "Creaat2e11aa42 2aPlane" << std::endl;
+    std::cout << "Creasfadaaa2 2adPaddlsane" << std::endl;
     /*
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
@@ -200,12 +215,13 @@ Scene* createPlane(GLFWwindow *window) {
         new Shader("guiShader.vs", "guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
     };
 
-    //Shader instanceShader = Shader("instanceShader.vs", "instanceShader.fs", "instance");
+    Light *light = new Light(glm::vec3(20000, 20000, 2000));
 
     View view = View(window, glm::vec3(0,20,-20));
     Game *game = new Game(view);
 
     // TERRAIN
+    /*
     std::vector<glm::vec4> colorPalette = {
         glm::vec4(201, 178, 99, 1),
         glm::vec4(135, 184, 82, 1),
@@ -219,6 +235,9 @@ Scene* createPlane(GLFWwindow *window) {
 
     Model *terrain = new Model(terrainGen.generateTerrain(200), SHADER_TYPE_TERRAIN);
     game->addTerrain(terrain);
+    */
+    Terrain *terrain = new Terrain();
+    game->addTerrain(terrain);
 
     // SKYBOX
     Mesh box = Primitives::createCube(1);
@@ -226,21 +245,7 @@ Scene* createPlane(GLFWwindow *window) {
     Model *skybox = new Model(box, SHADER_TYPE_SKY);
     game->addSky(skybox);
 
-    // INSTANCES TEST
-    /*
-    std::vector<glm::vec3> pos = {
-        glm::vec3(0,20,0),
-        glm::vec3(10,20,0),
-        glm::vec3(-10,20,0),
-        glm::vec3(-20,20,0),
-        glm::vec3(0,0,20)
-    };
-    Model instanceTest = Model("PlanetFirstTry.obj", instanceShader, instanceShaderCb, pos);
-    game->addModel(instanceTest);
-    */
     // GUI
-    //Gui *gui = new Gui(loadTextureFromFile("container2.png"),
-    //                 glm::vec2(0.0,0.0), glm::vec2(200,200));
     //Gui *gui = new Gui();
 
     // WATER TEST

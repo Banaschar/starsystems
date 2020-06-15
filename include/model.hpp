@@ -27,6 +27,7 @@ public:
     std::vector<glm::mat4>& getInstanceModels();
     glm::mat4 getMvp(int index = 0);
     std::string type();
+    Mesh& getMesh(int index = 0);
 
 private:
     std::string type_;

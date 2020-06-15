@@ -1,9 +1,11 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
+#include <glm/glm.hpp>
+
 #define DEFAULT_AMBIENT glm::vec3(0.2f, 0.2f, 0.2f)
 #define DEFAULT_DIFFUSE glm::vec3(1.0f, 1.0f, 1.0f)
-#define DEFAULT_SPECULAR glm::Vec3(0.5f, 0.5f, 0.5f);
+#define DEFAULT_SPECULAR glm::vec3(0.5f, 0.5f, 0.5f);
 
 class Light {
 public:
@@ -48,5 +50,5 @@ private:
     glm::vec3 ambient_ = DEFAULT_AMBIENT;
     glm::vec3 diffuse_ = DEFAULT_DIFFUSE;
     glm::vec3 specular_ = DEFAULT_SPECULAR;
-}
+};
 #endif
