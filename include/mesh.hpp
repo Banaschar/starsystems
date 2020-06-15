@@ -30,12 +30,14 @@ private:
     unsigned int drawInstances_;
     unsigned int vao_, vbo_, ebo_, ibo_;
     void generateIndices();
-
     void initMesh();
+    //void initMesh2d(std::vector<glm::vec2> positions);
 public:
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {});
     Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, 
         std::vector<unsigned int> indices = {});
+    // 2D mesh constructor
+    //Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices = {});
     void draw(Shader *shader);
     void updateMesh();
     void updateIbo();

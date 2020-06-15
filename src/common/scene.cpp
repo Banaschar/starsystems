@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "scene.hpp"
+#include "waterframebuffer.hpp"
 
 Scene::Scene(Game *game, Renderer *renderer) : 
                             game_(game), renderer_(renderer), lights_(game_->getLights()),
@@ -13,14 +14,26 @@ Scene::Scene(Game *game, Renderer *renderer) :
 Scene::~Scene() {
     delete game_;
     delete renderer_;
+    if (gui_)
+        delete gui_;
 }
 
+void Scene::addGui(Gui *gui) {
+    gui_ = gui;
+    if (waterFrameBuffer_)
+        gui_->addGuiElement(waterFrameBuffer_->getReflectionTexture(), glm::vec2(0.0,0.0), glm::vec2(320,180));
+}
+
+/*
+ * WaterFrameBuffer disabled
+ */
 void Scene::setupScene() {
-    /*
-    int width, height;
-    game_->getView().getWindowSize(&width, &height);
-    renderer_->setReflectiveWaterRender(width, height);
-    */
+    if (!water_.empty() && 0) {
+        int width, height;
+        game_->getView().getWindowSize(&width, &height);
+        waterFrameBuffer_ = new WaterFrameBuffer(width, height);
+        renderer_->setWaterFrameBuffer(waterFrameBuffer_);
+    }
 }
 
 /*
@@ -28,6 +41,8 @@ void Scene::setupScene() {
  */
 void Scene::update() {
     game_->getView().update();
+    if (gui_)
+        gui_->update(game_);
 }
 
 /*
@@ -35,8 +50,10 @@ void Scene::update() {
  * Each drawable needs a unique identifier, so it can be deleted from
  */
 void Scene::render() {
-
-    renderer_->render(lights_, terrain_, entities_, sky_, water_, game_);
+    if (gui_)
+        renderer_->render(lights_, terrain_, entities_, sky_, water_, gui_->getGuiElements(), game_);
+    else
+        renderer_->render(lights_, terrain_, entities_, sky_, water_, game_);
 }
 
 void Scene::setAutoRotate(bool value) {

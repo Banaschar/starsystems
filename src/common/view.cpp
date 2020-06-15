@@ -61,8 +61,16 @@ glm::mat4 View::getProjectionMatrix() {
     return projectionMatrix_;
 }
 
+glm::mat4 View::getOrthoProjection() {
+    return glm::ortho(0.0f, (float)windowWidth_, 0.0f, (float)windowHeight_);
+}
+
 glm::vec3 View::getCameraPosition() {
     return camPosition_;
+}
+
+glm::vec3 View::getWorldNormal() {
+    return worldUp_;
 }
 
 void View::getWindowSize(int *width, int *height) {
@@ -89,11 +97,6 @@ void View::rotateCamera() {
 }
 
 void View::update() {
-    /*
-    projectionMatrix_ = glm::perspective(glm::radians(zoom_), 
-                            (float)windowWidth_ / (float)windowHeight_, 0.1f, 200.0f);
-    cameraMatrix_ = glm::lookAt(camPosition_, camPosition_ + camDirection_, camUp_);
-    */
     processInputs();
 
     if (flagUpdate_) {

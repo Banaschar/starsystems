@@ -11,6 +11,7 @@
 #include "shader.hpp"
 #include "global.hpp"
 #include "waterframebuffer.hpp"
+#include "gui.hpp"
 
 class Shader;
 
@@ -26,6 +27,9 @@ typedef std::vector<Drawable*> DrawableList;
 class Renderer {
 public:
     Renderer(std::vector<Shader*> shaders) {
+        setupRenderer(shaders);
+    }
+    Renderer(std::vector<Shader*> shaders, WaterFrameBuffer *waterFb) : waterFrameBuffer_(waterFb) {
         setupRenderer(shaders);
     }
     ~Renderer() {
@@ -47,21 +51,43 @@ public:
         for (const auto& kv : shaderMap_) {
             delete shaderMap_[kv.first];
         }
-    
+
+        if (guiRenderer_)
+            delete guiRenderer_;
     }
+
     void render(DrawableList &lights, DrawableList &terrain,
                     DrawableList &entities, DrawableList &sky, 
                     DrawableList &water, Game *game) {
 
+        render(lights, terrain, entities, sky, water, NULL, game);
+    }
+
+    void render(DrawableList &lights, DrawableList &terrain,
+                    DrawableList &entities, DrawableList &sky, 
+                    DrawableList &water, DrawableList *gui, Game *game) {
+
         processEntities(entities);
+
+        // Render to waterFrameBuffer
+        if (waterFrameBuffer_) {
+            waterFrameBuffer_->bindReflectionFrameBuffer();
+            renderScene(lights, terrain, sky, game);
+            renderList(waterShader_, water, game);
+            waterFrameBuffer_->unbindActiveFrameBuffer();
+        }
+
         renderScene(lights, terrain, sky, game);
         renderList(waterShader_, water, game);
+
+        if (gui && guiRenderer_)
+            guiRenderer_->render(gui, game);
 
         entityMap_.clear();
     }
 
-    void setReflectiveWaterRenderer(int width, int height) {
-        waterFrameBuffer_ = new WaterFrameBuffer(width, height);
+    void setWaterFrameBuffer(WaterFrameBuffer *waterFb) {
+        waterFrameBuffer_ = waterFb;
     }
 private:
     ShaderMap shaderMap_;
@@ -71,6 +97,7 @@ private:
     Shader *waterShader_ = NULL;
     Shader *skyShader_ = NULL;
     WaterFrameBuffer *waterFrameBuffer_ = NULL;
+    GuiRenderer *guiRenderer_ = NULL;
 
     void setupRenderer(std::vector<Shader*> shaders) {
         
@@ -83,6 +110,9 @@ private:
                 skyShader_ = shader;
             else if (shader->type() == SHADER_TYPE_WATER)
                 waterShader_ = shader;
+            else if (shader->type() == SHADER_TYPE_GUI) {
+                guiRenderer_ = new GuiRenderer(shader);
+            }
             else {
                 if (shaderMap_.count(shader->type()))
                     std::cout << "WARNING: Two shaders with same type" << std::endl;
@@ -90,21 +120,10 @@ private:
                     shaderMap_[shader->type()] = shader;
             }
         }
-        /*
-        if (lightShader_)
-            std::cout << "lightshader present" << std::endl;
-        if (skyShader_)
-            std::cout << "skyshader present" << std::endl;
-        if (terrainShader_)
-            std::cout << "terrainshader present" << std::endl;
-        if (waterShader_)
-            std::cout << "watershader present" << std::endl;
-        std::cout << "shaderMap size: " << shaderMap_.size() << std::endl;
-        */
     }
 
     /*
-     * Puts entieties in a hash map for batched drawing
+     * Puts entities in a hash map for batched drawing
      */
     void processEntities(std::vector<Drawable*> &entities) {
         EntityMap::iterator it;

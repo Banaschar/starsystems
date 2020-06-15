@@ -40,7 +40,7 @@ public:
         return refractionDepthTexture_;
     }
 
-    void unbindActiveFb() {
+    void unbindActiveFrameBuffer() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, windowWitdh_, windowHeight_);
     }
@@ -68,19 +68,22 @@ private:
         reflectionFb_ = createFrameBuffer();
         reflectionTexture_ = createTextureAttachment(reflectionWidth_, reflectionHeight_);
         reflectionDepthBuffer_ = createDepthBufferAttachment(reflectionWidth_, reflectionHeight_);
-        unbindActiveFb();
+        unbindActiveFrameBuffer();
     }
 
     void initRefractionFrameBuffer() {
         refractionFb_ = createFrameBuffer();
         refractionTexture_ = createTextureAttachment(refractionWidth_, refractionHeight_);
         refractionDepthTexture_ = createDepthTextureAttachment(refractionWidth_, refractionHeight_);
-        unbindActiveFb();
+        unbindActiveFrameBuffer();
     }
 
     void bindFrameBuffer(unsigned int frameBuffer, int width, int height) {
         glBindTexture(GL_TEXTURE_2D, 0);
         glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+        glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
         glViewport(0, 0, width, height);
     }
 

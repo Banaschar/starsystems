@@ -6,13 +6,10 @@
 #include <string>
 #include <stdlib.h>
 
-//#include <GLFW/glfw3.h>
-
 #include "drawable.hpp"
 #include "mesh.hpp"
 #include "shader.hpp"
 #include "game.hpp"
-
 
 class Model: public Drawable {
 public:
@@ -30,8 +27,7 @@ public:
     std::vector<glm::mat4>& getInstanceModels();
     glm::mat4 getMvp(int index = 0);
     std::string type();
-    //void register_callback(const callback_t &cb);
-    //void test();
+
 private:
     std::string type_;
     std::vector<Mesh> meshes_;

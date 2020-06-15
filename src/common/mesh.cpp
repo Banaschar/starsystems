@@ -17,6 +17,12 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vec
             vertices_(vertices), textures_(textures), indices_(indices) {
     initMesh();
 }
+/*
+Mesh::Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices) :
+            indices_(indices) {
+    initMesh2d(positions);
+}
+*/
 
 void Mesh::generateIndices() {
     for (int i = 0; i < vertices_.size(); i++) {
@@ -36,6 +42,31 @@ void Mesh::initMesh() {
 
     updateMesh();
 }
+/*
+void Mesh::initMesh2d(std::vector<glm::vec2d> positions) {
+    glGenVertexArrays(1, &vao_);
+    glGenBuffers(1, &vbo_);
+
+    if (!indices_.empty())
+        glGenBuffers(1, &vbo_);
+
+    glBindVertexArray(vao_);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(Vertex), &vertices_[0], GL_STATIC_DRAW);
+
+    if (!indices_.empty()) {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), &indices_[0], GL_STATIC_DRAW);
+    }
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
+
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, textureCoords));
+
+}
+*/
 
 /*
  * TODO: Internally, create a Vertex struct that only holds the data types we actually 
@@ -126,6 +157,7 @@ void Mesh::draw(Shader *shader) {
     unsigned int specularNr = 1;
     unsigned int normalNr   = 1;
     unsigned int heightNr   = 1;
+    unsigned int guiNr      = 1;
 
     for (int i = 0; i < textures_.size(); i++) {
         std::string number;
@@ -147,6 +179,8 @@ void Mesh::draw(Shader *shader) {
             number = std::to_string(normalNr++);
         else if(type == "texture_height")
             number = std::to_string(heightNr++);
+        else if(type == "texture_gui")
+            number = std::to_string(guiNr++);
         else {
             std::cout << "Texture with unknown type: " << type << std::endl;
             break;

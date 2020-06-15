@@ -15,6 +15,8 @@ public:
     glm::mat4 getCameraMatrix();
     glm::mat4 getProjectionMatrix();
     glm::vec3 getCameraPosition();
+    glm::mat4 getOrthoProjection();
+    glm::vec3 getWorldNormal();
     void update();
     void setAutoRotate(bool value);
     void mouseCallback(GLFWwindow *window, double xpos, double ypos);

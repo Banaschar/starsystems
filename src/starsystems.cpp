@@ -19,12 +19,12 @@ using namespace glm;
 #include "model.hpp"
 #include "scene.hpp"
 #include "assetloader.hpp"
-//#include "global.hpp"
 #include "planet.hpp"
 #include "game.hpp"
 #include "primitives.hpp"
 #include "generator.hpp"
 #include "renderer.hpp"
+#include "gui.hpp"
 
 float deltaTime = 0.0f;
 
@@ -95,7 +95,7 @@ Scene* createStarSystems(GLFWwindow* window) {
     Model *sun = new Model("PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
 
     // Skybox
-    Mesh box = createCube(1);
+    Mesh box = Primitives::createCube(1);
     box.addTexture(cubemapTexture);
     Model *skybox = new Model(box, SHADER_TYPE_SKY);
     
@@ -135,9 +135,12 @@ Scene* createStarSystems(GLFWwindow* window) {
 void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {    
     shader->uniform("MVP", drawable->getMvp());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("cameraPos", game->getView().getCameraPosition());
     shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
     shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
     shader->uniform("light.diffuse", glm::vec3(1.0, 1.0, 1.0));
+    shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
 }
 
 void flatColorCb(Shader *shader, Drawable *drawable, Game *game) {   
@@ -151,15 +154,24 @@ void instanceShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 
 void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("MVP", drawable->getMvp());
+    shader->uniform("worldNormal", game->getView().getWorldNormal());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("cameraPos", game->getView().getCameraPosition());
     shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
     shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
     shader->uniform("light.diffuse", glm::vec3(1.0, 1.0, 1.0));
+    shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
+}
+
+void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
+    shader->uniform("MVP", game->getView().getOrthoProjection()
+                           * drawable->getModelMatrix());
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "Create Plane" << std::endl;
-
+    std::cout << "Creaat2e11aa42 2aPlane" << std::endl;
+    /*
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
         "skyboxSky/left.jpg",
@@ -168,13 +180,24 @@ Scene* createPlane(GLFWwindow *window) {
         "skyboxSky/front.jpg",
         "skyboxSky/back.jpg"
     };
+    */
+    std::vector<std::string> cubetex = {
+        "skyboxSky2/right.png",
+        "skyboxSky2/left.png",
+        "skyboxSky2/top.png",
+        "skyboxSky2/bottom.png",
+        "skyboxSky2/front.png",
+        "skyboxSky2/back.png"
+    };
+    
     Texture cubemapTexture = loadCubeMap(cubetex);
-
+    
     std::vector<Shader*> shaders = {
         new Shader("plane.vs", "plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
         new Shader("skybox.vs", "skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("waterShader.vs", "waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
-        new Shader("flatColor.vs", "flatColor.fs", "flat", flatColorCb)
+        new Shader("flatColor.vs", "flatColor.fs", "flat", flatColorCb),
+        new Shader("guiShader.vs", "guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
     };
 
     //Shader instanceShader = Shader("instanceShader.vs", "instanceShader.fs", "instance");
@@ -198,7 +221,7 @@ Scene* createPlane(GLFWwindow *window) {
     game->addTerrain(terrain);
 
     // SKYBOX
-    Mesh box = createCube(1);
+    Mesh box = Primitives::createCube(1);
     box.addTexture(cubemapTexture);
     Model *skybox = new Model(box, SHADER_TYPE_SKY);
     game->addSky(skybox);
@@ -215,26 +238,18 @@ Scene* createPlane(GLFWwindow *window) {
     Model instanceTest = Model("PlanetFirstTry.obj", instanceShader, instanceShaderCb, pos);
     game->addModel(instanceTest);
     */
-    // Test
-    
-    //unsigned int texCont = loadTextureFromFile("container2.png");
-    //Texture texContainer;
-    //texContainer.id = texCont;
-    //texContainer.type = "texture_diffuse";
-    Mesh t = createQuad();
-    //t.addTexture(texContainer);
-    t.addColor(glm::vec4(1.0,0.0,1.0,1.0));
-    Model *test = new Model(t, "flat");
-    game->addEntity(test);
-    
+    // GUI
+    //Gui *gui = new Gui(loadTextureFromFile("container2.png"),
+    //                 glm::vec2(0.0,0.0), glm::vec2(200,200));
+    //Gui *gui = new Gui();
 
     // WATER TEST
     unsigned int texID = loadTextureFromFile("waternormals.jpg");
     Texture waterNormal;
     waterNormal.id = texID;
     waterNormal.type = "texture_normal";
-    Mesh mesh = createQuad();
-    mesh.addColor(glm::vec4(0.0,0.0,1.0,0.3));
+    Mesh mesh = Primitives::createQuad();
+    mesh.addColor(glm::vec4(0.0,0.0,1.0,0.6));
     mesh.addTexture(waterNormal);
     Model *waterTile = new Model(mesh, SHADER_TYPE_WATER);
     glm::vec3 trans = glm::vec3(0, -3, 1);
@@ -244,7 +259,7 @@ Scene* createPlane(GLFWwindow *window) {
     
     Renderer *renderer = new Renderer(shaders);
     Scene *scene = new Scene(game, renderer);
-    //scene.setAutoRotate(true);
+    //scene->addGui(gui);
 
     return scene;
 }
@@ -292,15 +307,15 @@ int main()
     // Don't render triangles which normal is not torwards the camera
     glEnable(GL_CULL_FACE);
 
-    // BLENDING for transparency?
+    // BLENDING
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // create starsystem scene
-    Scene *scene = createStarSystems(window);
+    //Scene *scene = createStarSystems(window);
 
     //create plane
-    //Scene *scene = createPlane(window);
+    Scene *scene = createPlane(window);
 
     int nbFrames = 0;
     float lastFrame = glfwGetTime();

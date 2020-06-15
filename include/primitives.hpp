@@ -4,316 +4,189 @@
 #include <vector>
 #include "mesh.hpp"
 
-Mesh createPlane(int dimension) {
-    int numVertices = dimension * dimension;
-    int half = dimension / 2;
-    std::vector<Vertex> vertices (numVertices);
-    int numIndices = (dimension - 1) * (dimension - 1) * 2 * 3;
-    std::vector<unsigned int> indices (numIndices);
+class Primitives {
+public:
+    static Mesh createPlane(int dimension) {
+        int numVertices = dimension * dimension;
+        int half = dimension / 2;
+        std::vector<Vertex> vertices (numVertices);
+        int numIndices = (dimension - 1) * (dimension - 1) * 2 * 3;
+        std::vector<unsigned int> indices (numIndices);
 
-    for (int i = 0; i < dimension; i++) {
-        for (int j = 0; j < dimension; j++) {
-            Vertex &tmp = vertices[i * dimension + j];
-            tmp.position.x = j - half;
-            tmp.position.y = 0;
-            tmp.position.z = i - half;
+        for (int i = 0; i < dimension; i++) {
+            for (int j = 0; j < dimension; j++) {
+                Vertex &tmp = vertices[i * dimension + j];
+                tmp.position.x = j - half;
+                tmp.position.y = 0;
+                tmp.position.z = i - half;
+            }
         }
-    }
 
-    int cnt = 0;
-    for (int row = 0; row < dimension - 1; row++) {
-        for (int col = 0; col < dimension - 1; col++) {
-            indices[cnt++] = dimension * row + col;
-            indices[cnt++] = dimension * row + col + dimension;
-            indices[cnt++] = dimension * row + col + dimension + 1;
+        int cnt = 0;
+        for (int row = 0; row < dimension - 1; row++) {
+            for (int col = 0; col < dimension - 1; col++) {
+                indices[cnt++] = dimension * row + col;
+                indices[cnt++] = dimension * row + col + dimension;
+                indices[cnt++] = dimension * row + col + dimension + 1;
 
-            indices[cnt++] = dimension * row + col;
-            indices[cnt++] = dimension * row + col + dimension + 1;
-            indices[cnt++] = dimension * row + col + 1;
+                indices[cnt++] = dimension * row + col;
+                indices[cnt++] = dimension * row + col + dimension + 1;
+                indices[cnt++] = dimension * row + col + 1;
+            }
         }
+
+        return Mesh(vertices, indices);
     }
 
-    return Mesh(vertices, indices);
-}
+    static Mesh createQuad() {
+        std::vector<Vertex> vertices(4);
+        std::vector<glm::vec3> pos = {
+            glm::vec3(-1, 0, -1),
+            glm::vec3(-1, 0, 1),
+            glm::vec3(1, 0, -1),
+            glm::vec3(1, 0, 1)
+        };
+        std::vector<glm::vec2> texCoords = {
+            glm::vec2(0,0),
+            glm::vec2(0,1),
+            glm::vec2(1,0),
+            glm::vec2(1,1)
+        };
+        std::vector<unsigned int> indices = {0, 1, 2, 2, 1, 3};
 
-/*
- * Create plane 6 times, with different coordinates set to 0
- */
-Mesh createCubeLarge(int dimension) {
-    ;
-}
+        std::vector<glm::vec3> normals = calculateVertexNormalAverages(pos, indices);
 
-std::vector<glm::vec3> calculateVertexNormalAverages(std::vector<glm::vec3> &pos,
-                                std::vector<unsigned int> &indices) {
-    std::vector<glm::vec3> normals(pos.size());
+        for (int i = 0; i < 4; i++) {
+            vertices[i].position = pos[i];
+            vertices[i].normal = normals[i];
+            vertices[i].textureCoords = texCoords[i];
+        }
 
-    for (int i = 0; i < indices.size() / 3; i++) {
-        glm::vec3 v0 = pos[indices[i]];
-        glm::vec3 v1 = pos[indices[i+1]];
-        glm::vec3 v2 = pos[indices[i+2]];
-
-        glm::vec3 p1 = v1 - v0;
-        glm::vec3 p2 = v2 - v0;
-        glm::vec3 normal = glm::cross(p1, p2);
-        normal = glm::normalize(normal);
-
-        normals[indices[i]] += normal;
-        normals[indices[i+1]] += normal;
-        normals[indices[i+2]] += normal;
+        return Mesh(vertices, indices);
     }
-
-    for (int i = 0; i < normals.size(); i++) {
-        normals[i] = glm::normalize(normals[i]);
-    }
-
-    return normals;
-}
-
-/*
- * TODO: This is basically a 1-dimension plane
- * -> So not really neccessary?
- * This is a plane. Normal vectors simply always point in the y-direction, e.g.
- * glm::vec3(0,1,0);
- */
-Mesh createQuad() {
-    std::vector<Vertex> vertices(4);
-    std::vector<glm::vec3> pos = {
-        glm::vec3(-1, 0, -1),
-        glm::vec3(-1, 0, 1),
-        glm::vec3(1, 0, -1),
-        glm::vec3(1, 0, 1)
-    };
-    std::vector<glm::vec2> texCoords = {
-        glm::vec2(0,0),
-        glm::vec2(0,1),
-        glm::vec2(1,0),
-        glm::vec2(1,1)
-    };
-    std::vector<unsigned int> indices = {0, 1, 2, 2, 1, 3};
-
-    std::vector<glm::vec3> normals = calculateVertexNormalAverages(pos, indices);
-
-    for (int i = 0; i < 4; i++) {
-        vertices[i].position = pos[i];
-        vertices[i].normal = normals[i];
-        vertices[i].textureCoords = texCoords[i];
-    }
-
-    return Mesh(vertices, indices);
-}
-
-Mesh createCube(int side) {
-    
-    glm::vec3 vertList[] = {
-        glm::vec3(-1, -1, -1),
-        glm::vec3(1, -1, -1),
-        glm::vec3(1, 1, -1),
-        glm::vec3(-1, 1, -1),
-        glm::vec3(-1, -1, 1),
-        glm::vec3(1, -1, 1),
-        glm::vec3(1, 1, 1),
-        glm::vec3(-1, 1, 1)
-    };
-
-    glm::vec2 texCoords[] = {
-        glm::vec2(0, 0),
-        glm::vec2(1, 0),
-        glm::vec2(1, 1),
-        glm::vec2(0, 1)
-    };
-
-    glm::vec3 normals[] = {
-        glm::vec3(0, 0, 1),
-        glm::vec3(1, 0, 0),
-        glm::vec3(0, 0, -1),
-        glm::vec3(-1, 0, 0),
-        glm::vec3(0, 1, 0),
-        glm::vec3(0, -1, 0)
-    };
-
-    std::vector<unsigned int> indices = {
-        0, 1, 3, 3, 1, 2,
-        1, 5, 2, 2, 5, 6,
-        5, 4, 6, 6, 4, 7,
-        4, 0, 7, 7, 0, 3,
-        3, 2, 7, 7, 2, 6,
-        4, 5, 0, 0, 5, 1
-    };
-
-    int texInds[6] = { 0, 1, 3, 3, 1, 2 };
-
-    std::vector<Vertex> vertices(8);
-    for (int i = 0; i < 8; i++) {
-        vertices[i].position = vertList[i];
-        //vertices[i].normal = normals[indices[i / 6]];
-        //vertices[i].textureCoords = texCoords[texInds[i % 4]];
-    }
-    
-    // ##########
-
     /*
-    glm::vec3 vertList[] = {
-        glm::vec3(-1.0, -1.0,  1.0),
-        glm::vec3(1.0, -1.0,  1.0),
-        glm::vec3(1.0,  1.0,  1.0),
-        glm::vec3(-1.0,  1.0,  1.0),
+    static Mesh createQuad2d() {
+        std::vector<Vertex> vertices(4);
+        std::vector<glm::vec3> pos = {
+            glm::vec3(-1, 1, 0),
+            glm::vec3(-1, -1, 0),
+            glm::vec3(1, -1, 0),
+            glm::vec3(1, 1, 0)
+        };
+        std::vector<glm::vec2> texCoords = {
+            glm::vec2(0,0),
+            glm::vec2(0,1),
+            glm::vec2(1,1),
+            glm::vec2(1,0)
+        };
+        std::vector<unsigned int> indices = {1, 0, 2, 2, 0, 3};
 
-        glm::vec3(-1.0, -1.0, -1.0),
-        glm::vec3(1.0, -1.0, -1.0),
-        glm::vec3(1.0,  1.0, -1.0),
-        glm::vec3(-1.0,  1.0, -1.0)
-    };
+        for (int i = 0; i < 4; i++) {
+            vertices[i].position = pos[i];
+            vertices[i].textureCoords = texCoords[i];
+        }
 
-    std::vector<unsigned int> indices = {
-        0, 1, 2,
-        2, 3, 0,
-        1, 5, 6,
-        6, 2, 1,
-        7, 6, 5,
-        5, 4, 7,
-        4, 0, 3,
-        3, 7, 4,
-        4, 5, 1,
-        1, 0, 4,
-        3, 2, 6,
-        6, 7, 3
-    };
-    */
-    // ##################
-
-    /*
-    glm::vec3 vertList[] = {
-        glm::vec3(-1.0f, 1.0f, 1.0f),
-        glm::vec3(-1.0f, -1.0f, 1.0f),
-        glm::vec3(1.0f, -1.0f, 1.0f),
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(1.0f, 1.0f, -1.0f),
-        glm::vec3(1.0f, -1.0f, -1.0f),
-        glm::vec3(-1.0f, -1.0f, -1.0f),
-        glm::vec3(-1.0f, 1.0f, -1.0f),
-    };
-
-    std::vector<unsigned int> indices = {
-        0, 1, 2,
-        0, 2, 3,
-        7, 6, 1,
-        7, 1, 0,
-        4, 5, 6,
-        4, 6, 7,
-        3, 2, 5,
-        3, 5, 4
-    };
-    */
-    //####################
-    /*
-    glm::vec3 vertList[] =
-    {
-        vec3(-1.0f, +1.0f, +1.0f), // 0
-        vec3(+1.0f, +1.0f, +1.0f), // 1
-        vec3(+1.0f, +1.0f, -1.0f), // 2
-        vec3(-1.0f, +1.0f, -1.0f), // 3
-        vec3(-1.0f, +1.0f, -1.0f), // 4
-        vec3(+1.0f, +1.0f, -1.0f), // 5
-        vec3(+1.0f, -1.0f, -1.0f), // 6
-        vec3(-1.0f, -1.0f, -1.0f), // 7
-        vec3(+1.0f, +1.0f, -1.0f), // 8
-        vec3(+1.0f, +1.0f, +1.0f), // 9
-        vec3(+1.0f, -1.0f, +1.0f), // 10
-        vec3(+1.0f, -1.0f, -1.0f), // 11
-        vec3(-1.0f, +1.0f, +1.0f), // 12
-        vec3(-1.0f, +1.0f, -1.0f), // 13
-        vec3(-1.0f, -1.0f, -1.0f), // 14
-        vec3(-1.0f, -1.0f, +1.0f), // 15
-        vec3(+1.0f, +1.0f, +1.0f), // 16
-        vec3(-1.0f, +1.0f, +1.0f), // 17
-        vec3(-1.0f, -1.0f, +1.0f), // 18
-        vec3(+1.0f, -1.0f, +1.0f), // 19
-        vec3(+1.0f, -1.0f, -1.0f), // 20
-        vec3(-1.0f, -1.0f, -1.0f), // 21
-        vec3(-1.0f, -1.0f, +1.0f), // 22
-        vec3(+1.0f, -1.0f, +1.0f), // 23
-    };
-
-    std::vector<unsigned int> indices = {
-        0,   1,  2,  0,  2,  3, // Top
-        4,   5,  6,  4,  6,  7, // Front
-        8,   9, 10,  8, 10, 11, // Right
-        12, 13, 14, 12, 14, 15, // Left
-        16, 17, 18, 16, 18, 19, // Back
-        20, 22, 21, 20, 23, 22, // Bottom
-    };
-    */
-
-    // ################ WORKING ##########
-    /*
-    float vertList[] = {
-    // positions          
-    -1.0f,  1.0f, -1.0f,
-    -1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-
-    -1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f, -1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
-
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-
-    -1.0f, -1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f, -1.0f,  1.0f,
-    -1.0f, -1.0f,  1.0f,
-
-    -1.0f,  1.0f, -1.0f,
-     1.0f,  1.0f, -1.0f,
-     1.0f,  1.0f,  1.0f,
-     1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f,  1.0f,
-    -1.0f,  1.0f, -1.0f,
-
-    -1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-     1.0f, -1.0f, -1.0f,
-     1.0f, -1.0f, -1.0f,
-    -1.0f, -1.0f,  1.0f,
-     1.0f, -1.0f,  1.0f
-    };
-
-    std::vector<Vertex> vertices(36);
-    std::vector<unsigned int> indices(36);
-    for (int i = 0; i < 36; i++) {
-        //vertices[i].position = vertList[indices[i]];
-        //vertices[i].normal = normals[indices[i / 6]];
-        //vertices[i].textureCoords = texCoords[texInds[i % 4]];
-        vertices[i].position.x = vertList[i * 3];
-        vertices[i].position.y = vertList[i * 3 + 1];
-        vertices[i].position.z = vertList[i * 3 + 2];
-        indices[i] = i;
+        return Mesh(vertices, indices);
     }
     */
-    return Mesh(vertices, indices);
-}
+    static Mesh createQuad2d() {
+        std::vector<Vertex> vertices(4);
+        std::vector<glm::vec3> pos = {
+            glm::vec3(0, 0, 0),
+            glm::vec3(0, 1, 0),
+            glm::vec3(1, 0, 0),
+            glm::vec3(1, 1, 0)
+        };
+        std::vector<glm::vec2> texCoords = {
+            glm::vec2(0,0),
+            glm::vec2(0,1),
+            glm::vec2(1,0),
+            glm::vec2(1,1)
+        };
+        std::vector<unsigned int> indices = {2, 1, 0, 3, 1, 2};
 
-/*
-Mesh createCube(float xPos, float yPos, float zPos, float edgeLen) {
-    float halfEdge = edgeLen * 0.5;
+        for (int i = 0; i < 4; i++) {
+            vertices[i].position = pos[i];
+            vertices[i].textureCoords = texCoords[i];
+        }
 
-    float vertList[] = {
-        xPos - halfEdge, yPos + halfEdge, zPos + halfEdge,
+        return Mesh(vertices, indices);
     }
-}
-*/
 
+    static std::vector<glm::vec3> calculateVertexNormalAverages(std::vector<glm::vec3> &pos,
+                                    std::vector<unsigned int> &indices) {
+        std::vector<glm::vec3> normals(pos.size());
+
+        for (int i = 0; i < indices.size() / 3; i++) {
+            glm::vec3 v0 = pos[indices[i]];
+            glm::vec3 v1 = pos[indices[i+1]];
+            glm::vec3 v2 = pos[indices[i+2]];
+
+            glm::vec3 p1 = v1 - v0;
+            glm::vec3 p2 = v2 - v0;
+            glm::vec3 normal = glm::cross(p1, p2);
+            normal = glm::normalize(normal);
+
+            normals[indices[i]] += normal;
+            normals[indices[i+1]] += normal;
+            normals[indices[i+2]] += normal;
+        }
+
+        for (int i = 0; i < normals.size(); i++) {
+            normals[i] = glm::normalize(normals[i]);
+        }
+
+        return normals;
+    }
+
+    static Mesh createCube(int side) {
+        
+        glm::vec3 vertList[] = {
+            glm::vec3(-1, -1, -1),
+            glm::vec3(1, -1, -1),
+            glm::vec3(1, 1, -1),
+            glm::vec3(-1, 1, -1),
+            glm::vec3(-1, -1, 1),
+            glm::vec3(1, -1, 1),
+            glm::vec3(1, 1, 1),
+            glm::vec3(-1, 1, 1)
+        };
+
+        glm::vec2 texCoords[] = {
+            glm::vec2(0, 0),
+            glm::vec2(1, 0),
+            glm::vec2(1, 1),
+            glm::vec2(0, 1)
+        };
+
+        glm::vec3 normals[] = {
+            glm::vec3(0, 0, 1),
+            glm::vec3(1, 0, 0),
+            glm::vec3(0, 0, -1),
+            glm::vec3(-1, 0, 0),
+            glm::vec3(0, 1, 0),
+            glm::vec3(0, -1, 0)
+        };
+
+        std::vector<unsigned int> indices = {
+            0, 1, 3, 3, 1, 2,
+            1, 5, 2, 2, 5, 6,
+            5, 4, 6, 6, 4, 7,
+            4, 0, 7, 7, 0, 3,
+            3, 2, 7, 7, 2, 6,
+            4, 5, 0, 0, 5, 1
+        };
+
+        int texInds[6] = { 0, 1, 3, 3, 1, 2 };
+
+        std::vector<Vertex> vertices(8);
+        for (int i = 0; i < 8; i++) {
+            vertices[i].position = vertList[i];
+            //vertices[i].normal = normals[indices[i / 6]];
+            //vertices[i].textureCoords = texCoords[texInds[i % 4]];
+        }
+
+        return Mesh(vertices, indices);
+    }
+};
 #endif
