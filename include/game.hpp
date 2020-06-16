@@ -3,9 +3,11 @@
 
 #include <glm/glm.hpp>
 #include <vector>
+#include <iostream>
 
 #include "drawable.hpp"
 #include "view.hpp"
+#include "light.hpp"
 
 class Game {
 public:
@@ -42,7 +44,22 @@ public:
     }
 
     void addLight(Drawable *light) {
-        lights_.push_back(light);
+        Light* tmp = dynamic_cast<Light*>(light);
+        if (tmp)
+            lights_.push_back(light);
+        else
+            std::cout << "Model added as light is not actually of class Light" << std::endl;
+    }
+
+    void addSun(Drawable *sun) {
+        Light* tmp = dynamic_cast<Light*>(sun);
+        if (tmp) {
+            sun_ = sun;
+            if (tmp->hasModel())
+                lights_.push_back(sun);
+        } else {
+            std::cout << "Model added as sun is not actually of class Light" << std::endl;
+        }
     }
 
     void addSky(Drawable *sky) {
@@ -77,8 +94,17 @@ public:
         return water_;
     }
 
-    Drawable* getLightSource() {
-        return lights_[0];
+    Drawable* getSun() {
+        if (sun_)
+            return sun_;
+        else {
+            std::cout << "Requested non-existing sun, this returns NULL and therefore probably gives you a SegFault" << std::endl;
+            return NULL;
+        }
+    }
+
+    Drawable* getLightSource(int index = 0) {
+        return lights_.at(index);
     }
 
     std::vector<Drawable*>& getSky() {
@@ -87,6 +113,7 @@ public:
 
 private:
     View view_;
+    Drawable *sun_ = NULL;
     std::vector<Drawable*> sky_;
     std::vector<Drawable*> lights_;
     std::vector<Drawable*> terrain_;

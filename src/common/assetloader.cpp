@@ -134,8 +134,6 @@ std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::st
 }
 
 /*
- * TODO: 
- * directory in texture path
  * glTex parameter -> define more variable somewhere else
  */
 unsigned int loadTextureFromFile(const char *path) {

@@ -146,6 +146,10 @@ glm::vec3 Model::getPosition(int index) {
     return modelPositions_.at(index);
 }
 
+glm::vec3 Model::getScale(int index) {
+    return scale_.at(index);
+}
+
 glm::mat3 Model::getNormalMatrix(int index) {
     return normalMatrices_.at(index);
 }

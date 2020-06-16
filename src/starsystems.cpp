@@ -28,7 +28,7 @@ using namespace glm;
 #include "light.hpp"
 #include "terrain.hpp"
 
-float deltaTime = 0.0f;
+float g_deltaTime = 0.0f;
 
 /*
 Architecture:
@@ -67,7 +67,8 @@ void skyBoxShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     glm::mat4 mvp = game->getView().getProjectionMatrix() *
         glm::mat4(glm::mat3(game->getView().getCameraMatrix())) * 
         drawable->getModelMatrix();
-    
+
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("MVP", mvp);
 }
 
@@ -141,7 +142,7 @@ Scene* createStarSystems(GLFWwindow* window) {
     game->addEntity(planet2);
     game->addEntity(planet3);
 
-    Renderer *renderer = new Renderer(shaders);
+    Renderer *renderer = new Renderer(window, shaders);
     Scene *scene = new Scene(game, renderer);
 
     return scene;
@@ -173,10 +174,10 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("cameraPos", game->getView().getCameraPosition());
-    shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
-    shader->uniform("light.diffuse", glm::vec3(1.0, 1.0, 1.0));
-    shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
+    shader->uniform("light.position", game->getSun()->getPosition());
+    shader->uniform("light.color", game->getSun()->getPosition());
+    //shader->uniform("tilingSize", drawable->getScale().x / 2.0f);
+    shader->uniform("tilingSize", 4.0f);
 }
 
 void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -185,7 +186,7 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "Creasfadaaa2 2adPaddlsane" << std::endl;
+    std::cout << "daCaadkaadaaadldassdafa asd" << std::endl;
     /*
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
@@ -215,28 +216,14 @@ Scene* createPlane(GLFWwindow *window) {
         new Shader("guiShader.vs", "guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
     };
 
-    Light *light = new Light(glm::vec3(20000, 20000, 2000));
+    Light *sun = new Light(glm::vec3(20000, 20000, 2000));
 
     View view = View(window, glm::vec3(0,20,-20));
     Game *game = new Game(view);
+    game->addSun(sun);
 
-    // TERRAIN
-    /*
-    std::vector<glm::vec4> colorPalette = {
-        glm::vec4(201, 178, 99, 1),
-        glm::vec4(135, 184, 82, 1),
-        glm::vec4(80, 171, 93, 1),
-        glm::vec4(120, 120, 120, 1),
-        glm::vec4(200, 200, 210, 1)
-    };
-    ColorGenerator colorGen = ColorGenerator(colorPalette, 0.45f);
-    PerlinNoise pNoise = PerlinNoise(6, 10, 0.35f);
-    TerrainGenerator terrainGen = TerrainGenerator(colorGen, pNoise);
-
-    Model *terrain = new Model(terrainGen.generateTerrain(200), SHADER_TYPE_TERRAIN);
-    game->addTerrain(terrain);
-    */
-    Terrain *terrain = new Terrain();
+    // Terrain
+    Terrain *terrain = new Terrain(200);
     game->addTerrain(terrain);
 
     // SKYBOX
@@ -246,25 +233,20 @@ Scene* createPlane(GLFWwindow *window) {
     game->addSky(skybox);
 
     // GUI
-    //Gui *gui = new Gui();
+    Gui *gui = new Gui();
 
     // WATER TEST
-    unsigned int texID = loadTextureFromFile("waternormals.jpg");
-    Texture waterNormal;
-    waterNormal.id = texID;
-    waterNormal.type = "texture_normal";
     Mesh mesh = Primitives::createQuad();
     mesh.addColor(glm::vec4(0.0,0.0,1.0,0.6));
-    mesh.addTexture(waterNormal);
     Model *waterTile = new Model(mesh, SHADER_TYPE_WATER);
-    glm::vec3 trans = glm::vec3(0, -3, 1);
-    glm::vec3 scale = glm::vec3(12, 1, 12);
+    glm::vec3 trans = glm::vec3(0, -3, 0);
+    glm::vec3 scale = glm::vec3(200, 1, 200);
     waterTile->transform(&scale, &trans, NULL);
     game->addWater(waterTile);
     
-    Renderer *renderer = new Renderer(shaders);
+    Renderer *renderer = new Renderer(window, shaders);
     Scene *scene = new Scene(game, renderer);
-    //scene->addGui(gui);
+    scene->addGui(gui);
 
     return scene;
 }
@@ -327,7 +309,7 @@ int main()
     float lastTime = lastFrame;
     do {
         float currentFrame = glfwGetTime();
-        deltaTime = currentFrame - lastFrame;
+        g_deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         nbFrames++;
         if (currentFrame - lastTime >= 1.0) {

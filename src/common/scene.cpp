@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "scene.hpp"
-#include "waterframebuffer.hpp"
 
 Scene::Scene(Game *game, Renderer *renderer) : 
                             game_(game), renderer_(renderer), lights_(game_->getLights()),
@@ -20,20 +19,16 @@ Scene::~Scene() {
 
 void Scene::addGui(Gui *gui) {
     gui_ = gui;
-    if (waterFrameBuffer_)
+    /*
+    if (waterFrameBuffer_) {
         gui_->addGuiElement(waterFrameBuffer_->getReflectionTexture(), glm::vec2(0.0,0.0), glm::vec2(320,180));
+        gui_->addGuiElement(waterFrameBuffer_->getRefractionTexture(), glm::vec2(0.0,2.0), glm::vec2(320,180));
+    }
+    */
 }
 
-/*
- * WaterFrameBuffer disabled
- */
 void Scene::setupScene() {
-    if (!water_.empty() && 0) {
-        int width, height;
-        game_->getView().getWindowSize(&width, &height);
-        waterFrameBuffer_ = new WaterFrameBuffer(width, height);
-        renderer_->setWaterFrameBuffer(waterFrameBuffer_);
-    }
+    ;
 }
 
 /*

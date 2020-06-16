@@ -17,9 +17,11 @@ public:
     void update(Game *game);
     std::string type();
     glm::vec3 getPosition(int index = 0);
+    glm::vec3 getScale(int index = 0);
     glm::mat4 getMvp(int index = 0);
     glm::mat4 getModelMatrix(int index = 0);
     glm::mat3 getNormalMatrix(int index = 0);
+    void transform(glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree = 0.0);
 private:
     Model model_;
     float orbitSpeed_;

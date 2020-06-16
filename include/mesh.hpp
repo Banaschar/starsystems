@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 
-#include "drawable.hpp"
 #include "shader.hpp"
 
 struct Vertex {

@@ -32,7 +32,7 @@ public:
         return reflectionTexture_;
     }
 
-    unsigned int getRefractionTexture_() {
+    unsigned int getRefractionTexture() {
         return refractionTexture_;
     }
 

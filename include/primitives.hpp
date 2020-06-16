@@ -108,6 +108,7 @@ public:
         for (int i = 0; i < 4; i++) {
             vertices[i].position = pos[i];
             vertices[i].textureCoords = texCoords[i];
+            vertices[i].normal = glm::vec3(0, 1, 0);
         }
 
         return Mesh(vertices, indices);

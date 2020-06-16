@@ -9,6 +9,6 @@
 #define SHADER_TYPE_WATER "default_water"
 #define SHADER_TYPE_GUI "default_gui"
 
-extern float deltaTime;
+extern float g_deltaTime;
 
 #endif

@@ -17,9 +17,11 @@ class Drawable {
         virtual void draw(Shader *shader) = 0;
         virtual void update(Game *game) = 0;
         virtual glm::vec3 getPosition(int index = 0) = 0;
+        virtual glm::vec3 getScale(int index = 0) = 0;
         virtual glm::mat4 getMvp(int index = 0) = 0;
         virtual glm::mat4 getModelMatrix(int index = 0) = 0;
         virtual glm::mat3 getNormalMatrix(int index = 0) = 0;
+        virtual void transform(glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree = 0.0) = 0;
         virtual std::string type() = 0;
 };
 #endif

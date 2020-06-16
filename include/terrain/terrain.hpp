@@ -51,6 +51,9 @@ public:
     glm::vec3 getPosition(int index = 0) {
         return model_->getPosition(index);
     }
+    glm::vec3 getScale(int index = 0) {
+        return model_->getScale(index);
+    }
     glm::mat4 getMvp(int index = 0) {
         return model_->getMvp(index);
     }
@@ -64,6 +67,10 @@ public:
         return model_->type();
     }
 
+    void transform(glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree = 0.0) {
+        model_->transform(scale, translate, rotate, degree);
+    }
+
     float getAmplitude() {
         return amplitude_;
     }
@@ -75,8 +82,9 @@ private:
 class TerrainRenderer {
 public:
     TerrainRenderer(Shader *shader) : shader_(shader) {}
-    void render(std::vector<Drawable*> terrains, Game *game) {
+    void render(std::vector<Drawable*> terrains, Game *game, glm::vec4 clipPlane) {
         shader_->use();
+        shader_->uniform("clipPlane", clipPlane);
         for (Drawable* drawable : terrains) {
             Terrain *terrain = static_cast<Terrain*> (drawable);
             shader_->uniform("amplitude", terrain->getAmplitude());

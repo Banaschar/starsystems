@@ -14,10 +14,12 @@ public:
         float speed, float mouseSpeed);
     glm::mat4 getCameraMatrix();
     glm::mat4 getProjectionMatrix();
-    glm::vec3 getCameraPosition();
+    glm::vec3& getCameraPosition();
     glm::mat4 getOrthoProjection();
     glm::vec3 getWorldNormal();
+    void invertPitch();
     void update();
+    void updateForce();
     void setAutoRotate(bool value);
     void mouseCallback(GLFWwindow *window, double xpos, double ypos);
     void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
@@ -30,6 +32,7 @@ public:
 private:
     void rotateCamera();
     void processInputs();
+    void update_();
     GLFWwindow *window_;
     int windowWidth_, windowHeight_;
     glm::mat4 cameraMatrix_;

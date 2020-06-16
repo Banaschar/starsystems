@@ -65,7 +65,11 @@ glm::mat4 View::getOrthoProjection() {
     return glm::ortho(0.0f, (float)windowWidth_, 0.0f, (float)windowHeight_);
 }
 
-glm::vec3 View::getCameraPosition() {
+void View::invertPitch() {
+        pitch_ = -pitch_;
+}
+
+glm::vec3& View::getCameraPosition() {
     return camPosition_;
 }
 
@@ -82,7 +86,7 @@ void View::setAutoRotate(bool value) {
 }
 
 void View::rotateCamera() {
-    camRotateVal_ += cameraSpeed_ * deltaTime;
+    camRotateVal_ += cameraSpeed_ * g_deltaTime;
 
     if (camRotateVal_ > 360)
         camRotateVal_ = camRotateVal_ - 360;
@@ -96,9 +100,17 @@ void View::rotateCamera() {
     camUp_);
 }
 
+void View::updateForce() {
+    flagUpdate_ = true;
+    update_();
+}
+
 void View::update() {
     processInputs();
+    update_();
+}
 
+void View::update_() {
     if (flagUpdate_) {
         // direction vector
         glm::vec3 dir;
@@ -120,32 +132,32 @@ void View::update() {
 
 void View::processInputs() {    
     if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
-        camPosition_ += camDirection_ * deltaTime * speed_;
+        camPosition_ += camDirection_ * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
     
     if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
-        camPosition_ -= camDirection_ * deltaTime * speed_;
+        camPosition_ -= camDirection_ * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
     
     if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
-        camPosition_ += camRight_ * deltaTime * speed_;
+        camPosition_ += camRight_ * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
 
     if (glfwGetKey(window_, GLFW_KEY_A) == GLFW_PRESS) {
-        camPosition_ -= camRight_ * deltaTime * speed_;
+        camPosition_ -= camRight_ * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
 
     if (glfwGetKey(window_, GLFW_KEY_F) == GLFW_PRESS) {
-        camPosition_ -= glm::vec3(0, 1, 0) * deltaTime * speed_;
+        camPosition_ -= glm::vec3(0, 1, 0) * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
 
     if (glfwGetKey(window_, GLFW_KEY_R) == GLFW_PRESS) {
-        camPosition_ += glm::vec3(0, 1, 0) * deltaTime * speed_;
+        camPosition_ += glm::vec3(0, 1, 0) * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
 }

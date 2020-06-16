@@ -12,8 +12,6 @@ using namespace std;
 #include <string.h>
 
 #include "shader.hpp"
-#include "drawable.hpp"
-#include "game.hpp"
 
 Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, 
 				const std::string type, const callback_t cb) : type_(type),
@@ -116,10 +114,22 @@ bool Shader::openShaders(const char *vertexShaderPath, const char *fragmentShade
 
 void Shader::use() {
 	glUseProgram(shaderProgramId_);
+	textureCounter_ = 0;
+}
+
+void Shader::end() {
+	glActiveTexture(GL_TEXTURE0);
 }
 
 void Shader::prepare(Drawable *drawable, Game *game) {
 	drawCallback_(this, drawable, game);
+}
+
+void Shader::bindTexture(const std::string &name, unsigned int texId) {
+	glActiveTexture(GL_TEXTURE0 + textureCounter_);
+	uniform(name, textureCounter_);
+	glBindTexture(GL_TEXTURE_2D, texId);
+	++textureCounter_;
 }
 
 void Shader::uniform(const std::string &name, glm::mat4 value) {

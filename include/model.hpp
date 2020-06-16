@@ -6,8 +6,8 @@
 #include <string>
 #include <stdlib.h>
 
-#include "drawable.hpp"
 #include "mesh.hpp"
+#include "drawable.hpp"
 #include "shader.hpp"
 #include "game.hpp"
 
@@ -22,6 +22,7 @@ public:
     void transform(glm::vec3 *scaleVec, glm::vec3 *translateVec, 
                     glm::vec3 *rotationAxis, float degree = 0.0f);
     glm::vec3 getPosition(int index = 0);
+    glm::vec3 getScale(int index = 0);
     glm::mat3 getNormalMatrix(int index = 0);
     glm::mat4 getModelMatrix(int index = 0);
     std::vector<glm::mat4>& getInstanceModels();

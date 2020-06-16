@@ -40,7 +40,7 @@ public:
     }
 
     float getNoise2d(int x, int y) {
-        float total = 0;
+        float total = 0;;
         float d = (float) glm::pow(2, octaves_ - 1);
         for (int i = 0; i < octaves_; i++) {
             float freq = (float) (glm::pow(2, i) / d);

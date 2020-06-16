@@ -7,7 +7,7 @@ Planet::Planet(Model model, float orbitSpeed): model_(model), orbitSpeed_(orbitS
 
 void Planet::update(Game *game) {
     
-    rotationVal_ += orbitSpeed_ * deltaTime;
+    rotationVal_ += orbitSpeed_ * g_deltaTime;
 
     glm::vec3 trans = glm::vec3(0.0f);
     trans.x = sin(rotationVal_) * orbitRadius_;
@@ -26,6 +26,10 @@ glm::vec3 Planet::getPosition(int index) {
     return model_.getPosition(index);
 }
 
+glm::vec3 Planet::getScale(int index) {
+    return model_.getScale(index);
+}
+
 glm::mat4 Planet::getMvp(int index) {
     return model_.getMvp(index);
 }
@@ -40,4 +44,8 @@ glm::mat3 Planet::getNormalMatrix(int index) {
 
 std::string Planet::type() {
     return model_.type();
+}
+
+void Planet::transform(glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree) {
+    model_.transform(scale, translate, rotate, degree);
 }

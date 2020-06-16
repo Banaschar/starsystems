@@ -61,7 +61,7 @@ vec4 blendTextures() {
     vec4 rock = texture(texture_diffuse4, texCoords);
     vec4 snow = texture(texture_diffuse5, texCoords);
 
-    float value = (fragPosOriginal.y + amplitude / (amplitude * 2));
+    float value = (fragPosOriginal.y + amplitude) / (amplitude * 2);
     value = clamp((value - spread/2.0) * (1.0 / spread), 0.0, 0.9999);
     int firstPalette = int(floor(value / part));
     float blend = (value - (firstPalette * part)) / part;
