@@ -96,10 +96,10 @@ public:
 
         
         renderScene(lights, terrain, sky, game, glm::vec4(0, -1, 0, 10000));
-        
+
         if (waterRenderer_)
             waterRenderer_->render(water, game);
-        
+
         if (gui && guiRenderer_)
             guiRenderer_->render(gui, game);
 

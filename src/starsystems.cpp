@@ -176,8 +176,8 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("cameraPos", game->getView().getCameraPosition());
     shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.color", game->getSun()->getPosition());
-    //shader->uniform("tilingSize", drawable->getScale().x / 2.0f);
-    shader->uniform("tilingSize", 4.0f);
+    shader->uniform("tilingSize", drawable->getScale().x / 4.0f);
+    //shader->uniform("tilingSize", 4.0f);
 }
 
 void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -186,7 +186,7 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "daCaadkaadaaadldassdafa asd" << std::endl;
+    std::cout << "dasddsadCsskasdadkafaAaddaaaadldassdafa asd" << std::endl;
     /*
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
@@ -216,7 +216,7 @@ Scene* createPlane(GLFWwindow *window) {
         new Shader("guiShader.vs", "guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
     };
 
-    Light *sun = new Light(glm::vec3(20000, 20000, 2000));
+    Light *sun = new Light(glm::vec3(200000, 200000, 10000));
 
     View view = View(window, glm::vec3(0,20,-20));
     Game *game = new Game(view);
@@ -239,7 +239,7 @@ Scene* createPlane(GLFWwindow *window) {
     Mesh mesh = Primitives::createQuad();
     mesh.addColor(glm::vec4(0.0,0.0,1.0,0.6));
     Model *waterTile = new Model(mesh, SHADER_TYPE_WATER);
-    glm::vec3 trans = glm::vec3(0, -3, 0);
+    glm::vec3 trans = glm::vec3(0, 0, 0);
     glm::vec3 scale = glm::vec3(200, 1, 200);
     waterTile->transform(&scale, &trans, NULL);
     game->addWater(waterTile);
@@ -293,10 +293,6 @@ int main()
     glDepthFunc(GL_LESS);
     // Don't render triangles which normal is not torwards the camera
     glEnable(GL_CULL_FACE);
-
-    // BLENDING
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // create starsystem scene
     //Scene *scene = createStarSystems(window);

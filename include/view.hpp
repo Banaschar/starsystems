@@ -57,5 +57,7 @@ private:
     float mouseSensitivity_;
     float yaw_;
     float pitch_;
+    float nearPlane_;
+    float farPlane_;
 };
 #endif

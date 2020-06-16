@@ -4,9 +4,8 @@
 
 #include "view.hpp"
 
-// default camera values
-//const float YAW = -90.0f;
-//const float PITCH = 0.0f;
+#define DEFAULT_NEAR_PLANE 0.1f
+#define DEFAULT_FAR_PLANE 1000.0f
 const float YAW = 90.0f;
 const float PITCH = -30.0f;
 const float SPEED = 10.0f;
@@ -36,6 +35,8 @@ View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float yaw, fl
     camRotateVal_ = 0.0;
     autoRotate_ = AUTO_ROTATE;
     constrainPitch_ = CONSTRAIN_PITCH;
+    nearPlane_ = DEFAULT_NEAR_PLANE;
+    farPlane_ = DEFAULT_FAR_PLANE;
 
     update();
 }
@@ -123,7 +124,7 @@ void View::update_() {
         camUp_ = glm::normalize(glm::cross(camRight_, camDirection_));
 
         projectionMatrix_ = glm::perspective(glm::radians(zoom_), 
-                    (float)windowWidth_ / (float)windowHeight_, 0.1f, 200.0f);
+                    (float)windowWidth_ / (float)windowHeight_, nearPlane_, farPlane_);
         cameraMatrix_ = glm::lookAt(camPosition_, camPosition_ + camDirection_, camUp_);
 
         flagUpdate_ = false;

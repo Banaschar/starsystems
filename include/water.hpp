@@ -22,16 +22,20 @@ public:
         refractionTexture_ = waterFb->getRefractionTexture();
         dudvTexture_ = loadTextureFromFile("waterDUDV.png");
         normalTexture_ = loadTextureFromFile("waterNormal.png");
+        depthTexture_ = waterFb->getRefractionDepthTexture();
     }
     void render(std::vector<Drawable*> water, Game *game) {
         moveFactor_ += WATER_WAVE_SPEED * g_deltaTime;
         moveFactor_ = moveFactor_ >= 1.0 ? 0.0 : moveFactor_;
         shader_->use();
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         shader_->uniform("moveFactor", moveFactor_);
         shader_->bindTexture("texture_reflection", reflectionTexture_);
         shader_->bindTexture("texture_refraction", refractionTexture_);
         shader_->bindTexture("texture_dudv", dudvTexture_);
         shader_->bindTexture("texture_normal", normalTexture_);
+        shader_->bindTexture("texture_depth", depthTexture_);
 
         for (Drawable *drawable : water) {
             drawable->update(game);
@@ -39,6 +43,7 @@ public:
             drawable->draw(shader_);
         }
         shader_->end();
+        glDisable(GL_BLEND);
     }
 private:
     Shader *shader_;
@@ -46,6 +51,7 @@ private:
     unsigned int refractionTexture_;
     unsigned int dudvTexture_;
     unsigned int normalTexture_;
+    unsigned int depthTexture_;
     float moveFactor_ = 0.0;
 };
 #endif
