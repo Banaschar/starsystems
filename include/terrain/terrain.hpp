@@ -13,7 +13,6 @@ public:
     Terrain(TerrainGenerator terrainGen, int dimension = DEFAULT_DIMENSION) : dimension_(dimension){
         model_ = new Model(terrainGen.generateTerrain(dimension_), SHADER_TYPE_TERRAIN);
         amplitude_ = terrainGen.getPerlinNoise().getAmplitude();
-        setupTextures();
     }
 
     Terrain(int dimension = DEFAULT_DIMENSION) : dimension_(dimension) {
@@ -21,28 +20,10 @@ public:
         TerrainGenerator terrainGen = TerrainGenerator(pNoise);
         model_ = new Model(terrainGen.generateTerrain(dimension_), SHADER_TYPE_TERRAIN);
         amplitude_ = terrainGen.getPerlinNoise().getAmplitude();
-        setupTextures();
     }
 
     ~Terrain() {
         delete model_;
-    }
-
-    void setupTextures() {
-        Texture tex;
-        tex.type = "texture_diffuse";
-        tex.id = loadTextureFromFile("seaGround.jpg");
-        model_->getMesh().addTexture(tex);
-        tex.id = loadTextureFromFile("sand256.tga");
-        model_->getMesh().addTexture(tex);
-        tex.id = loadTextureFromFile("grass.tga");
-        model_->getMesh().addTexture(tex);
-        tex.id = loadTextureFromFile("ground.tga");
-        model_->getMesh().addTexture(tex);
-        tex.id = loadTextureFromFile("rock512.tga");
-        model_->getMesh().addTexture(tex);
-        tex.id = loadTextureFromFile("snow512.tga");
-        model_->getMesh().addTexture(tex);
     }
 
     void draw(Shader *shader) {
@@ -89,11 +70,38 @@ private:
 
 class TerrainRenderer {
 public:
-    TerrainRenderer(Shader *shader) : shader_(shader) {}
+    TerrainRenderer(Shader *shader) : shader_(shader) {
+        setupTextures();
+    }
+
+    void setupTextures() {
+        Texture tex;
+        tex.type = "texture_diffuse";
+        tex.id = loadTextureFromFile("seaGround.jpg");
+        textures_.push_back(tex);
+        tex.id = loadTextureFromFile("sand256.tga");
+        textures_.push_back(tex);
+        tex.id = loadTextureFromFile("grass.tga");
+        textures_.push_back(tex);
+        tex.id = loadTextureFromFile("ground.tga");
+        textures_.push_back(tex);
+        tex.id = loadTextureFromFile("rock512.tga");
+        textures_.push_back(tex);
+        tex.id = loadTextureFromFile("snow512.tga");
+        textures_.push_back(tex);
+    }
+
+    void bindTextures() {
+        for (int i = 0; i < textures_.size(); i++) {
+            shader_->bindTexture(textures_[i].type + std::to_string(i + 1), textures_[i].id);
+        }
+    }
+
     void render(std::vector<Drawable*> terrains, Game *game, glm::vec4 clipPlane) {
         shader_->use();
         shader_->uniform("clipPlane", clipPlane);
         shader_->uniform("waterLevel", game->getWaterLevel());
+        bindTextures();
         for (Drawable* drawable : terrains) {
             Terrain *terrain = static_cast<Terrain*> (drawable);
             shader_->uniform("amplitude", terrain->getAmplitude());
@@ -105,5 +113,6 @@ public:
     }
 private:
     Shader *shader_;
+    std::vector<Texture> textures_;
 };
 #endif

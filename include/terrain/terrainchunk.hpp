@@ -1,15 +1,18 @@
 #ifndef TERRAINCHUNK_H
 #define TERRAINCHUNK_H
 
+#include <array>
+
 /*
- * Draw water and terrain in one or two draw calls?
- * Iterate over tree twice, or siwtch shaders for every chunk?
- * I would guess switching shaders is more expensive, but need to do
- * performance tests.
+ * Terrainchunk used in the Quad tree.
+ * Seperate draw methods for water and terrain, because switching shaders and
+ * textures every chunk is more costly then iterating over the tree twice.
+ *
+ * As a child has never more then 4 children in a quad tree, we can use a static array
  */
 class TerrainChunk {
 public:
-    TerrainChunk() {}
+    TerrainChunk(Drawable *terrain, Drawable *water) : terrain_(terrain), water_(water) {}
     ~TerrainChunk() {
         for (TerrainChunk *t : children_)
             delete t;
@@ -25,9 +28,13 @@ public:
         parent_ = parent;
     }
 
-    void addChild(TerrainChunk *child) {
+    bool addChild(TerrainChunk *child) {
+        if (index_ == 4)
+            return false;
+
         child->setParent(this);
-        children_.push_back(child);
+        children_[index++] = child;
+        return true;
     }
 
     void update() {
@@ -41,20 +48,21 @@ public:
         terrain_->draw();
 
         for (TerrainChunk *child : children_)
-            child->draw();
+            child->drawTerrain();
     }
 
     void drawWater() {
         water_->draw();
 
         for (TerrainChunk *child : children_)
-            child->draw();
+            child->drawWater();
     }
 
 private:
+    int index_ = 0;
     TerrainChunk *parent_;
-    std::vector<TerrainChunk*> children_;
-    Terrain *terrain_;
+    std::array<TerrainChunk*, 4> children_;
+    Drawable *terrain_;
     Drawable *water_;
 }
 #endif

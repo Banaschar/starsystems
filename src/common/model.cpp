@@ -77,28 +77,6 @@ void Model::transform(glm::vec3 *scaleVec, glm::vec3 *translateVec,
     transform(0, scaleVec, translateVec, rotationAxis, degree);
 }
 
-/*
-void Model::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, 
-                    glm::vec3 *rotationAxis, float degree) {
-
-    if (scaleVec)
-        modelMatrices_[index] = glm::scale(modelMatrices_[index], *scaleVec);
-
-    if (rotationAxis) {
-        if (degree == 0.0f) {
-            fprintf(stderr, "Rotation axis specified but no degree\n");
-        } else {
-            modelMatrices_[index] = glm::rotate(modelMatrices_[index], glm::radians(degree), *rotationAxis);
-        }
-    }
-
-    if (translateVec) {
-        modelPositions_[index] = modelPositions_[index] + *translateVec;
-        modelMatrices_[index] = glm::translate(modelMatrices_[index], *translateVec);
-    }
-}
-*/
-
 void Model::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, 
                     glm::vec3 *rotationAxis, float degree) {
 
