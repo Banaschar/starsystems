@@ -9,20 +9,21 @@ struct Light {
 };
 
 in vec4 color;
-in vec3 fragPos;
-in vec3 fragPosOriginal;
+in vec3 fragPos_worldspace;
 in vec3 normal;
 in vec2 texCoords;
 
 uniform vec3 cameraPos;
 uniform Light light;
 uniform float amplitude;
+uniform float waterLevel;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_diffuse2;
 uniform sampler2D texture_diffuse3;
 uniform sampler2D texture_diffuse4;
 uniform sampler2D texture_diffuse5;
+uniform sampler2D texture_diffuse6;
 
 vec4 calculateLighting(vec3 normal) {
     // ambient
@@ -35,7 +36,7 @@ vec4 calculateLighting(vec3 normal) {
     vec3 diffuse = light.diffuse * diff;
 
     //specular
-    vec3 viewDirection = normalize(cameraPos - fragPos);
+    vec3 viewDirection = normalize(cameraPos - fragPos_worldspace);
     vec3 reflectDirection = reflect(-light.direction, norm);
     float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 32.0);
     vec3 specular = 0.5 * spec * light.specular;
@@ -43,25 +44,24 @@ vec4 calculateLighting(vec3 normal) {
     return vec4(ambient + diffuse + specular, 1.0);
 }
 
-vec4 interpolateColors(vec4 tex1, vec4 tex2, float blend) {
-    float color1weight = 1 - blend;
-    float r = (color1weight * tex1.x) + (blend * tex2.y);
-    float g = (color1weight * tex1.y) + (blend * tex2.y);
-    float b = (color1weight * tex1.z) + (blend * tex2.z);
-
-    return vec4(r,g,b,1.0f);
-}
-
 vec4 blendTextures() {
     float spread = 0.45;
     float part = 1.0 / 4.0;
-    vec4 sand = texture(texture_diffuse1, texCoords);
-    vec4 grass = texture(texture_diffuse2, texCoords);
-    vec4 ground = texture(texture_diffuse3, texCoords);
-    vec4 rock = texture(texture_diffuse4, texCoords);
-    vec4 snow = texture(texture_diffuse5, texCoords);
+    vec4 seaGround = texture(texture_diffuse1, texCoords);
+    vec4 sand = texture(texture_diffuse2, texCoords);
+    if (fragPos_worldspace.y < waterLevel-1.0)
+        return seaGround;
 
-    float value = (fragPosOriginal.y + amplitude) / (amplitude * 2);
+    if (fragPos_worldspace.y < waterLevel)
+        return mix(seaGround, sand, 1 - abs(fragPos_worldspace.y));
+    
+    vec4 grass = texture(texture_diffuse3, texCoords);
+    vec4 ground = texture(texture_diffuse4, texCoords);
+    vec4 rock = texture(texture_diffuse5, texCoords);
+    vec4 snow = texture(texture_diffuse6, texCoords);
+
+    //float value = (fragPos_worldspace.y + amplitude) / (amplitude * 2);
+    float value = min(fragPos_worldspace.y + 2.0f, amplitude) / amplitude;
     value = clamp((value - spread/2.0) * (1.0 / spread), 0.0, 0.9999);
     int firstPalette = int(floor(value / part));
     float blend = (value - (firstPalette * part)) / part;
@@ -69,16 +69,16 @@ vec4 blendTextures() {
 
     switch (firstPalette) {
     case 0: 
-        result = interpolateColors(sand, grass, blend);
+        result = mix(sand, grass, blend);
         break;
     case 1: 
-        result = interpolateColors(grass, ground, blend);
+        result = mix(grass, ground, blend);
         break;
     case 2: 
-        result = interpolateColors(ground, rock, blend);
+        result = mix(ground, rock, blend);
         break;
     case 3: 
-        result = interpolateColors(rock, snow, blend);
+        result = mix(rock, snow, blend);
         break;
     }
     return result;
@@ -88,10 +88,4 @@ void main()
 {
     //FragColor = calculateLighting(normal) * color;
     FragColor = calculateLighting(normal) * blendTextures();
-    //FragColor = blendTextures();
-    //if (fragPosOriginal.y == 0) {
-    //    FragColor = vec4(0.0,0.0,1.0,1.0);
-    //} else {
-    //    FragColor = color;
-    //}
 }

@@ -75,7 +75,7 @@ public:
 
         processEntities(entities);
         // Render to waterFrameBuffer
-        if (waterFrameBuffer_) {
+        if (waterTypeQuality_ && !water.empty()) {
             glEnable(GL_CLIP_DISTANCE0);
             float distance = 2 * (game->getView().getCameraPosition().y - water[0]->getPosition().y);
             game->getView().getCameraPosition().y -= distance;
@@ -97,7 +97,7 @@ public:
         
         renderScene(lights, terrain, sky, game, glm::vec4(0, -1, 0, 10000));
 
-        if (waterRenderer_)
+        if (waterRenderer_ && !water.empty())
             waterRenderer_->render(water, game);
 
         if (gui && guiRenderer_)
@@ -116,6 +116,7 @@ private:
     GuiRenderer *guiRenderer_ = NULL;
     TerrainRenderer *terrainRenderer_ = NULL;
     WaterRenderer *waterRenderer_ = NULL;
+    bool waterTypeQuality_ = false;
 
     void setupRenderer(std::vector<Shader*> shaders) {
         
@@ -128,9 +129,12 @@ private:
                 skyShader_ = shader;
             else if (shader->type() == SHADER_TYPE_WATER) {
                 int width, height;
+                waterTypeQuality_ = true;
                 glfwGetWindowSize(window_, &width, &height);
                 waterFrameBuffer_ = new WaterFrameBuffer(width, height);
                 waterRenderer_ = new WaterRenderer(shader, waterFrameBuffer_);
+            } else if (shader->type() == SHADER_TYPE_WATER_PERFORMANCE) {
+                waterRenderer_ = new WaterRenderer(shader);
             }
             else if (shader->type() == SHADER_TYPE_GUI) {
                 guiRenderer_ = new GuiRenderer(shader);

@@ -72,6 +72,7 @@ public:
 
     void addWater(Drawable *water) {
         water_.push_back(water);
+        waterLevel_ = water->getPosition().y;
     }
 
     View& getView() {
@@ -111,9 +112,14 @@ public:
         return sky_;
     }
 
+    float getWaterLevel() {
+        return waterLevel_;
+    }
+
 private:
     View view_;
     Drawable *sun_ = NULL;
+    float waterLevel_ = 0.0;
     std::vector<Drawable*> sky_;
     std::vector<Drawable*> lights_;
     std::vector<Drawable*> terrain_;

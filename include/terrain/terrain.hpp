@@ -10,15 +10,16 @@
 
 class Terrain : public Drawable {
 public:
-    Terrain(TerrainGenerator terrainGen, int dimension = DEFAULT_DIMENSION) {
-        model_ = new Model(terrainGen.generateTerrain(dimension), SHADER_TYPE_TERRAIN);
+    Terrain(TerrainGenerator terrainGen, int dimension = DEFAULT_DIMENSION) : dimension_(dimension){
+        model_ = new Model(terrainGen.generateTerrain(dimension_), SHADER_TYPE_TERRAIN);
         amplitude_ = terrainGen.getPerlinNoise().getAmplitude();
         setupTextures();
     }
 
-    Terrain(int dimension = DEFAULT_DIMENSION) {
-        TerrainGenerator terrainGen = TerrainGenerator();
-        model_ = new Model(terrainGen.generateTerrain(dimension), SHADER_TYPE_TERRAIN);
+    Terrain(int dimension = DEFAULT_DIMENSION) : dimension_(dimension) {
+        PerlinNoise pNoise = PerlinNoise(4, 10.0f, 0.01f);
+        TerrainGenerator terrainGen = TerrainGenerator(pNoise);
+        model_ = new Model(terrainGen.generateTerrain(dimension_), SHADER_TYPE_TERRAIN);
         amplitude_ = terrainGen.getPerlinNoise().getAmplitude();
         setupTextures();
     }
@@ -30,6 +31,8 @@ public:
     void setupTextures() {
         Texture tex;
         tex.type = "texture_diffuse";
+        tex.id = loadTextureFromFile("seaGround.jpg");
+        model_->getMesh().addTexture(tex);
         tex.id = loadTextureFromFile("sand256.tga");
         model_->getMesh().addTexture(tex);
         tex.id = loadTextureFromFile("grass.tga");
@@ -74,7 +77,12 @@ public:
     float getAmplitude() {
         return amplitude_;
     }
+
+    int getDimension() {
+        return dimension_;
+    }
 private:
+    int dimension_;
     float amplitude_;
     Model *model_;
 };
@@ -85,9 +93,11 @@ public:
     void render(std::vector<Drawable*> terrains, Game *game, glm::vec4 clipPlane) {
         shader_->use();
         shader_->uniform("clipPlane", clipPlane);
+        shader_->uniform("waterLevel", game->getWaterLevel());
         for (Drawable* drawable : terrains) {
             Terrain *terrain = static_cast<Terrain*> (drawable);
             shader_->uniform("amplitude", terrain->getAmplitude());
+            shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
             drawable->update(game);
             shader_->prepare(drawable, game);
             drawable->draw(shader_);

@@ -177,7 +177,6 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.color", game->getSun()->getPosition());
     shader->uniform("tilingSize", drawable->getScale().x / 4.0f);
-    //shader->uniform("tilingSize", 4.0f);
 }
 
 void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -186,7 +185,7 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 Scene* createPlane(GLFWwindow *window) {
-    std::cout << "dasddsadCsskasdadkafaAaddaaaadldassdafa asd" << std::endl;
+    std::cout << "dsassdddddadddaddsdasal" << std::endl;
     /*
     std::vector<std::string> cubetex = {
         "skyboxSky/right.jpg",
@@ -212,6 +211,7 @@ Scene* createPlane(GLFWwindow *window) {
         new Shader("plane.vs", "plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
         new Shader("skybox.vs", "skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("waterShader.vs", "waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
+        //new Shader("waterShader.vs", "waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         new Shader("flatColor.vs", "flatColor.fs", "flat", flatColorCb),
         new Shader("guiShader.vs", "guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
     };
@@ -223,7 +223,7 @@ Scene* createPlane(GLFWwindow *window) {
     game->addSun(sun);
 
     // Terrain
-    Terrain *terrain = new Terrain(200);
+    Terrain *terrain = new Terrain(500);
     game->addTerrain(terrain);
 
     // SKYBOX
@@ -240,7 +240,7 @@ Scene* createPlane(GLFWwindow *window) {
     mesh.addColor(glm::vec4(0.0,0.0,1.0,0.6));
     Model *waterTile = new Model(mesh, SHADER_TYPE_WATER);
     glm::vec3 trans = glm::vec3(0, 0, 0);
-    glm::vec3 scale = glm::vec3(200, 1, 200);
+    glm::vec3 scale = glm::vec3(300, 1, 300);
     waterTile->transform(&scale, &trans, NULL);
     game->addWater(waterTile);
     

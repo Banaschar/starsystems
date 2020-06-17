@@ -68,6 +68,8 @@ vec4 calculateLighting() {
  * ---> USE waterDepth to generate like white foam from waves at the edges
  *
  * ---> REDUCE specular highlight when moving the camera farther away, like really far torwards orbit
+ *
+ * --> My water consits of 6 vertices -> vertex shader is only run twice. Move more code to the vertex shader!!!!!!!
  */
 vec4 reflectRefract() {
     vec2 ndc = (clipSpace.xy / clipSpace.w); // normalized device coordinates
@@ -88,7 +90,7 @@ vec4 reflectRefract() {
     // Distortion
     vec2 distortionTexCoords = texture(texture_dudv, vec2(texCoords.x + moveFactor, texCoords.y)).xy * 0.1;
     distortionTexCoords = texCoords + vec2(distortionTexCoords.x, distortionTexCoords.y + moveFactor);
-    vec2 distortion = (texture(texture_dudv, distortionTexCoords).xy * 2.0 - 1.0) * waveStrength; //* clamp(waterDepth/2.0, 0.0, 1.0); // * clamp is questionable.
+    vec2 distortion = (texture(texture_dudv, distortionTexCoords).xy * 2.0 - 1.0) * waveStrength * clamp(waterDepth/5.0, 0.0, 1.0); // * clamp is questionable.
 
     reflectTexCoords += distortion;
     reflectTexCoords.x = clamp(reflectTexCoords.x, 0.001, 0.999); // avoid visual bugs at the bottom of the screen  
@@ -107,19 +109,20 @@ vec4 reflectRefract() {
 
     // Fresnel effect
     vec3 toCameraVectorNorm = normalize(cameraPos - fragPos_worldspace);
-    float refractiveFactor = dot(toCameraVectorNorm, vec3(0.0,1.0,0.0)); // use vec3(0.0, 1.0, 0.0) as normal for original subtler effect
+    float refractiveFactor = dot(toCameraVectorNorm, normal); // use vec3(0.0, 1.0, 0.0) as normal for original subtler effect
     refractiveFactor = pow(refractiveFactor, 2.0);
 
     // Normal mapping: calc specular light
     vec3 fromLightVector = fragPos_worldspace - light.position;
-    vec3 reflectedLight = reflect(normalize(fromLightVector), normal);
+    //vec3 reflectedLight = reflect(normalize(fromLightVector), normal); // actual value of set light position
+    vec3 reflectedLight = reflect(normalize(vec3(-0.2, -1.9f, -0.3f)), normal); // fixed value for directional light, much better
     float spec = pow(max(dot(reflectedLight, toCameraVectorNorm), 0.0), shineDamper);
-    vec3 specular = light.color * spec * reflectivity; //* clamp(waterDepth/2.0, 0.0, 1.0);;
+    vec3 specular = light.color * spec * reflectivity * clamp(waterDepth/10.0, 0.0, 1.0);;
 
     vec4 retColor = mix(reflectColor, refractColor, refractiveFactor);
-    retColor = mix(retColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specular, 0.0);
+    retColor = mix(retColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specular, 0.0); // specular component add
     
-    //retColor.a = clamp(waterDepth/2.0, 0.0, 1.0); // From refraction Depth map -> gets rid of the ugly edges, but looks much worse from afar...
+    retColor.a = clamp(waterDepth/2.0, 0.0, 1.0); // From refraction Depth map -> gets rid of the ugly edges, but looks much worse from afar...
     return retColor;
 }
 

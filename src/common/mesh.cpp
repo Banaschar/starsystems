@@ -163,6 +163,7 @@ void Mesh::draw(Shader *shader) {
         std::string type = textures_[i].type;
         if (type == "cubemap") {
             glDepthFunc(GL_LEQUAL);
+            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_CUBE_MAP, textures_[i].id);
             depthMask = true;
@@ -198,8 +199,10 @@ void Mesh::draw(Shader *shader) {
 
     glBindVertexArray(0);
 
-    if (depthMask)
+    if (depthMask) {
         glDepthFunc(GL_LESS);
+        glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+    }
 
     glActiveTexture(GL_TEXTURE0);
 }

@@ -224,6 +224,7 @@ private:
 class TerrainGenerator {
 public:
     TerrainGenerator() : colorGen_(ColorGenerator()), pNoise_(PerlinNoise()) {}
+    TerrainGenerator(PerlinNoise pNoise) : pNoise_(pNoise), colorGen_(ColorGenerator()) {}
     TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise) : colorGen_(colorGen), pNoise_(pNoise) {}
 
     Mesh generateTerrain(int dimension) {
