@@ -18,7 +18,6 @@ using namespace glm;
 #include "mesh.hpp"
 #include "model.hpp"
 #include "scene.hpp"
-#include "assetloader.hpp"
 #include "planet.hpp"
 #include "game.hpp"
 #include "primitives.hpp"
@@ -31,15 +30,8 @@ using namespace glm;
 float g_deltaTime = 0.0f;
 
 /*
-Architecture:
-Create a game class -> game object holds all the initial initialization (and memory!)
--> Can switch out game objects to test different things (e.g. follow the tutorials)
---> Need to move the shader options (uniforms etc.) out of the model class.
---> Or somehow initialize it with the necessary function calls.
------> Maybe have a callback function in Model, that gets registered during initialization 
-
-*/
-
+ *
+ */
 void standardShadingCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("MVP", drawable->getMvp());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
@@ -63,7 +55,6 @@ void sunShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void skyBoxShaderCb(Shader *shader, Drawable *drawable, Game *game) {    
-    // remove translation, so skybox is not changed by moving around
     glm::mat4 mvp = game->getView().getProjectionMatrix() *
         glm::mat4(glm::mat3(game->getView().getCameraMatrix())) * 
         drawable->getModelMatrix();
@@ -83,7 +74,7 @@ Scene* createStarSystems(GLFWwindow* window) {
         "skyboxSpace/back.png"
     };
     
-    Texture cubemapTexture = loadCubeMap(cubetex);
+    Texture cubemapTexture = TextureLoader::loadCubeMap(cubetex);
     // Create and compile shaders
     std::vector<Shader*> shaders = { 
         new Shader("StandardShading.vs", "StandardShading.fs", 
@@ -95,33 +86,25 @@ Scene* createStarSystems(GLFWwindow* window) {
     View view = View(window, glm::vec3(0.0f,20.0f,-40.0f));
 
     // Sun
-    Model *sun = new Model("PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
+    Drawable *sun = DrawableFactory::createModel("PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
 
     // Skybox
-    Mesh box = Primitives::createCube(1);
-    box.addTexture(cubemapTexture);
-    Model *skybox = new Model(box, SHADER_TYPE_SKY);
-    
+    Drawable *skybox = DrawableFactory::createPrimitive(PrimitiveType::CUBE, SHADER_TYPE_SKY);
+    skybox.addTexture(cubemapTexture);
+
     // Add planets
+    // These could be instances
     glm::vec3 trans;
     glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
-    Model tmp1 = Model("PlanetFirstTry.obj", "planet");
+    Planet *planet = new Planet(AssetLoader::loadModel("PlanetFirstTry.obj"), 0.7f);
     trans = glm::vec3(10, 0, 0);
     tmp1.transform(&scale, &trans, NULL);
-    
-    Model tmp2 = Model("PlanetFirstTry.obj", "planet");
-    trans = glm::vec3(20, 0, 20);
-    tmp2.transform(&scale, &trans, NULL);
-
-    
-    Model tmp3 = Model("PlanetFirstTry.obj", "planet");
+    Planet *planet2 = new Planet(AssetLoader::loadModel("PlanetFirstTry.obj"), 0.5f);
+    trans = glm::vec3(20, 0, 20)
+    tmp1.transform(&scale, &trans, NULL);
+    Planet *planet3 = new Planet(AssetLoader::loadMOdel("PlanetFirstTry.obj"), 0.2f);
     trans = glm::vec3(30, 0, 40);
     tmp3.transform(&scale, &trans, NULL);
-
-    Planet *planet = new Planet(tmp1, 0.7f);
-    Planet *planet2 = new Planet(tmp2, 0.5f);
-    Planet *planet3 = new Planet(tmp3, 0.2f);
-
     // INSTANCES TEST, load asteroids
     /*
     std::vector<glm::vec3> pos = {

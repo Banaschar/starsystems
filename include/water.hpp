@@ -1,13 +1,12 @@
-#ifndef WATER_H
-#define WATER_H
+#ifndef WATERRENDERER_H
+#define WATERRENDERER_H
 
 #include <iostream>
 
 #include "global.hpp"
 #include "shader.hpp"
 #include "drawable.hpp"
-#include "waterframebuffer.hpp"
-#include "assetloader.hpp"
+#include "textureloader.hpp"
 
 #define WATER_WAVE_SPEED 0.03f
 
@@ -17,19 +16,21 @@
  */
 class WaterRenderer {
 public:
-    WaterRenderer(Shader *shader, WaterFrameBuffer *waterFb) : shader_(shader) {
-        reflectionTexture_ = waterFb->getReflectionTexture();
-        refractionTexture_ = waterFb->getRefractionTexture();
-        dudvTexture_ = loadTextureFromFile("waterDUDV.png");
-        normalTexture_ = loadTextureFromFile("waterNormal.png");
-        depthTexture_ = waterFb->getRefractionDepthTexture();
+    WaterRenderer(Shader *shader, unsigned int reflectionTexture, 
+                    unsigned int refractionTexture,
+                    unsigned int depthTexture) : shader_(shader), 
+                            reflectionTexture_(reflectionTexture),
+                            refractionTexture_(refractionTexture_), depthTexture_(depthTexture) {
+
+        dudvTexture_ = TextureLoader::loadTextureFromFile("waterDUDV.png");
+        normalTexture_ = TextureLoader::loadTextureFromFile("waterNormal.png");
         renderPerformance_ = false;
     }
     WaterRenderer(Shader *shader) : shader_(shader) {
         renderPerformance_ = true;
-        waterTextureLow_ = loadTextureFromFile("waterLow.tga");
-        dudvTexture_ = loadTextureFromFile("waterDUDV.png");
-        normalTexture_ = loadTextureFromFile("waterNormal.png");
+        waterTextureLow_ = TextureLoader::loadTextureFromFile("waterLow.tga");
+        dudvTexture_ = TextureLoader::loadTextureFromFile("waterDUDV.png");
+        normalTexture_ = TextureLoader::loadTextureFromFile("waterNormal.png");
     }
     void render(std::vector<Drawable*> water, Game *game) {
         moveFactor_ += WATER_WAVE_SPEED * g_deltaTime;

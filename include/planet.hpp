@@ -4,26 +4,17 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#include "model.hpp"
-#include "game.hpp"
 #include "drawable.hpp"
 #include "global.hpp"
-#include "shader.hpp"
+
+const std::string DEFAULT_TYPE = "planet"
 
 class Planet : public Drawable {
 public:
-    Planet(Model model, float orbitSpeed);
-    void draw(Shader *shader);
-    void update(Game *game);
-    std::string type();
-    glm::vec3 getPosition(int index = 0);
-    glm::vec3 getScale(int index = 0);
-    glm::mat4 getMvp(int index = 0);
-    glm::mat4 getModelMatrix(int index = 0);
-    glm::mat3 getNormalMatrix(int index = 0);
-    void transform(glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree = 0.0);
+    Planet(Mesh mesh, float orbitSpeed, std::string type = DEFAULT_TYPE);
+
+    void update(Game *game) override;
 private:
-    Model model_;
     float orbitSpeed_;
     float orbitRadius_;
     float rotationVal_;

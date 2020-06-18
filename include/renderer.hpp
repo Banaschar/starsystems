@@ -15,8 +15,9 @@
 #include "shader.hpp"
 #include "waterframebuffer.hpp"
 #include "gui.hpp"
-#include "terrain.hpp"
-#include "water.hpp"
+#include "terrainrenderer.hpp"
+#include "waterrenderer.hpp"
+#include "skyrenderer.hpp"
 
 class Shader;
 
@@ -39,11 +40,8 @@ public:
         if (lightShader_)
             delete lightShader_;
 
-        //if (terrainShader_)
-        //    delete terrainShader_;
-
-        if (skyShader_)
-            delete skyShader_;
+        if (skyRenderer_)
+            delete skyRenderer_;
 
         if (waterRenderer_)
             delete waterRenderer_;
@@ -111,7 +109,7 @@ private:
     EntityMap entityMap_;
     GLFWwindow *window_;
     Shader *lightShader_ = NULL;
-    Shader *skyShader_ = NULL;
+    SkyRenderer *skyRenderer_ = NULL;
     WaterFrameBuffer *waterFrameBuffer_ = NULL;
     GuiRenderer *guiRenderer_ = NULL;
     TerrainRenderer *terrainRenderer_ = NULL;
@@ -126,13 +124,16 @@ private:
             else if (shader->type() == SHADER_TYPE_TERRAIN)
                 terrainRenderer_ = new TerrainRenderer(shader);
             else if (shader->type() == SHADER_TYPE_SKY)
-                skyShader_ = shader;
+                skyRenderer_ = new SkyRenderer(shader);
             else if (shader->type() == SHADER_TYPE_WATER) {
                 int width, height;
                 waterTypeQuality_ = true;
                 glfwGetWindowSize(window_, &width, &height);
                 waterFrameBuffer_ = new WaterFrameBuffer(width, height);
-                waterRenderer_ = new WaterRenderer(shader, waterFrameBuffer_);
+                waterRenderer_ = new WaterRenderer(shader, 
+                                        waterFrameBuffer_->getReflectionTexture(), 
+                                        waterFrameBuffer_->getRefractionTexture(), 
+                                        waterFrameBuffer_->getRefractionDepthTexture());
             } else if (shader->type() == SHADER_TYPE_WATER_PERFORMANCE) {
                 waterRenderer_ = new WaterRenderer(shader);
             }
@@ -168,11 +169,12 @@ private:
 
     void renderScene(DrawableList &lights, DrawableList &terrain,
                      DrawableList &sky, Game *game, glm::vec4 clipPlane) {
-        renderList(lightShader_, lights, game, clipPlane);         // render lights
+        renderList(lightShader_, lights, game, clipPlane);           // render lights
         if (terrainRenderer_)
             terrainRenderer_->render(terrain, game, clipPlane);      // render terrain
-        renderEntities(game, clipPlane);                           // render models
-        renderList(skyShader_, sky, game, clipPlane);              // render skybox
+        renderEntities(game, clipPlane);                             // render models
+        if (skyRenderer_)                           
+            skyRenderer_->render(sky, game, clipPlane);              // render skybox
     }
 
     void renderList(Shader *shader, DrawableList &drawables, Game *game, glm::vec4 clipPlane) {

@@ -23,50 +23,16 @@ Model::Model(const char *path, std::string type, std::vector<glm::vec3> instance
     initModel();
 }
 
-/*
- * TODO:
- * Split in multiple classes:
- * Entitiy (main class, only contains the transformation code)
- * model -> base sub class
- * instance -> instance sub class
- */
 void Model::initModel() {
-    if (modelPositions_.size()) {
-        glm::mat4 baseModel = glm::mat4(1.0);
-        mvps_.resize(modelPositions_.size());
-        modelMatrices_.resize(modelPositions_.size());
-        normalMatrices_.resize(modelPositions_.size());
-        scale_.resize(modelPositions_.size());
-        rotationAxis_.resize(modelPositions_.size());
-        rotationDegree_.resize(modelPositions_.size());
-        for (int i = 0; i < modelPositions_.size(); i++) {
-            mvps_[i] = modelMatrices_[i] = glm::translate(baseModel, modelPositions_[i]);
-            scale_[i] = glm::vec3(1.0f);
-            rotationAxis_[i] = glm::vec3(1.0f);
-            rotationDegree_[i] = 0.0f;
-        }
 
-        for (Mesh &mesh : meshes_)
-            mesh.makeInstances(&mvps_);
-    } else {
-        modelPositions_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-        modelMatrices_.push_back(glm::mat4(1.0));
-        mvps_.resize(1);
-        normalMatrices_.resize(1);
-        scale_.push_back(glm::vec3(1.0f));
-        rotationAxis_.push_back(glm::vec3(1.0f));
-        rotationDegree_.push_back(0.0f);
-    }
 }
 
-void Model::loadModel(const char *path) {
-    if (!loadObj(path, &meshes_))
-        fprintf(stdout, "Could not load model.\n");
-}
+
 
 void Model::draw(Shader *shader) {
-
     for (unsigned int i = 0; i < meshes_.size(); i++) {
+        for (Texture *tex : texturePerMesh_[i])
+            shader->bindTexture(tex.type, tex.id);
         meshes_[i].draw(shader);
     }
 }

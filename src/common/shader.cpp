@@ -127,8 +127,12 @@ void Shader::prepare(Drawable *drawable, Game *game) {
 
 void Shader::bindTexture(const std::string &name, unsigned int texId) {
 	glActiveTexture(GL_TEXTURE0 + textureCounter_);
+	if (name == "cubemap") {
+		glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
+	else
+		glBindTexture(GL_TEXTURE_2D, texId);
+
 	uniform(name, textureCounter_);
-	glBindTexture(GL_TEXTURE_2D, texId);
 	++textureCounter_;
 }
 

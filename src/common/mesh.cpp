@@ -149,27 +149,17 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
 
 void Mesh::draw(Shader *shader) {
     glBindVertexArray(vao_);
-    bool depthMask = false;
 
-    // bind appropriate textures
+    // bind textures if any
     unsigned int diffuseNr  = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr   = 1;
     unsigned int heightNr   = 1;
     unsigned int guiNr      = 1;
 
-    for (int i = 0; i < textures_.size(); i++) {
+    for (Texture &tex : textures_) {
         std::string number;
-        std::string type = textures_[i].type;
-        if (type == "cubemap") {
-            glDepthFunc(GL_LEQUAL);
-            glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_CUBE_MAP, textures_[i].id);
-            depthMask = true;
-            break;
-        }
-        glActiveTexture(GL_TEXTURE0 + i);
+        std::string type = tex.type;
 
         if(type == "texture_diffuse")
             number = std::to_string(diffuseNr++);
@@ -186,42 +176,37 @@ void Mesh::draw(Shader *shader) {
             break;
         }
 
-        shader->uniform((type + number).c_str(), i);
-        glBindTexture(GL_TEXTURE_2D, textures_[i].id);
+        shader->bindTexture((type + number).c_str(), tex.id);
     }
-    
+
     if (drawInstances_) {
-        updateIbo();
         glDrawElementsInstanced(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0, drawInstances_);
     }
     else
         glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
 
     glBindVertexArray(0);
-
-    if (depthMask) {
-        glDepthFunc(GL_LESS);
-        glDisable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    }
-
-    glActiveTexture(GL_TEXTURE0);
 }
 
 /*
  * Update the ibo attribute buffer that holds the matrices 
  * for instanced draw calls
  */
-void Mesh::updateIbo() {
-    drawInstances_ = instanceMatrices_->size();
+void Mesh::updateInstances(std::vector<mat4> *instanceMatrices) {
+    drawInstances_ = instanceMatrices->size();
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
     glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), &instanceMatrices_->front());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), instanceMatrices->front());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);
+}
+
+std::vector<Texture>& Mesh::getTextures() {
+    return textures_;
 }
 
 void Mesh::addColor(glm::vec4 color) {

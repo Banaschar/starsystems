@@ -5,11 +5,18 @@
 #include <string>
 #include <functional>
 
-#include "drawable.hpp"
-
+class Drawable;
 class Game;
 
 typedef std::function<void(Shader*, Drawable*, Game*)> callback_t;
+
+enum TextureType {
+    TEXTURE_TYPE_DIFFUSE,
+    TEXTURE_TYPE_SPECULAR,
+    TEXTURE_TYPE_NORMAL,
+    TEXTURE_TYPE_HEIGHT,
+    TEXTURE_TYPE_GUI
+}
 
 class Shader {
 public:
