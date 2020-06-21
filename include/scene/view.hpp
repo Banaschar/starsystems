@@ -1,10 +1,10 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include "global.hpp"
 #include <glm/glm.hpp>
-#include <GLFW/glfw3.h>
 #include <functional>
+
+struct GLFWwindow;
 
 class View {
 public:
@@ -12,11 +12,11 @@ public:
     View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir);
     View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float angleH, float angleVert, float fov,
         float speed, float mouseSpeed);
-    glm::mat4 getCameraMatrix();
-    glm::mat4 getProjectionMatrix();
+    glm::mat4& getCameraMatrix();
+    glm::mat4& getProjectionMatrix();
     glm::vec3& getCameraPosition();
     glm::mat4 getOrthoProjection();
-    glm::vec3 getWorldNormal();
+    glm::vec3& getWorldNormal();
     void invertPitch();
     void update();
     void updateForce();

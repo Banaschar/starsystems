@@ -1,9 +1,20 @@
 #include "planet.hpp"
+#include "global.hpp"
 
-Planet::Planet(Mesh mesh, float orbitSpeed, std::string type) 
+Planet::Planet(Mesh mesh, float orbitSpeed, glm::vec3 position, std::string type) 
             : Drawable(mesh, type), orbitSpeed_(orbitSpeed) {
-    orbitRadius_ = glm::distance(model_.getPosition(), glm::vec3(0.0f, 0.0f, 0.0f));
-    rotationVal_ = 0.0;
+    initPlanet(position);
+}
+
+Planet::Planet(std::vector<Mesh> meshes, float orbitSpeed, glm::vec3 position, std::string type)
+            : Drawable(meshes, type), orbitSpeed_(orbitSpeed) {
+    initPlanet(position);
+}
+
+void Planet::initPlanet(glm::vec3 position) {
+    Drawable::transform(NULL, &position, NULL);
+    orbitRadius_ = glm::distance(Drawable::getPosition(), glm::vec3(0.0f, 0.0f, 0.0f));
+    rotationVal_ = 0.0;  
 }
 
 void Planet::update(Game *game) {
@@ -13,8 +24,6 @@ void Planet::update(Game *game) {
     glm::vec3 trans = glm::vec3(0.0f);
     trans.x = sin(rotationVal_) * orbitRadius_;
     trans.z = cos(rotationVal_) * orbitRadius_;
-    trans = trans - model_.getPosition();
+    trans = trans - Drawable::getPosition();
     transform(NULL, &trans, NULL);
-    
-    model_.update(game);
 }

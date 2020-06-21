@@ -5,13 +5,12 @@
 #include <fstream>
 #include <algorithm>
 #include <sstream>
-using namespace std;
-
-#include <GL/glew.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "oglheader.hpp"
 #include "shader.hpp"
+#include "drawable.hpp"
 
 Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, 
 				const std::string type, const callback_t cb) : type_(type),
@@ -127,13 +126,47 @@ void Shader::prepare(Drawable *drawable, Game *game) {
 
 void Shader::bindTexture(const std::string &name, unsigned int texId) {
 	glActiveTexture(GL_TEXTURE0 + textureCounter_);
-	if (name == "cubemap") {
+	if (name.substr(0, name.size()-1) == "texture_cubemap")
 		glBindTexture(GL_TEXTURE_CUBE_MAP, texId);
 	else
 		glBindTexture(GL_TEXTURE_2D, texId);
 
 	uniform(name, textureCounter_);
 	++textureCounter_;
+}
+
+void Shader::handleMeshTextures(std::vector<Texture> &textures) {
+    // bind textures if any
+    unsigned int diffuseNr  = 1;
+    unsigned int specularNr = 1;
+    unsigned int normalNr   = 1;
+    unsigned int heightNr   = 1;
+    unsigned int guiNr      = 1;
+    unsigned int cubeNr     = 1;
+
+    for (Texture &tex : textures) {
+        std::string number;
+        std::string type = tex.type;
+
+        if(type == "texture_diffuse")
+            number = std::to_string(diffuseNr++);
+        else if(type == "texture_specular")
+            number = std::to_string(specularNr++);
+        else if(type == "texture_normal")
+            number = std::to_string(normalNr++);
+        else if(type == "texture_height")
+            number = std::to_string(heightNr++);
+        else if(type == "texture_gui")
+            number = std::to_string(guiNr++);
+        else if(type == "texture_cubemap")
+            number = std::to_string(cubeNr++);
+        else {
+            std::cout << "Texture with unknown type: " << type << std::endl;
+            break;
+        }
+
+        bindTexture((type + number).c_str(), tex.id);
+    }
 }
 
 void Shader::uniform(const std::string &name, glm::mat4 value) {

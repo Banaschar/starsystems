@@ -5,32 +5,26 @@
 #include <vector>
 #include <string>
 
-#include "shader.hpp"
-
-struct Vertex {
-    glm::vec3 position;
-    glm::vec3 normal;
-    glm::vec2 textureCoords;
-    glm::vec4 color;
-};
-
-struct Texture {
-    unsigned int id;
-    std::string type;
-    std::string path;
-};
+#include "enginetypes.hpp"
 
 class Mesh {
 private:
+    std::vector<Texture> textures_;
     std::vector<Vertex> vertices_;
     std::vector<unsigned int> indices_;
-    unsigned int drawInstances_;
+    bool isInstanced_ = false;
+    unsigned int drawInstances_ = 0;
     unsigned int vao_, vbo_, ebo_, ibo_;
     void generateIndices();
     void initMesh();
 public:
+    /*
+     * TODO: Incomplete type. Handle this
+     */
+    Mesh();
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {});
-    void draw();
+    Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, 
+                                std::vector<unsigned int> indices = {});
     void updateMesh();
     void updateInstances(std::vector<glm::mat4> *instanceMatrices);
     void optimize();
@@ -38,7 +32,9 @@ public:
     std::vector<Texture>& getTextures();
     void addColor(glm::vec4 color);
     void makeInstances(std::vector<glm::mat4> *instanceMatrices);
-    std::vector<Vertex>& getVertices();
-    std::vector<unsigned int>& getIndices(); 
+    unsigned int getVao();
+    unsigned int getIndicesSize();
+    unsigned int getInstanceSize();
+    bool& isInstanced();
 };
 #endif

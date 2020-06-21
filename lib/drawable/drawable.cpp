@@ -1,0 +1,148 @@
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "drawable.hpp"
+
+
+Drawable::Drawable() {
+    type_ = DEFAULT_TYPE;
+    initDrawable();
+}
+Drawable::Drawable(Mesh mesh, std::string type, std::vector<glm::vec3> instancePositions)
+             : type_(type), modelPositions_(instancePositions) {
+    meshes_.push_back(mesh);
+    if (instancePositions.empty())
+        initDrawable();
+    else
+        initInstances();
+}
+Drawable::Drawable(std::vector<Mesh> meshes, std::string type, std::vector<glm::vec3> instancePositions)
+             : type_(type), modelPositions_(instancePositions) {
+    meshes_ = meshes;
+    if (instancePositions.empty())
+        initDrawable();
+    else
+        initInstances();
+}
+Drawable::Drawable(Mesh mesh, Texture texture, std::string type, std::vector<glm::vec3> instancePositions) 
+            : type_(type), modelPositions_(instancePositions) {
+    meshes_.push_back(mesh);
+    addTexture(texture);
+    if (instancePositions.empty())
+        initDrawable();
+    else
+        initInstances();
+}
+
+void Drawable::update(Game *game) {
+    ;
+}
+
+std::string Drawable::type() {
+    return type_;
+}
+
+void Drawable::setType(std::string type) {
+    type_ = type;
+}
+
+void Drawable::addTexture(Texture tex, int index) {
+    meshes_.at(index).addTexture(tex);
+}
+
+void Drawable::addColor(glm::vec4 color, int index) {
+    meshes_.at(index).addColor(color);
+}
+
+void Drawable::addMesh(Mesh mesh) {
+    meshes_.push_back(mesh);
+}
+
+std::vector<Texture>& Drawable::getTextures(int index) {
+    return meshes_.at(index).getTextures();
+}
+
+glm::vec3 Drawable::getPosition(int index) {
+    return modelPositions_.at(index);
+}
+
+glm::vec3 Drawable::getScale(int index) {
+    return scale_.at(index);
+}
+
+glm::mat4 Drawable::getModelMatrix(int index) {
+    return modelMatrices_.at(index);
+}
+
+glm::mat3 Drawable::getNormalMatrix(int index) {
+    return glm::mat3(glm::transpose(glm::inverse(modelMatrices_.at(index))));
+}
+
+void Drawable::transform(glm::vec3 *scaleVec, glm::vec3 *translateVec, glm::vec3 *rotationAxis, float degree) {
+    transform(0, scaleVec, translateVec, rotationAxis, degree);
+}
+
+void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, glm::vec3 *rotationAxis, float degree) {
+    if (translateVec) {
+        modelPositions_[index] += *translateVec;
+    }
+    
+    if (scaleVec) {
+        scale_[index].x *= scaleVec->x;
+        scale_[index].y *= scaleVec->y;
+        scale_[index].z *= scaleVec->z;
+    }
+
+    if (rotationAxis) {
+        if (degree == 0.0f) {
+            fprintf(stderr, "Rotation axis specified but no degree\n");
+        } else {
+            rotationAxis_[index] = *rotationAxis;
+            rotationDegree_[index] = degree;
+        }
+    }
+    glm::mat4 tmp = glm::mat4(1.0f);
+    tmp = glm::scale(tmp, scale_[index]);
+    tmp = glm::rotate(tmp, glm::radians(rotationDegree_[index]), rotationAxis_[index]);
+    tmp = glm::translate(tmp, modelPositions_[index]);
+    modelMatrices_[index] = tmp; 
+}
+
+void Drawable::setPosition(glm::vec3 pos, int index) {
+    modelPositions_.at(index) = pos;
+    transform(index, NULL, NULL, NULL);
+}
+
+std::vector<Mesh>& Drawable::getMeshes() {
+    return meshes_;
+}
+
+void Drawable::submitInstanceBuffer(std::vector<glm::mat4> *instanceMatrices) {
+    for (Mesh &mesh : meshes_) {
+        mesh.updateInstances(instanceMatrices);
+    }
+}
+
+void Drawable::initDrawable() {
+    modelPositions_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
+    modelMatrices_.push_back(glm::mat4(1.0f));
+    scale_.push_back(glm::vec3(1.0f));
+    rotationAxis_.push_back(glm::vec3(1.0f));
+    rotationDegree_.push_back(0.0f);
+}
+
+void Drawable::initInstances() {
+    int size = modelPositions_.size();
+    modelMatrices_.resize(size);
+    scale_.resize(size);
+    rotationAxis_.resize(size);
+    rotationDegree_.resize(size);
+
+    glm::mat4 base = glm::mat4(1.0f);
+    for (int i = 0; i < modelPositions_.size(); i++) {
+        modelMatrices_[i] = glm::translate(base, modelPositions_[i]);
+    }
+
+    for (Mesh &mesh : meshes_) {
+        mesh.makeInstances(&modelMatrices_);
+    }
+}

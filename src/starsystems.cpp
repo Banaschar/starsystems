@@ -1,39 +1,16 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <iostream>
-#include <forward_list>
 
-//#include <GL/glew.h>
-#include "global.hpp"
-#include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/string_cast.hpp>
-using namespace glm;
-
-#include "shader.hpp"
-#include "view.hpp"
-#include "mesh.hpp"
-#include "model.hpp"
-#include "scene.hpp"
+#include "engine.hpp"
 #include "planet.hpp"
-#include "game.hpp"
-#include "primitives.hpp"
-#include "generator.hpp"
-#include "renderer.hpp"
-#include "gui.hpp"
-#include "light.hpp"
-#include "terrain.hpp"
-
-float g_deltaTime = 0.0f;
 
 /*
  *
  */
 void standardShadingCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", drawable->getMvp());
+    shader->uniform("MVP", game->getView().getProjectionMatrix() 
+                            * game->getView().getCameraMatrix()
+                            * drawable->getModelMatrix());
+
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("cameraPos", game->getView().getCameraPosition());
@@ -50,8 +27,11 @@ void standardShadingCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void sunShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", drawable->getMvp());
-    shader->uniform("color", glm::vec4(1.0f, 1.0f, 0.2f, 0.7f));
+    Light *light = dynamic_cast<Light*>(drawable);
+    shader->uniform("MVP", game->getView().getProjectionMatrix() 
+                            * game->getView().getCameraMatrix()
+                            * drawable->getModelMatrix());
+    shader->uniform("color", light->getColor());
 }
 
 void skyBoxShaderCb(Shader *shader, Drawable *drawable, Game *game) {    
@@ -63,48 +43,50 @@ void skyBoxShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("MVP", mvp);
 }
 
-Scene* createStarSystems(GLFWwindow* window) {
+Scene* createStarSystems(Engine *engine) {
     
     std::vector<std::string> cubetex = {
-        "skyboxSpace/right.png",
-        "skyboxSpace/left.png",
-        "skyboxSpace/top.png",
-        "skyboxSpace/bottom.png",
-        "skyboxSpace/front.png",
-        "skyboxSpace/back.png"
+        "assets/skyboxSpace/right.png",
+        "assets/skyboxSpace/left.png",
+        "assets/skyboxSpace/top.png",
+        "assets/skyboxSpace/bottom.png",
+        "assets/skyboxSpace/front.png",
+        "assets/skyboxSpace/back.png"
     };
     
-    Texture cubemapTexture = TextureLoader::loadCubeMap(cubetex);
     // Create and compile shaders
     std::vector<Shader*> shaders = { 
-        new Shader("StandardShading.vs", "StandardShading.fs", 
+        new Shader("shader/StandardShading.vs", "shader/StandardShading.fs", 
                                         "planet", standardShadingCb),
-        new Shader("sun.vs", "sun.fs", SHADER_TYPE_LIGHT, sunShaderCb),
-        new Shader("skybox.vs", "skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb)
+        new Shader("shader/sun.vs", "shader/sun.fs", SHADER_TYPE_LIGHT, sunShaderCb),
+        new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb)
     };
 
-    View view = View(window, glm::vec3(0.0f,20.0f,-40.0f));
+    View view = View(engine->getWindow(), glm::vec3(0.0f,20.0f,-40.0f));
 
     // Sun
     Drawable *sun = DrawableFactory::createModel("PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
 
     // Skybox
-    Drawable *skybox = DrawableFactory::createPrimitive(PrimitiveType::CUBE, SHADER_TYPE_SKY);
-    skybox.addTexture(cubemapTexture);
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
 
     // Add planets
     // These could be instances
-    glm::vec3 trans;
+    std::vector<Mesh> planetMeshes;
+    if (!AssetLoader::loadModel("PlanetFirstTry.obj", &planetMeshes)) {
+        std::cout << "Could not load model" << std::endl;
+        return NULL;
+    }
+
+
+    Planet *planet1 = new Planet(planetMeshes, 0.7f, glm::vec3(10, 0, 0));
+    Planet *planet2 = new Planet(planetMeshes, 0.5f, glm::vec3(20, 0, 20));
+    Planet *planet3 = new Planet(planetMeshes, 0.2f, glm::vec3(30, 0, 40));
+
     glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
-    Planet *planet = new Planet(AssetLoader::loadModel("PlanetFirstTry.obj"), 0.7f);
-    trans = glm::vec3(10, 0, 0);
-    tmp1.transform(&scale, &trans, NULL);
-    Planet *planet2 = new Planet(AssetLoader::loadModel("PlanetFirstTry.obj"), 0.5f);
-    trans = glm::vec3(20, 0, 20)
-    tmp1.transform(&scale, &trans, NULL);
-    Planet *planet3 = new Planet(AssetLoader::loadMOdel("PlanetFirstTry.obj"), 0.2f);
-    trans = glm::vec3(30, 0, 40);
-    tmp3.transform(&scale, &trans, NULL);
+    planet1->transform(&scale, NULL, NULL);
+    planet2->transform(&scale, NULL, NULL);
+    planet3->transform(&scale, NULL, NULL);
     // INSTANCES TEST, load asteroids
     /*
     std::vector<glm::vec3> pos = {
@@ -121,18 +103,20 @@ Scene* createStarSystems(GLFWwindow* window) {
     Game *game = new Game(view);
     game->addLight(sun);
     game->addSky(skybox);
-    game->addEntity(planet);
+    game->addEntity(planet1);
     game->addEntity(planet2);
     game->addEntity(planet3);
 
-    Renderer *renderer = new Renderer(window, shaders);
+    Renderer *renderer = new Renderer(shaders);
     Scene *scene = new Scene(game, renderer);
 
     return scene;
 }
 
 void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {    
-    shader->uniform("MVP", drawable->getMvp());
+    shader->uniform("MVP", game->getView().getProjectionMatrix() 
+                            * game->getView().getCameraMatrix()
+                            * drawable->getModelMatrix());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("cameraPos", game->getView().getCameraPosition());
@@ -143,7 +127,9 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void flatColorCb(Shader *shader, Drawable *drawable, Game *game) {   
-    shader->uniform("MVP", drawable->getMvp());
+    shader->uniform("MVP", game->getView().getProjectionMatrix() 
+                            * game->getView().getCameraMatrix()
+                            * drawable->getModelMatrix());
 }
 
 void instanceShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -152,7 +138,9 @@ void instanceShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", drawable->getMvp());
+    shader->uniform("MVP", game->getView().getProjectionMatrix() 
+                            * game->getView().getCameraMatrix()
+                            * drawable->getModelMatrix());
     shader->uniform("worldNormal", game->getView().getWorldNormal());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
@@ -167,41 +155,39 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
                            * drawable->getModelMatrix());
 }
 
-Scene* createPlane(GLFWwindow *window) {
-    std::cout << "dsassdddddadddaddsdasal" << std::endl;
+Scene* createPlane(Engine *engine) {
+    std::cout << "Create Plane." << std::endl;
     /*
     std::vector<std::string> cubetex = {
-        "skyboxSky/right.jpg",
-        "skyboxSky/left.jpg",
-        "skyboxSky/top.jpg",
-        "skyboxSky/bottom.jpg",
-        "skyboxSky/front.jpg",
-        "skyboxSky/back.jpg"
+        "assets/skyboxSky/right.jpg",
+        "assets/skyboxSky/left.jpg",
+        "assets/skyboxSky/top.jpg",
+        "assets/skyboxSky/bottom.jpg",
+        "assets/skyboxSky/front.jpg",
+        "assets/skyboxSky/back.jpg"
     };
     */
     std::vector<std::string> cubetex = {
-        "skyboxSky2/right.png",
-        "skyboxSky2/left.png",
-        "skyboxSky2/top.png",
-        "skyboxSky2/bottom.png",
-        "skyboxSky2/front.png",
-        "skyboxSky2/back.png"
+        "assets/skyboxSky2/right.png",
+        "assets/skyboxSky2/left.png",
+        "assets/skyboxSky2/top.png",
+        "assets/skyboxSky2/bottom.png",
+        "assets/skyboxSky2/front.png",
+        "assets/skyboxSky2/back.png"
     };
     
-    Texture cubemapTexture = loadCubeMap(cubetex);
-    
     std::vector<Shader*> shaders = {
-        new Shader("plane.vs", "plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
-        new Shader("skybox.vs", "skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
-        new Shader("waterShader.vs", "waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
+        new Shader("shader/plane.vs", "shader/plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
+        new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
+        new Shader("shader/waterShader.vs", "shader/waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
         //new Shader("waterShader.vs", "waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
-        new Shader("flatColor.vs", "flatColor.fs", "flat", flatColorCb),
-        new Shader("guiShader.vs", "guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
+        new Shader("shader/flatColor.vs", "shader/flatColor.fs", "flat", flatColorCb),
+        new Shader("shader/guiShader.vs", "shader/guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)
     };
 
     Light *sun = new Light(glm::vec3(200000, 200000, 10000));
 
-    View view = View(window, glm::vec3(0,20,-20));
+    View view = View(engine->getWindow(), glm::vec3(0,20,-20));
     Game *game = new Game(view);
     game->addSun(sun);
 
@@ -210,105 +196,77 @@ Scene* createPlane(GLFWwindow *window) {
     game->addTerrain(terrain);
 
     // SKYBOX
-    Mesh box = Primitives::createCube(1);
-    box.addTexture(cubemapTexture);
-    Model *skybox = new Model(box, SHADER_TYPE_SKY);
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
     game->addSky(skybox);
 
     // GUI
     Gui *gui = new Gui();
 
     // WATER TEST
-    Mesh mesh = Primitives::createQuad();
-    mesh.addColor(glm::vec4(0.0,0.0,1.0,0.6));
-    Model *waterTile = new Model(mesh, SHADER_TYPE_WATER);
+    Drawable *waterTile = DrawableFactory::createPrimitive(PrimitiveType::QUAD, SHADER_TYPE_WATER);
+    waterTile->addColor(glm::vec4(0.0,0.0,1.0,0.6));
     glm::vec3 trans = glm::vec3(0, 0, 0);
     glm::vec3 scale = glm::vec3(300, 1, 300);
     waterTile->transform(&scale, &trans, NULL);
     game->addWater(waterTile);
     
-    Renderer *renderer = new Renderer(window, shaders);
+    Renderer *renderer = new Renderer(shaders);
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);
 
     return scene;
 }
 
+Scene *test(Engine *engine) {
+    std::vector<std::string> cubetex = {
+        "assets/skyboxSky2/right.png",
+        "assets/skyboxSky2/left.png",
+        "assets/skyboxSky2/top.png",
+        "assets/skyboxSky2/bottom.png",
+        "assets/skyboxSky2/front.png",
+        "assets/skyboxSky2/back.png"
+    };
+    std::vector<Shader*> shaders = { 
+        new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
+        new Shader("shader/sun.vs", "shader/sun.fs", SHADER_TYPE_LIGHT, sunShaderCb),
+    };
+
+    View view = View(engine->getWindow(), glm::vec3(0,20,-20));
+    Game *game = new Game(view);
+
+    Drawable *light = DrawableFactory::createLight("assets/PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
+    game->addSky(skybox);
+    game->addSun(light);
+
+    Renderer *renderer = new Renderer(shaders);
+    Scene *scene = new Scene(game, renderer);
+
+    return scene;
+}
+
 int main() 
 {
-    glewExperimental = true;
-    if (!glfwInit()) {
-        fprintf(stderr, "Failed to init GLFW\n");
-        return -1;
-    }
-
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-    //Open windows and create its opengl context
-    GLFWwindow* window;
-    window = glfwCreateWindow(1280, 720, "star systems", NULL, NULL);
-    if (window == NULL) {
-        fprintf(stderr, "Failed to open GLFW window\n");
-        glfwTerminate();
-        return -1;
-    }
-    glfwMakeContextCurrent(window);
-
-    // Init GLEW
-    GLenum glewinit = glewInit();
-    if (glewinit != GLEW_OK) {
-        std::cout << "GlEW init failed! " << glewGetErrorString(glewinit);
-        glfwTerminate();
-        return -1;
-    }
-
-    // Init key capture
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-
-    // Background color
-    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
-
-    // Only draw if new fragment is closer to camera then one behind
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-    // Don't render triangles which normal is not torwards the camera
-    glEnable(GL_CULL_FACE);
+    Engine engine = Engine(1280, 720, "starsystem");
+    if (!engine.getWindow())
+        return 0;
 
     // create starsystem scene
-    //Scene *scene = createStarSystems(window);
+    //Scene *scene = createStarSystems(engine.getWindow);
 
     //create plane
-    Scene *scene = createPlane(window);
+    Scene *scene = createPlane(&engine);
 
-    int nbFrames = 0;
-    float lastFrame = glfwGetTime();
-    float lastTime = lastFrame;
-    do {
-        float currentFrame = glfwGetTime();
-        g_deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        nbFrames++;
-        if (currentFrame - lastTime >= 1.0) {
-            printf("%f ms/frame -> %i FPS\n", 1000.0/float(nbFrames), nbFrames);
-            nbFrames = 0;
-            lastTime += 1.0;
-        }
+    //Scene *scene = test(&engine);
+    
+    if (!scene) 
+        return 0;
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    std::cout << "Starting render loop..." << std::endl;
 
-        scene->update();
-        scene->render();
+    engine.addScene(scene);
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
-    } while(glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-            glfwWindowShouldClose(window) == 0);
-
-    glfwTerminate();
-    delete scene;
+    engine.render();
 
     return 0;
 }

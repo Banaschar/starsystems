@@ -1,9 +1,9 @@
 #version 330 core
 out vec4 SunColor;
 
-uniform vec4 color;
+uniform vec3 color;
 
 void main()
 {
-    SunColor = color;
+    SunColor = vec4(color, 1.0);
 }

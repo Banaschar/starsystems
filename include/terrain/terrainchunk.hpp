@@ -2,6 +2,7 @@
 #define TERRAINCHUNK_H
 
 #include <array>
+#include "terrain.hpp"
 
 /*
  * Terrainchunk used in the Quad tree.
@@ -12,51 +13,14 @@
  */
 class TerrainChunk {
 public:
-    TerrainChunk(Drawable *terrain, Drawable *water) : terrain_(terrain), water_(water) {}
-    ~TerrainChunk() {
-        for (TerrainChunk *t : children_)
-            delete t;
+    TerrainChunk(Drawable *terrain, Drawable *water);
+    ~TerrainChunk();
 
-        if (terrain_)
-            delete terrain_
+    void setParent(TerrainChunk *parent);
 
-        if (water_)
-            delete water_;
-    }
+    bool addChild(TerrainChunk *child);
 
-    void setParent(TerrainChunk *parent) {
-        parent_ = parent;
-    }
-
-    bool addChild(TerrainChunk *child) {
-        if (index_ == 4)
-            return false;
-
-        child->setParent(this);
-        children_[index++] = child;
-        return true;
-    }
-
-    void update() {
-        terrain_->update();
-        water_->update();
-        for (TerrainChunk *child : children_)
-            child->update();
-    }
-
-    void drawTerrain() {
-        terrain_->draw();
-
-        for (TerrainChunk *child : children_)
-            child->drawTerrain();
-    }
-
-    void drawWater() {
-        water_->draw();
-
-        for (TerrainChunk *child : children_)
-            child->drawWater();
-    }
+    void update();
 
 private:
     int index_ = 0;
@@ -64,5 +28,5 @@ private:
     std::array<TerrainChunk*, 4> children_;
     Drawable *terrain_;
     Drawable *water_;
-}
+};
 #endif

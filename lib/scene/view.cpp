@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "global.hpp"
 #include "view.hpp"
+#include "windowheader.hpp"
 
 #define DEFAULT_NEAR_PLANE 0.1f
 #define DEFAULT_FAR_PLANE 1000.0f
@@ -54,11 +56,11 @@ void View::setupInput() {
     glfwSetScrollCallback(window_, sCb);
 }
 
-glm::mat4 View::getCameraMatrix() {
+glm::mat4& View::getCameraMatrix() {
     return cameraMatrix_;
 }
 
-glm::mat4 View::getProjectionMatrix() {
+glm::mat4& View::getProjectionMatrix() {
     return projectionMatrix_;
 }
 
@@ -74,7 +76,7 @@ glm::vec3& View::getCameraPosition() {
     return camPosition_;
 }
 
-glm::vec3 View::getWorldNormal() {
+glm::vec3& View::getWorldNormal() {
     return worldUp_;
 }
 

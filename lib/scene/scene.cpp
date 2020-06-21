@@ -28,7 +28,9 @@ void Scene::addGui(Gui *gui) {
 }
 
 void Scene::setupScene() {
-    ;
+    int width, height;
+    game_->getView().getWindowSize(&width, &height);
+    renderer_->resolutionChange(width, height);
 }
 
 /*

@@ -1,11 +1,12 @@
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <vector>
 #include <string>
 
-#include <iostream>
-
+#include "oglheader.hpp"
 #include "mesh.hpp"
+
+Mesh::Mesh() {
+
+}
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) :
             vertices_(vertices), indices_(indices) {
@@ -120,9 +121,8 @@ void Mesh::updateMesh() {
 }
 
 void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
-    instanceMatrices_ = instanceMatrices;
-
-    drawInstances_ = instanceMatrices_->size();
+    isInstanced_ = true;
+    drawInstances_ = instanceMatrices->size();
 
     glGenBuffers(1, &ibo_);
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
@@ -147,66 +147,21 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
     glBindVertexArray(0);
 }
 
-void Mesh::draw(Shader *shader) {
-    glBindVertexArray(vao_);
-
-    // bind textures if any
-    unsigned int diffuseNr  = 1;
-    unsigned int specularNr = 1;
-    unsigned int normalNr   = 1;
-    unsigned int heightNr   = 1;
-    unsigned int guiNr      = 1;
-
-    for (Texture &tex : textures_) {
-        std::string number;
-        std::string type = tex.type;
-
-        if(type == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
-        else if(type == "texture_specular")
-            number = std::to_string(specularNr++);
-        else if(type == "texture_normal")
-            number = std::to_string(normalNr++);
-        else if(type == "texture_height")
-            number = std::to_string(heightNr++);
-        else if(type == "texture_gui")
-            number = std::to_string(guiNr++);
-        else {
-            std::cout << "Texture with unknown type: " << type << std::endl;
-            break;
-        }
-
-        shader->bindTexture((type + number).c_str(), tex.id);
-    }
-
-    if (drawInstances_) {
-        glDrawElementsInstanced(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0, drawInstances_);
-    }
-    else
-        glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
-
-    glBindVertexArray(0);
-}
-
 /*
  * Update the ibo attribute buffer that holds the matrices 
  * for instanced draw calls
  */
-void Mesh::updateInstances(std::vector<mat4> *instanceMatrices) {
+void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices) {
     drawInstances_ = instanceMatrices->size();
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
     glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), instanceMatrices->front());
+    glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), &instanceMatrices->front());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);
-}
-
-std::vector<Texture>& Mesh::getTextures() {
-    return textures_;
 }
 
 void Mesh::addColor(glm::vec4 color) {
@@ -216,10 +171,22 @@ void Mesh::addColor(glm::vec4 color) {
     updateMesh();
 }
 
-std::vector<Vertex>& Mesh::getVertices() {
-    return vertices_;
+unsigned int Mesh::getVao() {
+    return vao_;
 }
 
-std::vector<unsigned int>& Mesh::getIndices() {
-    return indices_;
+unsigned int Mesh::getIndicesSize() {
+    return indices_.size();
+}
+
+unsigned int Mesh::getInstanceSize() {
+    return drawInstances_;
+}
+
+bool& Mesh::isInstanced() {
+    return isInstanced_;
+}
+
+std::vector<Texture>& Mesh::getTextures() {
+    return textures_;
 }
