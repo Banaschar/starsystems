@@ -44,6 +44,13 @@ vec4 calculateLighting(vec3 normal) {
     return vec4(ambient + diffuse + specular, 1.0);
 }
 
+/*
+ * TODO: Use a different blending strategy.
+ * Blend grass and rock based on normal vector for example, e.g.
+ * the more the normal is in y direction, the more grass, the more horizonal, e.g. x/z
+ * direction, the more rock.
+ *
+ */
 vec4 blendTextures() {
     float spread = 0.45;
     float part = 1.0 / 4.0;

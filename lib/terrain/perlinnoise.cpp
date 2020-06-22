@@ -12,9 +12,13 @@ PerlinNoise::PerlinNoise(int octaves, float amplitude, float roughness, unsigned
         p = perm_;
 }
 
+/*
+ * Function based on "Fractional Brownian motion"
+ * to have multiple parameters to vary the created terrain.
+ * Also handles the problem with integers in perlin.
+ */
 float PerlinNoise::getNoise2d(int x, int y) {
     float total = 0;
-    ;
     float d = (float)glm::pow(2, octaves_ - 1);
     for (int i = 0; i < octaves_; i++) {
         float freq = (float)(glm::pow(2, i) / d);

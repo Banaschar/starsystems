@@ -2,7 +2,7 @@
 #include "perlinnoise.hpp"
 
 Terrain::Terrain(int dimension) : dimension_(dimension) {
-    PerlinNoise pNoise = PerlinNoise(4, 10.0f, 0.01f);
+    PerlinNoise pNoise = PerlinNoise(4, 20.0f, 0.09f);
     TerrainGenerator terrainGen = TerrainGenerator(pNoise);
 
     initTerrain(terrainGen);

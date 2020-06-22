@@ -55,6 +55,10 @@ std::vector<glm::vec3> TerrainGenerator::generateNormalVector(std::vector<float>
     return normals;
 }
 
+/*
+ * Generate height map.
+ * TODO: Fix normal vectors, if I take only abs values as heights, the lighting sucks
+ */
 std::vector<float> TerrainGenerator::generateHeights(int dimension, PerlinNoise pNoise) {
     std::vector<float> heights(dimension * dimension);
     for (int z = 0; z < dimension; z++) {

@@ -6,5 +6,7 @@ class TerrainQuadTree {
     TerrainQuadTree();
 
   private:
+    int rootChunks = 1;
+    TerrainChunk *rootNode;
 };
 #endif
