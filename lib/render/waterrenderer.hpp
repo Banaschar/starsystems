@@ -11,14 +11,13 @@
  * TODO: Load dudv texture somewhere else and pass it to the renderer
  */
 class WaterRenderer {
-public:
-    WaterRenderer(Shader *shader, VaoRenderer *vaoRenderer, 
-                    unsigned int reflectionTexture, 
-                    unsigned int refractionTexture,
-                    unsigned int depthTexture);
+  public:
+    WaterRenderer(Shader *shader, VaoRenderer *vaoRenderer, unsigned int reflectionTexture,
+                  unsigned int refractionTexture, unsigned int depthTexture);
     WaterRenderer(Shader *shader, VaoRenderer *vaoRenderer);
-    void render(std::vector<Drawable*> water, Game *game);
-private:
+    void render(std::vector<Drawable *> water, Game *game);
+
+  private:
     Shader *shader_;
     VaoRenderer *vaoRenderer_;
     unsigned int waterTextureLow_;

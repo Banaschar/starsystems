@@ -2,22 +2,23 @@
 #define GENERATOR_H
 
 //#include <bits/stdc++.h>
+#include "colorgenerator.hpp"
 #include "mesh.hpp"
 #include "perlinnoise.hpp"
-#include "colorgenerator.hpp"
 
 class TerrainGenerator {
-public:
+  public:
     TerrainGenerator();
     TerrainGenerator(PerlinNoise pNoise);
     TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise);
 
     Mesh generateTerrain(int dimension);
 
-    ColorGenerator& getColorGenerator();
+    ColorGenerator &getColorGenerator();
 
-    PerlinNoise& getPerlinNoise();
-private:
+    PerlinNoise &getPerlinNoise();
+
+  private:
     ColorGenerator colorGen_;
     PerlinNoise pNoise_;
 

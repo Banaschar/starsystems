@@ -13,7 +13,7 @@ Gui::Gui(Texture tex, glm::vec2 position, glm::vec2 scale) {
 }
 
 Gui::~Gui() {
-    for (Drawable* m : guiElements_) {
+    for (Drawable *m : guiElements_) {
         delete m;
     }
 }
@@ -33,6 +33,6 @@ void Gui::update(Game *game) {
     ;
 }
 
-std::vector<Drawable*>* Gui::getGuiElements() {
+std::vector<Drawable *> *Gui::getGuiElements() {
     return &guiElements_;
 }

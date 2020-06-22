@@ -10,12 +10,13 @@
 const std::string DEFAULT_PLANET_TYPE = "planet";
 
 class Planet : public Drawable {
-public:
+  public:
     Planet(Mesh mesh, float orbitSpeed, glm::vec3 position, std::string type = DEFAULT_PLANET_TYPE);
     Planet(std::vector<Mesh> meshes, float orbitSpeed, glm::vec3 position, std::string type = DEFAULT_PLANET_TYPE);
 
     void update(Game *game) override;
-private:
+
+  private:
     float orbitSpeed_;
     float orbitRadius_;
     float rotationVal_;

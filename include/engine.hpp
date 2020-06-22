@@ -1,28 +1,29 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 
-#include "global.hpp"
+#include "assetloader.hpp"
 #include "drawable.hpp"
 #include "drawablefactory.hpp"
-#include "assetloader.hpp"
 #include "game.hpp"
-#include "scene.hpp"
-#include "view.hpp"
+#include "global.hpp"
 #include "gui.hpp"
+#include "scene.hpp"
 #include "terrain.hpp"
 #include "terrainchunk.hpp"
 #include "terrainquadtree.hpp"
+#include "view.hpp"
 
 struct GLFWwindow;
 
 class Engine {
-public:
+  public:
     Engine(int width, int height, const std::string name);
     ~Engine();
-    GLFWwindow* getWindow();
+    GLFWwindow *getWindow();
     void addScene(Scene *scene);
     void render();
-private:
+
+  private:
     Scene *scene_;
     GLFWwindow *window_ = NULL;
     void initWindow(int width, int height, const std::string name);

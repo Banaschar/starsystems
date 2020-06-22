@@ -25,7 +25,7 @@ void Engine::initWindow(int width, int height, const std::string name) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    //Open windows and create its opengl context
+    // Open windows and create its opengl context
     window_ = glfwCreateWindow(1280, 720, "star systems", NULL, NULL);
     if (window_ == NULL) {
         fprintf(stderr, "Failed to open GLFW window\n");
@@ -55,7 +55,7 @@ void Engine::initWindow(int width, int height, const std::string name) {
     glEnable(GL_CULL_FACE);
 }
 
-GLFWwindow* Engine::getWindow() {
+GLFWwindow *Engine::getWindow() {
     return window_;
 }
 
@@ -80,7 +80,7 @@ void Engine::render_() {
         lastFrame = currentFrame;
         nbFrames++;
         if (currentFrame - lastTime >= 1.0) {
-            fprintf(stdout, "%f ms/frame -> %i FPS\n", 1000.0/float(nbFrames), nbFrames);
+            fprintf(stdout, "%f ms/frame -> %i FPS\n", 1000.0 / float(nbFrames), nbFrames);
             nbFrames = 0;
             lastTime += 1.0;
         }
@@ -92,8 +92,7 @@ void Engine::render_() {
 
         glfwSwapBuffers(window_);
         glfwPollEvents();
-    } while(glfwGetKey(window_, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-            glfwWindowShouldClose(window_) == 0);
+    } while (glfwGetKey(window_, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window_) == 0);
 
     glfwTerminate();
 }

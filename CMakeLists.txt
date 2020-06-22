@@ -106,13 +106,49 @@ add_custom_command(
         TARGET stars POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/shader
-        ${CMAKE_CURRENT_BINARY_DIR}/shader)
+        ${CMAKE_CURRENT_BINARY_DIR}/shader
+        )
 
 add_custom_command(
         TARGET stars POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E create_symlink
         ${CMAKE_SOURCE_DIR}/assets
-        ${CMAKE_CURRENT_BINARY_DIR}/assets)
+        ${CMAKE_CURRENT_BINARY_DIR}/assets
+        )
+
+file(GLOB_RECURSE PROJECT_FILES 
+        ${PROJECT_SOURCE_DIR}/lib/*.[ch]pp
+        ${PROJECT_SOURCE_DIR}/include/*.hpp
+        ${PROJECT_SOURCE_DIR}/src/*.[ch]pp
+        )
+
+find_program(CLANG_FORMAT "clang-format")
+if (CLANG_FORMAT)
+    add_custom_target(
+        format
+        COMMAND /usr/bin/clang-format
+        -i
+        -style=file
+        ${PROJECT_FILES}
+        COMMENT "Run clang-format on library and sources"
+        )
+endif()
+
+find_program(CPPCHECK "cppcheck")
+if (CPPCHECK)
+    add_custom_target(
+        cppcheck
+        COMMAND /usr/bin/cppcheck
+        --enable=warning,performance,portability,information,missingInclude
+        --std=c++11
+        #--template="[{severity}][{id}] {message} {callstack} \(On {file}:{line}\)"
+        --template=gcc
+        --verbose
+        --quiet
+        ${PROJECT_FILES}
+        COMMENT "Run cppcheck on library and sources"
+        )
+endif()
 
 #add_custom_command(TARGET stars POST_BUILD
 #                    COMMAND ${CMAKE_COMMAND} -E copy_directory

@@ -8,7 +8,7 @@ Terrain::Terrain(int dimension) : dimension_(dimension) {
     initTerrain(terrainGen);
 }
 
-Terrain::Terrain(TerrainGenerator &terrainGen, int dimension) : dimension_(dimension){
+Terrain::Terrain(TerrainGenerator &terrainGen, int dimension) : dimension_(dimension) {
     initTerrain(terrainGen);
 }
 
@@ -27,5 +27,5 @@ int Terrain::getDimension() {
 void Terrain::initTerrain(TerrainGenerator &terrainGen) {
     Drawable::addMesh(terrainGen.generateTerrain(dimension_));
     Drawable::setType(SHADER_TYPE_TERRAIN);
-    amplitude_ = terrainGen.getPerlinNoise().getAmplitude();  
+    amplitude_ = terrainGen.getPerlinNoise().getAmplitude();
 }

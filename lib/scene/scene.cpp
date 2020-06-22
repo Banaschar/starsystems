@@ -2,10 +2,9 @@
 
 #include "scene.hpp"
 
-Scene::Scene(Game *game, Renderer *renderer) : 
-                            game_(game), renderer_(renderer), lights_(game_->getLights()),
-                            terrain_(game_->getTerrain()), entities_(game_->getEntities()), 
-                            sky_(game_->getSky()), water_(game_->getWater()) {
+Scene::Scene(Game *game, Renderer *renderer)
+    : game_(game), renderer_(renderer), lights_(game_->getLights()), terrain_(game_->getTerrain()),
+      entities_(game_->getEntities()), sky_(game_->getSky()), water_(game_->getWater()) {
     autoRotate_ = false;
     setupScene();
 }

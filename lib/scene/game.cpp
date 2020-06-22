@@ -4,9 +4,9 @@ Game::Game(View view) : view_(view) {
     /* TODO: rethink this
      * This is only here because I copy the view object in here,
      * and therefore the callback for glfw points to the wrong view object.
-     * Could be solved by just getting a pointer to view instead of copying the 
+     * Could be solved by just getting a pointer to view instead of copying the
      * object. Would also be more harmonic, as the all passed around objects would need
-     * the "->" accessor. 
+     * the "->" accessor.
      */
     view_.setupInput();
 }
@@ -34,7 +34,7 @@ void Game::addEntity(Drawable *entity) {
 }
 
 void Game::addLight(Drawable *light) {
-    Light* tmp = dynamic_cast<Light*>(light);
+    Light *tmp = dynamic_cast<Light *>(light);
     if (tmp)
         lights_.push_back(light);
     else
@@ -42,7 +42,7 @@ void Game::addLight(Drawable *light) {
 }
 
 void Game::addSun(Drawable *sun) {
-    Light* tmp = dynamic_cast<Light*>(sun);
+    Light *tmp = dynamic_cast<Light *>(sun);
     if (tmp) {
         sun_ = sun;
         if (tmp->hasModel())
@@ -65,40 +65,41 @@ void Game::addWater(Drawable *water) {
     waterLevel_ = water->getPosition().y;
 }
 
-View& Game::getView() {
+View &Game::getView() {
     return view_;
 }
 
-std::vector<Drawable*>& Game::getLights() {
+std::vector<Drawable *> &Game::getLights() {
     return lights_;
 }
 
-std::vector<Drawable*>& Game::getEntities() {
+std::vector<Drawable *> &Game::getEntities() {
     return entities_;
 }
 
-std::vector<Drawable*>& Game::getTerrain() {
+std::vector<Drawable *> &Game::getTerrain() {
     return terrain_;
 }
 
-std::vector<Drawable*>& Game::getWater() {
+std::vector<Drawable *> &Game::getWater() {
     return water_;
 }
 
-Drawable* Game::getSun() {
+Drawable *Game::getSun() {
     if (sun_)
         return sun_;
     else {
-        std::cout << "Requested non-existing sun, this returns NULL and therefore probably gives you a SegFault" << std::endl;
+        std::cout << "Requested non-existing sun, this returns NULL and therefore probably gives you a SegFault"
+                  << std::endl;
         return NULL;
     }
 }
 
-Drawable* Game::getLightSource(int index) {
+Drawable *Game::getLightSource(int index) {
     return lights_.at(index);
 }
 
-std::vector<Drawable*>& Game::getSky() {
+std::vector<Drawable *> &Game::getSky() {
     return sky_;
 }
 

@@ -1,14 +1,14 @@
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
-#include "global.hpp"
 #include "drawable.hpp"
+#include "global.hpp"
 #include "terraingenerator.hpp"
 
 const int DEFAULT_DIMENSION = 200;
 
 class Terrain : public Drawable {
-public:
+  public:
     Terrain(int dimension = DEFAULT_DIMENSION);
     Terrain(TerrainGenerator &terrainGen, int dimension = DEFAULT_DIMENSION);
 
@@ -17,7 +17,8 @@ public:
     float getAmplitude();
 
     int getDimension();
-private:
+
+  private:
     int dimension_;
     float amplitude_;
     void initTerrain(TerrainGenerator &terrainGen);

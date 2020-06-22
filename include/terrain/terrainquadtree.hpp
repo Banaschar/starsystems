@@ -2,9 +2,9 @@
 #define TERRAINQUADTREE_H
 
 class TerrainQuadTree {
-public: 
+  public:
     TerrainQuadTree();
-private:
 
+  private:
 };
 #endif

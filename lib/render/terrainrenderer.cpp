@@ -1,7 +1,8 @@
 #include "terrainrenderer.hpp"
 #include "textureloader.hpp"
 
-TerrainRenderer::TerrainRenderer(Shader *shader, VaoRenderer *vaoRenderer) : shader_(shader), vaoRenderer_(vaoRenderer) {
+TerrainRenderer::TerrainRenderer(Shader *shader, VaoRenderer *vaoRenderer)
+    : shader_(shader), vaoRenderer_(vaoRenderer) {
     setupTextures();
 }
 
@@ -28,18 +29,18 @@ void TerrainRenderer::bindTextures() {
     }
 }
 
-void TerrainRenderer::render(std::vector<Drawable*> terrains, Game *game, glm::vec4 clipPlane) {
+void TerrainRenderer::render(std::vector<Drawable *> terrains, Game *game, glm::vec4 clipPlane) {
     shader_->use();
     shader_->uniform("clipPlane", clipPlane);
     shader_->uniform("waterLevel", game->getWaterLevel());
     bindTextures();
-    for (Drawable* drawable : terrains) {
-        Terrain *terrain = static_cast<Terrain*> (drawable);
+    for (Drawable *drawable : terrains) {
+        Terrain *terrain = static_cast<Terrain *>(drawable);
         shader_->uniform("amplitude", terrain->getAmplitude());
         shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
         drawable->update(game);
         shader_->prepare(drawable, game);
-        
+
         for (Mesh &mesh : drawable->getMeshes())
             vaoRenderer_->draw(mesh);
     }

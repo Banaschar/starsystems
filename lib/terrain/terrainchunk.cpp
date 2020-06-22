@@ -1,7 +1,6 @@
 #include "terrainchunk.hpp"
 
-TerrainChunk::TerrainChunk(Drawable *terrain, Drawable *water) : 
-                            terrain_(terrain), water_(water) {}
+TerrainChunk::TerrainChunk(Drawable *terrain, Drawable *water) : terrain_(terrain), water_(water) {}
 
 TerrainChunk::~TerrainChunk() {
     for (TerrainChunk *t : children_)

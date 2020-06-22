@@ -1,15 +1,15 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#include <functional>
 #include <glm/glm.hpp>
 #include <string>
-#include <functional>
 
 #include "drawable.hpp"
 #include "game.hpp"
 
 class Shader;
-typedef std::function<void(Shader*, Drawable*, Game*)> callback_t;
+typedef std::function<void(Shader *, Drawable *, Game *)> callback_t;
 
 enum TextureType {
     TEXTURE_TYPE_DIFFUSE,
@@ -20,9 +20,8 @@ enum TextureType {
 };
 
 class Shader {
-public:
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type,
-                const callback_t cb);
+  public:
+    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type, const callback_t cb);
     void use();
     void end();
     void prepare(Drawable *drawable, Game *game);
@@ -37,7 +36,7 @@ public:
     void uniform(const std::string &name, int value);
     void uniform(const std::string &name, float value);
 
-private:
+  private:
     unsigned int shaderProgramId_;
     const std::string type_;
     callback_t drawCallback_;

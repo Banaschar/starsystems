@@ -2,10 +2,10 @@
 
 #include <iostream>
 
-#include <glm/glm.hpp>
 #include <assimp/Importer.hpp>
-#include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <glm/glm.hpp>
 
 #include "textureloader.hpp"
 
@@ -15,17 +15,17 @@ std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::st
 
 bool AssetLoader::loadModel(const std::string &path, std::vector<Mesh> *meshes) {
     std::string delimiter = ".";
-    std::string extension = path.substr(path.find(delimiter)+1, path.size());
+    std::string extension = path.substr(path.find(delimiter) + 1, path.size());
 
     if (extension == "obj")
         return loadObj(path.c_str(), meshes);
-    else 
+    else
         std::cout << "Unkown file extension: " << extension << std::endl;
-    
+
     return false;
 }
 
-bool AssetLoader::loadObj(const char* path, std::vector<Mesh> *meshes) {
+bool AssetLoader::loadObj(const char *path, std::vector<Mesh> *meshes) {
 
     Assimp::Importer importer;
     // Set second argument to 0 for no post processing
@@ -36,7 +36,7 @@ bool AssetLoader::loadObj(const char* path, std::vector<Mesh> *meshes) {
         return false;
     }
 
-    //createMeshes(scene->mRootNode, scene, meshes);
+    // createMeshes(scene->mRootNode, scene, meshes);
     aiMesh *mesh = scene->mMeshes[0];
     meshes->push_back(processMesh(mesh, scene));
 
@@ -65,12 +65,12 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
         glm::vec3 vector;
-        //pos
+        // pos
         vector.x = mesh->mVertices[i].x;
         vector.y = mesh->mVertices[i].y;
         vector.z = mesh->mVertices[i].z;
         vertex.position = vector;
-        //normal
+        // normal
         vector.x = mesh->mNormals[i].x;
         vector.y = mesh->mNormals[i].y;
         vector.z = mesh->mNormals[i].z;
@@ -97,7 +97,7 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
         }
     }
 
-    //process materials
+    // process materials
     aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
 
     std::vector<Texture> diffuseMaps = loadMatTexture(material, aiTextureType_DIFFUSE, "tex_diffuse");
@@ -115,7 +115,7 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
     return Mesh(vertices, textures, indices);
 }
 
-/* 
+/*
  * Loads textures specified in model files
  * TODO: Make sure not to load textures that have already been loaded
  */

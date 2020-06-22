@@ -1,23 +1,24 @@
 #include "perlinnoise.hpp"
-#include <glm/glm.hpp>
 #include <cstdio>
+#include <glm/glm.hpp>
 #include <random>
 
 PerlinNoise::PerlinNoise() : PerlinNoise(DEFAULT_OCTAVES, DEFAULT_AMPLITUDE, DEFAULT_ROUGHNESS) {}
-PerlinNoise::PerlinNoise(int octaves, float amplitude, float roughness, unsigned int seed) :
-    octaves_(octaves), amplitude_(amplitude), roughness_(roughness), seed_(seed) {
-        if (seed_)
-            p = generateRandomPerm();
-        else
-            p = perm_;
+PerlinNoise::PerlinNoise(int octaves, float amplitude, float roughness, unsigned int seed)
+    : octaves_(octaves), amplitude_(amplitude), roughness_(roughness), seed_(seed) {
+    if (seed_)
+        p = generateRandomPerm();
+    else
+        p = perm_;
 }
 
 float PerlinNoise::getNoise2d(int x, int y) {
-    float total = 0;;
-    float d = (float) glm::pow(2, octaves_ - 1);
+    float total = 0;
+    ;
+    float d = (float)glm::pow(2, octaves_ - 1);
     for (int i = 0; i < octaves_; i++) {
-        float freq = (float) (glm::pow(2, i) / d);
-        float amp = (float) glm::pow(roughness_, i) * amplitude_;
+        float freq = (float)(glm::pow(2, i) / d);
+        float amp = (float)glm::pow(roughness_, i) * amplitude_;
         total += noise2d(x * freq, y * freq) * amp;
     }
     return total;
@@ -29,10 +30,10 @@ float PerlinNoise::getAmplitude() {
 
 std::vector<int> PerlinNoise::generateRandomPerm() {
     fprintf(stdout, "[PerlinNoise] Generating random permutation Vector. Seed: %u\n", seed_);
-    
+
     std::default_random_engine eng{seed_};
     std::uniform_int_distribution<> distrib(0, 255);
-    
+
     std::vector<int> perms(512);
     for (int i = 0; i < 256; i++) {
         perms[256 + i] = perms[i] = distrib(eng);
@@ -45,8 +46,8 @@ float PerlinNoise::noise2d(float x, float y) {
     float fx0, fy0, fx1, fy1;
     float s, t, nx0, nx1, n0, n1;
 
-    ix0 = (int) glm::floor(x);
-    iy0 = (int) glm::floor(y);
+    ix0 = (int)glm::floor(x);
+    iy0 = (int)glm::floor(y);
     fx0 = x - ix0;
     fy0 = y - iy0;
     fx1 = fx0 - 1.0f;
@@ -55,7 +56,7 @@ float PerlinNoise::noise2d(float x, float y) {
     iy1 = (iy0 + 1) & 0xff;
     ix0 = ix0 & 0xff;
     iy0 = iy0 & 0xff;
-    
+
     t = fade(fy0);
     s = fade(fx0);
 
@@ -82,5 +83,5 @@ float PerlinNoise::grad(int hash, float x, float y) {
     float u = h < 4 ? x : y;
     float v = h < 4 ? y : x;
 
-    return ((h & 1) ? -u : u) + ((h & 2) ? -2.0*v : 2.0*v);
+    return ((h & 1) ? -u : u) + ((h & 2) ? -2.0 * v : 2.0 * v);
 }

@@ -7,7 +7,7 @@
 #define REFRACTION_HEIGHT 720
 
 class WaterFrameBuffer {
-public:
+  public:
     WaterFrameBuffer(int windowWitdh, int windowHeight);
     ~WaterFrameBuffer();
 
@@ -25,7 +25,7 @@ public:
 
     void resolutionChange(int width, int height);
 
-private:
+  private:
     unsigned int reflectionFb_;
     unsigned int reflectionTexture_;
     unsigned int reflectionDepthBuffer_;

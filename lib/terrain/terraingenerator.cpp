@@ -7,7 +7,8 @@
 
 TerrainGenerator::TerrainGenerator() : colorGen_(ColorGenerator()), pNoise_(PerlinNoise()) {}
 TerrainGenerator::TerrainGenerator(PerlinNoise pNoise) : pNoise_(pNoise), colorGen_(ColorGenerator()) {}
-TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise) : colorGen_(colorGen), pNoise_(pNoise) {}
+TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
+    : colorGen_(colorGen), pNoise_(pNoise) {}
 
 Mesh TerrainGenerator::generateTerrain(int dimension) {
     std::vector<float> heights = generateHeights(dimension, pNoise_);
@@ -15,11 +16,11 @@ Mesh TerrainGenerator::generateTerrain(int dimension) {
     return generateMesh(heights, colors, dimension);
 }
 
-ColorGenerator& TerrainGenerator::getColorGenerator() {
+ColorGenerator &TerrainGenerator::getColorGenerator() {
     return colorGen_;
 }
 
-PerlinNoise& TerrainGenerator::getPerlinNoise() {
+PerlinNoise &TerrainGenerator::getPerlinNoise() {
     return pNoise_;
 }
 
@@ -65,7 +66,7 @@ std::vector<float> TerrainGenerator::generateHeights(int dimension, PerlinNoise 
 }
 
 std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension) {
-    std::vector<unsigned int> indices ((dimension-1) * (dimension-1) * 6);
+    std::vector<unsigned int> indices((dimension - 1) * (dimension - 1) * 6);
     int cnt = 0;
     for (int row = 0; row < dimension - 1; row++) {
         for (int col = 0; col < dimension - 1; col++) {
@@ -83,7 +84,7 @@ std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension) {
 }
 
 Mesh TerrainGenerator::generateMesh(std::vector<float> heights, std::vector<glm::vec4> colors, int dimension) {
-    std::vector<Vertex> vertices (dimension * dimension);
+    std::vector<Vertex> vertices(dimension * dimension);
     std::vector<glm::vec3> normals = generateNormalVector(heights, dimension);
     int half = dimension / 2;
     for (int z = 0; z < dimension; z++) {
@@ -94,7 +95,7 @@ Mesh TerrainGenerator::generateMesh(std::vector<float> heights, std::vector<glm:
             vertex.position.z = z - half;
             vertex.normal = normals[z * dimension + x];
             vertex.textureCoords.x = (float)x / ((float)dimension - 1);
-            vertex.textureCoords.y = (float)z / ((float)dimension - 1); 
+            vertex.textureCoords.y = (float)z / ((float)dimension - 1);
             vertex.color = colors[z * dimension + x];
             vertices[z * dimension + x] = vertex;
         }

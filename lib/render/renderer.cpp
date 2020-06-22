@@ -1,13 +1,13 @@
-#include "oglheader.hpp"
 #include "renderer.hpp"
-#include "waterframebuffer.hpp"
 #include "guirenderer.hpp"
-#include "vaorenderer.hpp"
-#include "terrainrenderer.hpp"
-#include "waterrenderer.hpp"
+#include "oglheader.hpp"
 #include "skyrenderer.hpp"
+#include "terrainrenderer.hpp"
+#include "vaorenderer.hpp"
+#include "waterframebuffer.hpp"
+#include "waterrenderer.hpp"
 
-Renderer::Renderer(std::vector<Shader*> shaders) {
+Renderer::Renderer(std::vector<Shader *> shaders) {
     vaoRenderer_ = new VaoRenderer();
     setupRenderer(shaders);
 }
@@ -25,7 +25,7 @@ Renderer::~Renderer() {
     if (waterFrameBuffer_)
         delete waterFrameBuffer_;
 
-    for (const auto& kv : shaderMap_) {
+    for (const auto &kv : shaderMap_) {
         delete shaderMap_[kv.first];
     }
 
@@ -39,16 +39,14 @@ Renderer::~Renderer() {
         delete vaoRenderer_;
 }
 
-void Renderer::render(DrawableList &lights, DrawableList &terrain,
-                DrawableList &entities, DrawableList &sky, 
-                DrawableList &water, Game *game) {
+void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
+                      DrawableList &water, Game *game) {
 
     render(lights, terrain, entities, sky, water, NULL, game);
 }
 
-void Renderer::render(DrawableList &lights, DrawableList &terrain,
-                DrawableList &entities, DrawableList &sky, 
-                DrawableList &water, DrawableList *gui, Game *game) {
+void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
+                      DrawableList &water, DrawableList *gui, Game *game) {
 
     processEntities(entities);
     // Render to waterFrameBuffer
@@ -71,7 +69,6 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain,
         glDisable(GL_CLIP_DISTANCE0);
     }
 
-    
     renderScene(lights, terrain, sky, game, glm::vec4(0, -1, 0, 10000));
 
     if (waterRenderer_ && !water.empty())
@@ -91,8 +88,8 @@ void Renderer::resolutionChange(int width, int height) {
         waterFrameBuffer_->resolutionChange(windowWidth_, windowHeight_);
 }
 
-void Renderer::setupRenderer(std::vector<Shader*> shaders) {
-    
+void Renderer::setupRenderer(std::vector<Shader *> shaders) {
+
     for (Shader *shader : shaders) {
         if (shader->type() == SHADER_TYPE_LIGHT)
             lightShader_ = shader;
@@ -103,17 +100,14 @@ void Renderer::setupRenderer(std::vector<Shader*> shaders) {
         else if (shader->type() == SHADER_TYPE_WATER) {
             waterTypeQuality_ = true;
             waterFrameBuffer_ = new WaterFrameBuffer(windowWidth_, windowHeight_);
-            waterRenderer_ = new WaterRenderer(shader, vaoRenderer_,
-                                    waterFrameBuffer_->getReflectionTexture(), 
-                                    waterFrameBuffer_->getRefractionTexture(), 
-                                    waterFrameBuffer_->getRefractionDepthTexture());
+            waterRenderer_ = new WaterRenderer(shader, vaoRenderer_, waterFrameBuffer_->getReflectionTexture(),
+                                               waterFrameBuffer_->getRefractionTexture(),
+                                               waterFrameBuffer_->getRefractionDepthTexture());
         } else if (shader->type() == SHADER_TYPE_WATER_PERFORMANCE) {
             waterRenderer_ = new WaterRenderer(shader, vaoRenderer_);
-        }
-        else if (shader->type() == SHADER_TYPE_GUI) {
+        } else if (shader->type() == SHADER_TYPE_GUI) {
             guiRenderer_ = new GuiRenderer(shader, vaoRenderer_);
-        }
-        else {
+        } else {
             if (shaderMap_.count(shader->type()))
                 std::cout << "WARNING: Two shaders with same type" << std::endl;
             else
@@ -125,29 +119,29 @@ void Renderer::setupRenderer(std::vector<Shader*> shaders) {
 /*
  * Puts entities in a hash map for batched drawing
  */
-void Renderer::processEntities(std::vector<Drawable*> &entities) {
+void Renderer::processEntities(std::vector<Drawable *> &entities) {
     EntityMap::iterator it;
-    
+
     for (Drawable *drawable : entities) {
         it = entityMap_.find(drawable->type());
 
         if (it != entityMap_.end())
             it->second.push_back(drawable);
         else {
-            std::vector<Drawable*> tmp = {drawable};
+            std::vector<Drawable *> tmp = {drawable};
             entityMap_.insert(it, EntityMap::value_type(drawable->type(), tmp));
         }
     }
 }
 
-void Renderer::renderScene(DrawableList &lights, DrawableList &terrain,
-                 DrawableList &sky, Game *game, glm::vec4 clipPlane) {
-    renderList(lightShader_, lights, game, clipPlane);           // render lights
+void Renderer::renderScene(DrawableList &lights, DrawableList &terrain, DrawableList &sky, Game *game,
+                           glm::vec4 clipPlane) {
+    renderList(lightShader_, lights, game, clipPlane); // render lights
     if (terrainRenderer_)
-        terrainRenderer_->render(terrain, game, clipPlane);      // render terrain
-    renderEntities(game, clipPlane);                             // render models
-    if (skyRenderer_)                           
-        skyRenderer_->render(sky, game, clipPlane);              // render skybox
+        terrainRenderer_->render(terrain, game, clipPlane); // render terrain
+    renderEntities(game, clipPlane);                        // render models
+    if (skyRenderer_)
+        skyRenderer_->render(sky, game, clipPlane); // render skybox
 }
 
 void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, glm::vec4 clipPlane) {
@@ -168,7 +162,7 @@ void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, g
 }
 
 void Renderer::renderEntities(Game *game, glm::vec4 clipPlane) {
-    for (auto& kv : entityMap_) {
+    for (auto &kv : entityMap_) {
         renderList(shaderMap_[kv.first], kv.second, game, clipPlane);
     }
 }

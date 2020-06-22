@@ -1,8 +1,8 @@
 #ifndef ENGINETYPES_H
 #define ENGINETYPES_H
 
-#include <string>
 #include <glm/glm.hpp>
+#include <string>
 
 struct Vertex {
     glm::vec3 position;

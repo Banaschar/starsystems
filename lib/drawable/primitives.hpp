@@ -1,20 +1,21 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
-#include <vector>
 #include "mesh.hpp"
+#include <vector>
 
 class Primitives {
-public:
+  public:
     static Mesh createPlane(int dimension);
 
     static Mesh createQuad();
-    
+
     static Mesh createQuad2d();
 
     static Mesh createCube(int side);
-private:
+
+  private:
     static std::vector<glm::vec3> calculateVertexNormalAverages(std::vector<glm::vec3> &pos,
-                                    std::vector<unsigned int> &indices);
+                                                                std::vector<unsigned int> &indices);
 };
 #endif

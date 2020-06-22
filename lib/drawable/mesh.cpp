@@ -1,20 +1,17 @@
-#include <vector>
 #include <string>
+#include <vector>
 
-#include "oglheader.hpp"
 #include "mesh.hpp"
+#include "oglheader.hpp"
 
-Mesh::Mesh() {
+Mesh::Mesh() {}
 
-}
-
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) :
-            vertices_(vertices), indices_(indices) {
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) : vertices_(vertices), indices_(indices) {
     initMesh();
 }
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices) :
-            vertices_(vertices), textures_(textures), indices_(indices) {
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices)
+    : vertices_(vertices), textures_(textures), indices_(indices) {
     initMesh();
 }
 /*
@@ -27,8 +24,8 @@ Mesh::Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices) 
 void Mesh::generateIndices() {
     for (int i = 0; i < vertices_.size(); i++) {
         indices_.push_back(i);
-        indices_.push_back(i+1);
-        indices_.push_back(i+2);
+        indices_.push_back(i + 1);
+        indices_.push_back(i + 2);
     }
 }
 
@@ -69,14 +66,14 @@ void Mesh::initMesh2d(std::vector<glm::vec2d> positions) {
 */
 
 /*
- * TODO: Internally, create a Vertex struct that only holds the data types we actually 
+ * TODO: Internally, create a Vertex struct that only holds the data types we actually
  * have and use
  * Also check if the vertices array contains any entries that are overlapping, e.g. any
  * vertices no index in the indices array is pointing to. Remove these and shrink the array
  * appropriately.
  * --> Can't create a struct dynamically. So the best possibilty would be
  * to create one char buffer and put everything inside interleaved
- * 
+ *
  */
 void optimize() {
     /*
@@ -93,7 +90,7 @@ void optimize() {
 /*
  * TODO: Either implement the optimize solution,
  * or simply use a different buffer object for each attribute
- * 
+ *
  */
 void Mesh::updateMesh() {
     glBindVertexArray(vao_);
@@ -106,16 +103,16 @@ void Mesh::updateMesh() {
 
     // set vertex attrib pointer
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*) 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, textureCoords));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, textureCoords));
 
     glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
 
     glBindVertexArray(0);
 }
@@ -131,13 +128,13 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
     glBindVertexArray(vao_);
 
     glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)0);
     glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)sizeof(glm::vec4));
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)sizeof(glm::vec4));
     glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(2 * sizeof(glm::vec4)));
     glEnableVertexAttribArray(7);
-    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(3 * sizeof(glm::vec4)));
 
     glVertexAttribDivisor(4, 1);
     glVertexAttribDivisor(5, 1);
@@ -148,7 +145,7 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
 }
 
 /*
- * Update the ibo attribute buffer that holds the matrices 
+ * Update the ibo attribute buffer that holds the matrices
  * for instanced draw calls
  */
 void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices) {
@@ -158,7 +155,6 @@ void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices) {
     glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), &instanceMatrices->front());
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
-
 
 void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);
@@ -183,10 +179,10 @@ unsigned int Mesh::getInstanceSize() {
     return drawInstances_;
 }
 
-bool& Mesh::isInstanced() {
+bool &Mesh::isInstanced() {
     return isInstanced_;
 }
 
-std::vector<Texture>& Mesh::getTextures() {
+std::vector<Texture> &Mesh::getTextures() {
     return textures_;
 }

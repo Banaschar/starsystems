@@ -1,6 +1,6 @@
 #include <glm/gtc/matrix_transform.hpp>
-#include <stdio.h>
 #include <iostream>
+#include <stdio.h>
 
 #include "global.hpp"
 #include "view.hpp"
@@ -16,20 +16,18 @@ const float FOV = 45.0f;
 const bool CONSTRAIN_PITCH = true;
 const bool AUTO_ROTATE = false;
 
-View::View(GLFWwindow *window, glm::vec3 camPos) : 
-            View(window, camPos, glm::vec3(-camPos.x, -camPos.y, -camPos.z)) {}
+View::View(GLFWwindow *window, glm::vec3 camPos) : View(window, camPos, glm::vec3(-camPos.x, -camPos.y, -camPos.z)) {}
 
-View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir) :
-            View(window, camPos, camDir, YAW, PITCH, FOV, SPEED, SENSITIVITY) {}
+View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir)
+    : View(window, camPos, camDir, YAW, PITCH, FOV, SPEED, SENSITIVITY) {}
 
-View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float yaw, float pitch, 
-            float fov, float speed, float sensitivity) : 
-                            window_(window), camPosition_(camPos), camDirection_(camDir), 
-                            yaw_(yaw), pitch_(pitch), 
-                            fov_(fov), speed_(speed), mouseSensitivity_(sensitivity) {
-    
+View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float yaw, float pitch, float fov, float speed,
+           float sensitivity)
+    : window_(window), camPosition_(camPos), camDirection_(camDir), yaw_(yaw), pitch_(pitch), fov_(fov), speed_(speed),
+      mouseSensitivity_(sensitivity) {
+
     glfwGetWindowSize(window_, &windowWidth_, &windowHeight_);
-    camUp_ = glm::vec3(0,1,0);
+    camUp_ = glm::vec3(0, 1, 0);
     worldUp_ = camUp_;
     zoom_ = fov_;
     camPositionOriginal_ = camPosition_;
@@ -46,21 +44,21 @@ View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float yaw, fl
 void View::setupInput() {
     glfwSetWindowUserPointer(window_, this);
     mCb = [](GLFWwindow *w, double a, double b) {
-        static_cast<View*>(glfwGetWindowUserPointer(w))->mouseCallback(w, a, b);
+        static_cast<View *>(glfwGetWindowUserPointer(w))->mouseCallback(w, a, b);
     };
     sCb = [](GLFWwindow *w, double a, double b) {
-        static_cast<View*>(glfwGetWindowUserPointer(w))->scrollCallback(w, a, b);
+        static_cast<View *>(glfwGetWindowUserPointer(w))->scrollCallback(w, a, b);
     };
-    
+
     glfwSetCursorPosCallback(window_, mCb);
     glfwSetScrollCallback(window_, sCb);
 }
 
-glm::mat4& View::getCameraMatrix() {
+glm::mat4 &View::getCameraMatrix() {
     return cameraMatrix_;
 }
 
-glm::mat4& View::getProjectionMatrix() {
+glm::mat4 &View::getProjectionMatrix() {
     return projectionMatrix_;
 }
 
@@ -69,14 +67,14 @@ glm::mat4 View::getOrthoProjection() {
 }
 
 void View::invertPitch() {
-        pitch_ = -pitch_;
+    pitch_ = -pitch_;
 }
 
-glm::vec3& View::getCameraPosition() {
+glm::vec3 &View::getCameraPosition() {
     return camPosition_;
 }
 
-glm::vec3& View::getWorldNormal() {
+glm::vec3 &View::getWorldNormal() {
     return worldUp_;
 }
 
@@ -96,11 +94,8 @@ void View::rotateCamera() {
 
     camPosition_.x = sin(camRotateVal_) * abs(camPositionOriginal_.z);
     camPosition_.z = cos(camRotateVal_) * abs(camPositionOriginal_.z);
-    
-    cameraMatrix_ = glm::lookAt(
-    camPosition_,
-    camDirection_,
-    camUp_);
+
+    cameraMatrix_ = glm::lookAt(camPosition_, camDirection_, camUp_);
 }
 
 void View::updateForce() {
@@ -125,25 +120,25 @@ void View::update_() {
         camRight_ = glm::normalize(glm::cross(camDirection_, worldUp_));
         camUp_ = glm::normalize(glm::cross(camRight_, camDirection_));
 
-        projectionMatrix_ = glm::perspective(glm::radians(zoom_), 
-                    (float)windowWidth_ / (float)windowHeight_, nearPlane_, farPlane_);
+        projectionMatrix_ =
+            glm::perspective(glm::radians(zoom_), (float)windowWidth_ / (float)windowHeight_, nearPlane_, farPlane_);
         cameraMatrix_ = glm::lookAt(camPosition_, camPosition_ + camDirection_, camUp_);
 
         flagUpdate_ = false;
     }
 }
 
-void View::processInputs() {    
+void View::processInputs() {
     if (glfwGetKey(window_, GLFW_KEY_W) == GLFW_PRESS) {
         camPosition_ += camDirection_ * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
-    
+
     if (glfwGetKey(window_, GLFW_KEY_S) == GLFW_PRESS) {
         camPosition_ -= camDirection_ * g_deltaTime * speed_;
         flagUpdate_ = true;
     }
-    
+
     if (glfwGetKey(window_, GLFW_KEY_D) == GLFW_PRESS) {
         camPosition_ += camRight_ * g_deltaTime * speed_;
         flagUpdate_ = true;
@@ -173,7 +168,7 @@ void View::mouseCallback(GLFWwindow *window, double xpos, double ypos) {
     }
 
     float xoffset = xpos - lastX_;
-    float yoffset = lastY_ - ypos; //reversed
+    float yoffset = lastY_ - ypos; // reversed
 
     lastX_ = xpos;
     lastY_ = ypos;
@@ -195,7 +190,7 @@ void View::mouseCallback(GLFWwindow *window, double xpos, double ypos) {
 }
 
 void View::scrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-    zoom_ -= (float) yoffset;
+    zoom_ -= (float)yoffset;
     if (zoom_ < 1.0f)
         zoom_ = 1.0f;
     if (zoom_ > fov_)

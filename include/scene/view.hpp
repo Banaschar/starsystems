@@ -1,22 +1,22 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-#include <glm/glm.hpp>
 #include <functional>
+#include <glm/glm.hpp>
 
 struct GLFWwindow;
 
 class View {
-public:
+  public:
     View(GLFWwindow *window, glm::vec3 camPos);
     View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir);
-    View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float angleH, float angleVert, float fov,
-        float speed, float mouseSpeed);
-    glm::mat4& getCameraMatrix();
-    glm::mat4& getProjectionMatrix();
-    glm::vec3& getCameraPosition();
+    View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float angleH, float angleVert, float fov, float speed,
+         float mouseSpeed);
+    glm::mat4 &getCameraMatrix();
+    glm::mat4 &getProjectionMatrix();
+    glm::vec3 &getCameraPosition();
     glm::mat4 getOrthoProjection();
-    glm::vec3& getWorldNormal();
+    glm::vec3 &getWorldNormal();
     void invertPitch();
     void update();
     void updateForce();
@@ -25,11 +25,12 @@ public:
     void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
     void setupInput();
     void getWindowSize(int *width, int *height);
-    //std::function<void(GLFWwindow*, double, double)> mCb;
-    //std::function<void(GLFWwindow*, double, double)> sCb;
-    void (*mCb)(GLFWwindow*, double, double);
-    void (*sCb)(GLFWwindow*, double, double);
-private:
+    // std::function<void(GLFWwindow*, double, double)> mCb;
+    // std::function<void(GLFWwindow*, double, double)> sCb;
+    void (*mCb)(GLFWwindow *, double, double);
+    void (*sCb)(GLFWwindow *, double, double);
+
+  private:
     void rotateCamera();
     void processInputs();
     void update_();

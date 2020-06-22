@@ -4,7 +4,7 @@
 #include "mesh.hpp"
 
 class VaoRenderer {
-public:
+  public:
     VaoRenderer();
 
     void draw(Mesh &mesh);

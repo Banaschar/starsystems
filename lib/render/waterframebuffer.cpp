@@ -1,8 +1,8 @@
-#include "oglheader.hpp"
 #include "waterframebuffer.hpp"
+#include "oglheader.hpp"
 
-WaterFrameBuffer::WaterFrameBuffer(int windowWitdh, int windowHeight) : 
-                windowWitdh_(windowWitdh), windowHeight_(windowHeight){
+WaterFrameBuffer::WaterFrameBuffer(int windowWitdh, int windowHeight)
+    : windowWitdh_(windowWitdh), windowHeight_(windowHeight) {
     reflectionWidth_ = REFLECTION_WIDTH;
     reflectionHeight_ = REFLECTION_HEIGHT;
     refractionWidth_ = REFRACTION_WIDTH;
@@ -85,8 +85,7 @@ unsigned int WaterFrameBuffer::createTextureAttachment(int width, int height) {
     unsigned int textureId;
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                    GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, textureId, 0);
@@ -98,8 +97,7 @@ unsigned int WaterFrameBuffer::createDepthTextureAttachment(int width, int heigh
     unsigned int textureId;
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height,
-                0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, textureId, 0);

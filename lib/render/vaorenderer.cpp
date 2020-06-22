@@ -1,15 +1,15 @@
-#include "oglheader.hpp"
 #include "vaorenderer.hpp"
+#include "oglheader.hpp"
 
-VaoRenderer::VaoRenderer(){}
+VaoRenderer::VaoRenderer() {}
 
 void VaoRenderer::draw(Mesh &mesh) {
     glBindVertexArray(mesh.getVao());
 
     if (mesh.isInstanced())
         glDrawElementsInstanced(GL_TRIANGLES, mesh.getIndicesSize(), GL_UNSIGNED_INT, 0, mesh.getInstanceSize());
-    else 
+    else
         glDrawElements(GL_TRIANGLES, mesh.getIndicesSize(), GL_UNSIGNED_INT, 0);
-    
+
     glBindVertexArray(0);
 }

@@ -16,19 +16,17 @@ ColorGenerator::ColorGenerator(bool random) {
     part_ = 1.0f / (colorPalette_.size() - 1);
 }
 
-ColorGenerator::ColorGenerator(std::vector<glm::vec4> colorPalette, float spread) :
-            colorPalette_(colorPalette), spread_(spread) {
+ColorGenerator::ColorGenerator(std::vector<glm::vec4> colorPalette, float spread)
+    : colorPalette_(colorPalette), spread_(spread) {
     halfSpread_ = spread_ / 2.0f;
     part_ = 1.0f / (colorPalette_.size() - 1);
     initRandom();
 }
 
-std::vector<glm::vec4> ColorGenerator::genColors(std::vector<float> &heights, 
-                                    float dimension, 
-                                    float amplitude) {
-    std::vector<glm::vec4> colors (heights.size());
+std::vector<glm::vec4> ColorGenerator::genColors(std::vector<float> &heights, float dimension, float amplitude) {
+    std::vector<glm::vec4> colors(heights.size());
     for (int z = 0; z < dimension; z++) {
-        for(int x = 0; x < dimension; x++) {
+        for (int x = 0; x < dimension; x++) {
             colors[z * dimension + x] = calcColor(heights[z * dimension + x], amplitude);
         }
     }
@@ -41,7 +39,7 @@ glm::vec4 ColorGenerator::getRandomColor() {
 }
 
 void ColorGenerator::initRandom() {
-     randEng_ = std::default_random_engine{static_cast<unsigned int>(time(0))};
+    randEng_ = std::default_random_engine{static_cast<unsigned int>(time(0))};
 }
 
 float ColorGenerator::getRandF() {
@@ -63,5 +61,5 @@ glm::vec4 ColorGenerator::interpolateColors(glm::vec4 col1, glm::vec4 col2, floa
     float g = (color1weight * col1.y) + (blend * col2.y);
     float b = (color1weight * col1.z) + (blend * col2.z);
 
-    return glm::vec4(r/255.0f,g/255.0f,b/255.0f,1.0f);
+    return glm::vec4(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
 }
