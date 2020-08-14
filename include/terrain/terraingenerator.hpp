@@ -12,7 +12,7 @@ class TerrainGenerator {
     TerrainGenerator(PerlinNoise pNoise);
     TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise);
 
-    Mesh generateTerrain(int dimension);
+    Mesh generateTerrain(int dimension, int startX, int startZ);
 
     ColorGenerator &getColorGenerator();
 
@@ -32,7 +32,7 @@ class TerrainGenerator {
      */
     std::vector<glm::vec3> generateNormalVector(std::vector<float> &heights, int dimension);
 
-    std::vector<float> generateHeights(int dimension, PerlinNoise pNoise);
+    std::vector<float> generateHeights(int dimension, int startX, int startZ, PerlinNoise pNoise);
 
     std::vector<unsigned int> generateIndexVector(int dimension);
 

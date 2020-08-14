@@ -5,12 +5,9 @@
 #include "global.hpp"
 #include "terraingenerator.hpp"
 
-const int DEFAULT_DIMENSION = 200;
-
 class Terrain : public Drawable {
   public:
-    Terrain(int dimension = DEFAULT_DIMENSION);
-    Terrain(TerrainGenerator &terrainGen, int dimension = DEFAULT_DIMENSION);
+    Terrain(TerrainGenerator *terrainGen, int dimension, int posX, int posZ);
 
     void update(Game *game) override;
 
@@ -20,7 +17,8 @@ class Terrain : public Drawable {
 
   private:
     int dimension_;
+    int posX_, posZ_;
     float amplitude_;
-    void initTerrain(TerrainGenerator &terrainGen);
+    void initTerrain(TerrainGenerator *terrainGen);
 };
 #endif

@@ -10,8 +10,11 @@ TerrainGenerator::TerrainGenerator(PerlinNoise pNoise) : pNoise_(pNoise), colorG
 TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
     : colorGen_(colorGen), pNoise_(pNoise) {}
 
-Mesh TerrainGenerator::generateTerrain(int dimension) {
-    std::vector<float> heights = generateHeights(dimension, pNoise_);
+/*
+ * startX and startZ are used to create seamless terrain, so different chunks fit together
+ */
+Mesh TerrainGenerator::generateTerrain(int dimension, int startX, int startZ) {
+    std::vector<float> heights = generateHeights(dimension, startX, startZ, pNoise_);
     std::vector<glm::vec4> colors = colorGen_.genColors(heights, dimension, pNoise_.getAmplitude());
     return generateMesh(heights, colors, dimension);
 }
@@ -59,11 +62,11 @@ std::vector<glm::vec3> TerrainGenerator::generateNormalVector(std::vector<float>
  * Generate height map.
  * TODO: Fix normal vectors, if I take only abs values as heights, the lighting sucks
  */
-std::vector<float> TerrainGenerator::generateHeights(int dimension, PerlinNoise pNoise) {
+std::vector<float> TerrainGenerator::generateHeights(int dimension, int startX, int startZ, PerlinNoise pNoise) {
     std::vector<float> heights(dimension * dimension);
-    for (int z = 0; z < dimension; z++) {
-        for (int x = 0; x < dimension; x++) {
-            heights[z * dimension + x] = pNoise.getNoise2d(x, z);
+    for (startZ; startZ < dimension + startZ; startZ++) {
+        for (startX; startX < dimension + startX; startX++) {
+            heights[startZ * dimension + startX] = pNoise.getNoise2d(startX, startZ);
         }
     }
     return heights;

@@ -26,6 +26,8 @@ class Game {
 
     void addWater(Drawable *water);
 
+    void update();
+
     View &getView();
 
     std::vector<Drawable *> &getLights();

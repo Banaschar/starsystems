@@ -160,7 +160,7 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/plane.vs", "shader/plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
         new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
         //new Shader("shader/waterShader.vs", "shader/waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
-        // new Shader("waterShader.vs", "waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
+        new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         new Shader("shader/flatColor.vs", "shader/flatColor.fs", "flat", flatColorCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)};
 
@@ -187,9 +187,9 @@ Scene *createPlane(Engine *engine) {
     Drawable *waterTile = DrawableFactory::createPrimitive(PrimitiveType::QUAD, SHADER_TYPE_WATER);
     waterTile->addColor(glm::vec4(0.0, 0.0, 1.0, 0.6));
     glm::vec3 trans = glm::vec3(0, 0, 0);
-    glm::vec3 scale = glm::vec3(500, 1, 500);
+    glm::vec3 scale = glm::vec3(50, 1, 50);
     waterTile->transform(&scale, &trans, NULL);
-    //game->addWater(waterTile);
+    game->addWater(waterTile);
 
     Renderer *renderer = new Renderer(shaders);
     Scene *scene = new Scene(game, renderer);

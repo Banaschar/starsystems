@@ -29,6 +29,17 @@ Game::~Game() {
     }
 }
 
+void Game::update() {
+    view_.update();
+    /*
+     * Update terrain tree and update drawable list
+     * if neccessary
+     */
+    if (terrainQuadTree_->update())
+        terrain_ = terrainQuadTree_->getTerrainList();
+
+}
+
 void Game::addEntity(Drawable *entity) {
     entities_.push_back(entity);
 }

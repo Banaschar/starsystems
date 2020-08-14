@@ -33,11 +33,6 @@ class Renderer {
      *
      */
     void render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
-                DrawableList &water, Game *game);
-    /*
-     *
-     */
-    void render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
                 DrawableList &water, DrawableList *gui, Game *game);
 
     void resolutionChange(int width, int height);

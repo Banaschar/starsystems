@@ -1,14 +1,7 @@
 #include "terrain.hpp"
 #include "perlinnoise.hpp"
 
-Terrain::Terrain(int dimension) : dimension_(dimension) {
-    PerlinNoise pNoise = PerlinNoise(4, 20.0f, 0.09f);
-    TerrainGenerator terrainGen = TerrainGenerator(pNoise);
-
-    initTerrain(terrainGen);
-}
-
-Terrain::Terrain(TerrainGenerator &terrainGen, int dimension) : dimension_(dimension) {
+Terrain::Terrain(TerrainGenerator *terrainGen, int dimension, int posX, int posZ) : dimension_(dimension), posX_(posX), posZ_(posZ) {
     initTerrain(terrainGen);
 }
 
@@ -24,8 +17,14 @@ int Terrain::getDimension() {
     return dimension_;
 }
 
-void Terrain::initTerrain(TerrainGenerator &terrainGen) {
-    Drawable::addMesh(terrainGen.generateTerrain(dimension_));
+/*
+ * Create terrain of size dimension
+ * and translate to specified position
+ */
+void Terrain::initTerrain(TerrainGenerator *terrainGen) {
+    Drawable::addMesh(terrainGen.generateTerrain(dimension_, posX_, posZ_));
     Drawable::setType(SHADER_TYPE_TERRAIN);
     amplitude_ = terrainGen.getPerlinNoise().getAmplitude();
+    glm::vec3 trans = glm::vec3(posX_, 0, posZ_);
+    Drawable::transform(NULL, &trans, NULL);
 }

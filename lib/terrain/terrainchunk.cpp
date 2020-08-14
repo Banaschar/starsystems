@@ -3,8 +3,10 @@
 TerrainChunk::TerrainChunk(Drawable *terrain, Drawable *water) : terrain_(terrain), water_(water) {}
 
 TerrainChunk::~TerrainChunk() {
-    for (TerrainChunk *t : children_)
-        delete t;
+    for (TerrainChunk *t : children_) {
+        if (t)
+            delete t;
+    }
 
     if (terrain_)
         delete terrain_;
@@ -24,6 +26,15 @@ bool TerrainChunk::addChild(TerrainChunk *child) {
     child->setParent(this);
     children_[index_++] = child;
     return true;
+}
+
+void buildTerrainList(std::vector<Terrain*> *terrainList) {
+    terrainList->push_back(terrain_);
+
+    for (TerrainChunk *child : children_) {
+        if (child)
+            child->buildTerrainList(terrainList);
+    }
 }
 
 void TerrainChunk::update() {

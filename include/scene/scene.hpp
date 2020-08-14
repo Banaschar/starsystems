@@ -28,6 +28,7 @@ class Scene {
     std::vector<Drawable *> &entities_;
     std::vector<Drawable *> &water_;
     std::vector<Drawable *> &sky_;
+    TerrainQuadTree &terrainTree_;
     bool autoRotate_;
 };
 #endif

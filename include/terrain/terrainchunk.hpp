@@ -20,12 +20,14 @@ class TerrainChunk {
 
     bool addChild(TerrainChunk *child);
 
+    void buildTerrainList(std::vector<Terrain*> *terrainList);
+
     void update();
 
   private:
     int index_ = 0;
     TerrainChunk *parent_;
-    std::array<TerrainChunk *, 4> children_;
+    std::array<TerrainChunk *, 4> children_{NULL};
     Drawable *terrain_;
     Drawable *water_;
 };

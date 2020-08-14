@@ -4,9 +4,17 @@
 class TerrainQuadTree {
   public:
     TerrainQuadTree();
+    TerrainQuadTree(TerrainGenerator *terrainGen);
+    ~TerrainQuadTree();
+
+    void update();
+    void getTerrainList();
 
   private:
-    int rootChunks = 1;
-    TerrainChunk *rootNode;
+    int rootChunks_ = 1;
+    int chunkDimension_ = 100;
+    TerrainChunk *rootNode_;
+    TerrainGenerator *terrainGenerator_;
+    void initTree();
 };
 #endif

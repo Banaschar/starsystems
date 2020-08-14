@@ -36,7 +36,7 @@ void Scene::setupScene() {
  * Update game object, holding player, with terrain for collision?
  */
 void Scene::update() {
-    game_->getView().update();
+    game_->update();
     if (gui_)
         gui_->update(game_);
 }
@@ -46,10 +46,7 @@ void Scene::update() {
  * Each drawable needs a unique identifier, so it can be deleted from
  */
 void Scene::render() {
-    if (gui_)
-        renderer_->render(lights_, terrain_, entities_, sky_, water_, gui_->getGuiElements(), game_);
-    else
-        renderer_->render(lights_, terrain_, entities_, sky_, water_, game_);
+    renderer_->render(lights_, terrain_, entities_, sky_, water_, gui_ ? gui_->getGuiElements() : NULL, game_);
 }
 
 void Scene::setAutoRotate(bool value) {

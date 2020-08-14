@@ -40,16 +40,13 @@ Renderer::~Renderer() {
 }
 
 void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
-                      DrawableList &water, Game *game) {
-
-    render(lights, terrain, entities, sky, water, NULL, game);
-}
-
-void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
                       DrawableList &water, DrawableList *gui, Game *game) {
 
     processEntities(entities);
-    // Render to waterFrameBuffer
+    /* 
+     * Render to waterFrameBuffer only if there is water to render
+     * and waterTypeQuiality is true 
+     */
     if (waterTypeQuality_ && !water.empty()) {
         glEnable(GL_CLIP_DISTANCE0);
         float distance = 2 * (game->getView().getCameraPosition().y - water[0]->getPosition().y);
@@ -117,7 +114,8 @@ void Renderer::setupRenderer(std::vector<Shader *> shaders) {
 }
 
 /*
- * Puts entities in a hash map for batched drawing
+ * Puts entities not in the base types (terrain, water, sky, lights)
+ * in a hash map for batched drawing
  */
 void Renderer::processEntities(std::vector<Drawable *> &entities) {
     EntityMap::iterator it;
