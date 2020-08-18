@@ -20,7 +20,7 @@ class TerrainChunk {
 
     bool addChild(TerrainChunk *child);
 
-    void buildTerrainList(std::vector<Terrain*> *terrainList);
+    void buildTerrainList(std::vector<Drawable *> *terrainList);
 
     void update();
 

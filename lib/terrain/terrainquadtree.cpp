@@ -21,10 +21,14 @@ TerrainQuadTree::initTree() {
     rootNode_->setParent(NULL);
 }
 
-void TerrainQuadTree::update() {
+bool TerrainQuadTree::update() {
     return false;
 }
 
-void TerrainQuadTree::getTerrainList(std::vector<Terrain *> tlist) {
-    rootNode_->buildTerrainList(tlist);
+/*
+ * TODO: Rather inefficient to clear and rebuild the entire list each time
+ */
+void TerrainQuadTree::getTerrainList(std::vector<Drawable *> *tlist) {
+    tlist->clear();
+    return rootNode_->buildTerrainList(tlist);
 }

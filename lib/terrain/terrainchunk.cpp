@@ -28,7 +28,7 @@ bool TerrainChunk::addChild(TerrainChunk *child) {
     return true;
 }
 
-void buildTerrainList(std::vector<Terrain*> *terrainList) {
+void TerrainChunk::buildTerrainList(std::vector<Drawable *> *terrainList) {
     terrainList->push_back(terrain_);
 
     for (TerrainChunk *child : children_) {

@@ -7,7 +7,7 @@
 
 class Terrain : public Drawable {
   public:
-    Terrain(TerrainGenerator *terrainGen, int dimension, int posX, int posZ);
+    Terrain(TerrainGenerator *terrainGen, int dimension, int posX, int posZ, int lod);
 
     void update(Game *game) override;
 
@@ -17,7 +17,7 @@ class Terrain : public Drawable {
 
   private:
     int dimension_;
-    int posX_, posZ_;
+    int posX_, posZ_, lod_;
     float amplitude_;
     void initTerrain(TerrainGenerator *terrainGen);
 };

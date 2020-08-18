@@ -74,6 +74,10 @@ glm::vec3 &View::getCameraPosition() {
     return camPosition_;
 }
 
+glm::vec3 &View::getCameraDirection() {
+    return camDirection_;
+}
+
 glm::vec3 &View::getWorldNormal() {
     return worldUp_;
 }

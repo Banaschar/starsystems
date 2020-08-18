@@ -1,14 +1,17 @@
 #ifndef TERRAINQUADTREE_H
 #define TERRAINQUADTREE_H
 
+#include "terraingenerator.hpp"
+#include "terrainchunk.hpp"
+
 class TerrainQuadTree {
   public:
     TerrainQuadTree();
     TerrainQuadTree(TerrainGenerator *terrainGen);
     ~TerrainQuadTree();
 
-    void update();
-    void getTerrainList();
+    bool update();
+    void getTerrainList(std::vector<Drawable *> *tlist);
 
   private:
     int rootChunks_ = 1;

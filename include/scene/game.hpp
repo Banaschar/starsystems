@@ -8,6 +8,7 @@
 #include "drawable.hpp"
 #include "light.hpp"
 #include "view.hpp"
+#include "terrainquadtree.hpp"
 
 class Game {
   public:
@@ -50,6 +51,7 @@ class Game {
     View view_;
     Drawable *sun_ = NULL;
     float waterLevel_ = 0.0;
+    TerrainQuadTree *terrainQuadTree_ = NULL;
     std::vector<Drawable *> sky_;
     std::vector<Drawable *> lights_;
     std::vector<Drawable *> terrain_;

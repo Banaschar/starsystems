@@ -11,8 +11,14 @@ class TerrainGenerator {
     TerrainGenerator();
     TerrainGenerator(PerlinNoise pNoise);
     TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise);
-
-    Mesh generateTerrain(int dimension, int startX, int startZ);
+    /*
+     * startX and startZ are the lower left corner of the terrain to generate
+     * dimension is the size of the terrain: Has to be a power of 2 plus 1
+     * so dimension = (2^X) + 1
+     * lod is the level of detail: Has to be a power of 2, smaller than dimension - 1
+     * lod = 2^X < (dimension - 1)
+     */
+    Mesh generateTerrain(int startX, int startZ, int dimension, int lod);
 
     ColorGenerator &getColorGenerator();
 
@@ -22,21 +28,21 @@ class TerrainGenerator {
     ColorGenerator colorGen_;
     PerlinNoise pNoise_;
 
-    float getHeightN(int x, int z, std::vector<float> &heights, int dim);
+    float getHeightN(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod);
 
-    glm::vec3 calcNormal(int x, int z, std::vector<float> &heights, int dim);
+    glm::vec3 calcNormal(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod);
 
     /*
      * Switch out for the normal generator in primitives
      *
      */
-    std::vector<glm::vec3> generateNormalVector(std::vector<float> &heights, int dimension);
+    void generateNormalVector(std::vector<Vertex> &vertices, int dimension, int lod);
 
-    std::vector<float> generateHeights(int dimension, int startX, int startZ, PerlinNoise pNoise);
+    float generateHeights(int x, int z, int lod);
 
-    std::vector<unsigned int> generateIndexVector(int dimension);
+    std::vector<unsigned int> generateIndexVector(int dimension, int lod);
 
-    Mesh generateMesh(std::vector<float> heights, std::vector<glm::vec4> colors, int dimension);
+    Mesh generateMesh(int startX, int startZ, int dimension, int lod);
 };
 
 #endif

@@ -34,10 +34,12 @@ void Game::update() {
     /*
      * Update terrain tree and update drawable list
      * if neccessary
-     */
-    if (terrainQuadTree_->update())
-        terrain_ = terrainQuadTree_->getTerrainList();
-
+     
+    if (terrainQuadTree_) {
+        if (terrainQuadTree_->update()) 
+            terrainQuadTree_->getTerrainList(terrain_, view_.getCameraPosition(), view_.getCameraDirection());
+    }
+    */
 }
 
 void Game::addEntity(Drawable *entity) {

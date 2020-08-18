@@ -15,6 +15,7 @@ class View {
     glm::mat4 &getCameraMatrix();
     glm::mat4 &getProjectionMatrix();
     glm::vec3 &getCameraPosition();
+    glm::vec3 &getCameraDirection();
     glm::mat4 getOrthoProjection();
     glm::vec3 &getWorldNormal();
     void invertPitch();
