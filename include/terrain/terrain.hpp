@@ -15,9 +15,14 @@ class Terrain : public Drawable {
 
     int getDimension();
 
+    glm::vec3 &getPosition();
+
+    int getLod();
+
   private:
     int dimension_;
-    int posX_, posZ_, lod_;
+    int lod_;
+    glm::vec3 position_;
     float amplitude_;
     void initTerrain(TerrainGenerator *terrainGen);
 };

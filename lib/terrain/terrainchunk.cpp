@@ -1,18 +1,18 @@
 #include "terrainchunk.hpp"
 
-TerrainChunk::TerrainChunk(Drawable *terrain, Drawable *water) : terrain_(terrain), water_(water) {}
+TerrainChunk::TerrainChunk(Terrain *terrain, Drawable *water) : terrain_(terrain), water_(water) {}
 
 TerrainChunk::~TerrainChunk() {
-    for (TerrainChunk *t : children_) {
-        if (t)
-            delete t;
-    }
-
     if (terrain_)
         delete terrain_;
 
     if (water_)
         delete water_;
+
+    for (TerrainChunk *t : children_) {
+        if (t)
+            delete t;
+    }
 }
 
 void TerrainChunk::setParent(TerrainChunk *parent) {
@@ -28,13 +28,28 @@ bool TerrainChunk::addChild(TerrainChunk *child) {
     return true;
 }
 
-void TerrainChunk::buildTerrainList(std::vector<Drawable *> *terrainList) {
-    terrainList->push_back(terrain_);
+int TerrainChunk::getDimension() {
+    return terrain_->getDimension();
+}
 
-    for (TerrainChunk *child : children_) {
-        if (child)
-            child->buildTerrainList(terrainList);
-    }
+glm::vec3 &TerrainChunk::getPosition() {
+    return terrain_->getPosition();
+}
+
+int TerrainChunk::getLod() {
+    return terrain_->getLod();
+}
+
+std::array<TerrainChunk *, 4> &TerrainChunk::getChildren() {
+    return children_;
+}
+
+Terrain *TerrainChunk::getTerrain() {
+    return terrain_;
+}
+
+int TerrainChunk::getIndex() {
+    return index_;
 }
 
 void TerrainChunk::update() {

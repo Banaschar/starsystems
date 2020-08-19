@@ -171,22 +171,26 @@ Scene *createPlane(Engine *engine) {
     game->addSun(sun);
 
     // Terrain
+    /*
     PerlinNoise pNoise = PerlinNoise(5, 10.0f, 0.09f);
     TerrainGenerator terrainGen = TerrainGenerator(pNoise);
-    Terrain *terrain = new Terrain(&terrainGen, 513, -256, -256, 4);
+    Terrain *terrain = new Terrain(&terrainGen, 33, 16, 16, 1);
     //glm::vec3 s = glm::vec3(10,1,10);
     //terrain->transform(&s, NULL,NULL);
     game->addTerrain(terrain);
-    /*
-    Terrain *t2 = new Terrain(&terrainGen, 65, 0, -64, 1);
+    
+    Terrain *t2 = new Terrain(&terrainGen, 33, 16, -16, 1);
     game->addTerrain(t2);
 
-    Terrain *t3 = new Terrain(&terrainGen, 65, 64, -64, 1);
+    Terrain *t3 = new Terrain(&terrainGen, 33, -16, -16, 1);
     game->addTerrain(t3);
 
-    Terrain *t4 = new Terrain(&terrainGen, 1025, 128, -64, 12);
+    Terrain *t4 = new Terrain(&terrainGen, 33, -16, 16, 1);
     game->addTerrain(t4);
     */
+    TerrainManager *terr = new TerrainManager(240, 60);
+    game->addTerrainManager(terr);
+    
 
     // SKYBOX
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
@@ -200,11 +204,10 @@ Scene *createPlane(Engine *engine) {
     Drawable *waterTile = DrawableFactory::createPrimitive(PrimitiveType::QUAD, SHADER_TYPE_WATER);
     waterTile->addColor(glm::vec4(0.0, 0.0, 1.0, 0.6));
     glm::vec3 trans = glm::vec3(0, 0, 0);
-    glm::vec3 scale = glm::vec3(50, 1, 50);
+    glm::vec3 scale = glm::vec3(1024, 1, 1024);
     waterTile->transform(&scale, &trans, NULL);
     game->addWater(waterTile);
     */
-
     Renderer *renderer = new Renderer(shaders);
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);

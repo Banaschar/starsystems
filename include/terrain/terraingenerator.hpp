@@ -12,7 +12,7 @@ class TerrainGenerator {
     TerrainGenerator(PerlinNoise pNoise);
     TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise);
     /*
-     * startX and startZ are the lower left corner of the terrain to generate
+     * startX and startZ are the center of the terrain to generate
      * dimension is the size of the terrain: Has to be a power of 2 plus 1
      * so dimension = (2^X) + 1
      * lod is the level of detail: Has to be a power of 2, smaller than dimension - 1

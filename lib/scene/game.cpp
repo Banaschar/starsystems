@@ -12,8 +12,12 @@ Game::Game(View view) : view_(view) {
 }
 
 Game::~Game() {
-    for (Drawable *m : terrain_) {
-        delete m;
+    if (terrainManager_)
+        delete terrainManager_;
+    else {
+        for (Drawable *m : terrain_) {
+            delete m;
+        }
     }
     for (Drawable *m : entities_) {
         delete m;
@@ -34,12 +38,15 @@ void Game::update() {
     /*
      * Update terrain tree and update drawable list
      * if neccessary
-     
-    if (terrainQuadTree_) {
-        if (terrainQuadTree_->update()) 
-            terrainQuadTree_->getTerrainList(terrain_, view_.getCameraPosition(), view_.getCameraDirection());
-    }
-    */
+     */ 
+    if (terrainManager_)
+        terrainManager_->update(view_.getCameraPosition(), &terrain_);
+}
+
+void Game::addTerrainManager(TerrainManager *terrainManager) {
+    if (terrainManager_)
+        delete terrainManager_;
+    terrainManager_ = terrainManager;
 }
 
 void Game::addEntity(Drawable *entity) {

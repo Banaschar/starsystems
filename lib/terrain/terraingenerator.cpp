@@ -102,14 +102,15 @@ std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension, i
 Mesh TerrainGenerator::generateMesh(int startX, int startZ, int dimension, int lod) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
+    int half = (dimension - 1) / 2;
     int index = 0, row = 0, col = 0;
     for (int z = startZ; z < dimension + startZ; z+=lod) {
         for (int x = startX; x < dimension + startX; x+=lod) {
             Vertex vertex;
-            vertex.position.x = x;
-            //vertex.position.y = lod > 1 ? generateHeights(x, z, lod) : pNoise_.getNoise2d(x, z);
-            vertex.position.y = pNoise_.getNoise2d(x, z);
-            vertex.position.z = z;
+            vertex.position.x = x - half;
+            //vertex.position.y = lod == 16 ? generateHeights(x - half, z - half, lod) : pNoise_.getNoise2d(x - half, z - half);
+            vertex.position.y = pNoise_.getNoise2d(x - half, z - half);
+            vertex.position.z = z - half;
             vertex.textureCoords.x = (float)col / ((float)dimensionLod - 1);
             vertex.textureCoords.y = (float)row / ((float)dimensionLod - 1);
             //vertex.color = colors[z * dimension + x];

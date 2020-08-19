@@ -13,22 +13,32 @@
  */
 class TerrainChunk {
   public:
-    TerrainChunk(Drawable *terrain, Drawable *water);
+    TerrainChunk(Terrain *terrain, Drawable *water);
     ~TerrainChunk();
 
     void setParent(TerrainChunk *parent);
 
     bool addChild(TerrainChunk *child);
 
-    void buildTerrainList(std::vector<Drawable *> *terrainList);
-
     void update();
+
+    std::array<TerrainChunk *, 4> &getChildren();
+
+    Terrain *getTerrain();
+
+    int getDimension();
+
+    int getLod();
+
+    glm::vec3 &getPosition();
+
+    int getIndex();
 
   private:
     int index_ = 0;
-    TerrainChunk *parent_;
+    TerrainChunk *parent_ = NULL;
     std::array<TerrainChunk *, 4> children_{NULL};
-    Drawable *terrain_;
+    Terrain *terrain_;
     Drawable *water_;
 };
 #endif

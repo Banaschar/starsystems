@@ -30,7 +30,9 @@ void TerrainRenderer::bindTextures() {
     }
 }
 
-void TerrainRenderer::render(std::vector<Drawable *> terrains, Game *game, glm::vec4 clipPlane) {
+void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm::vec4 &clipPlane) {
+    if (terrains.empty())
+        return;
     shader_->use();
     shader_->uniform("clipPlane", clipPlane);
     shader_->uniform("waterLevel", game->getWaterLevel());

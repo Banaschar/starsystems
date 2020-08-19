@@ -13,7 +13,7 @@ class TerrainRenderer {
 
     void bindTextures();
 
-    void render(std::vector<Drawable *> terrains, Game *game, glm::vec4 clipPlane);
+    void render(std::vector<Drawable *> &terrains, Game *game, glm::vec4 &clipPlane);
 
   private:
     Shader *shader_;

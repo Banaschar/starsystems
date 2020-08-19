@@ -9,8 +9,7 @@
 #include "gui.hpp"
 #include "scene.hpp"
 #include "terrain.hpp"
-#include "terrainchunk.hpp"
-#include "terrainquadtree.hpp"
+#include "terrainmanager.hpp"
 #include "view.hpp"
 
 struct GLFWwindow;

@@ -31,8 +31,10 @@ set(ENGINE_LIBRARY_SOURCE_FILES
     lib/terrain/terrain.cpp
     lib/terrain/terrainchunk.cpp
     lib/terrain/terraingenerator.cpp
+    lib/terrain/terrainmanager.cpp
     lib/terrain/colorgenerator.cpp
     lib/terrain/perlinnoise.cpp
+    lib/terrain/terrainmanager.cpp
     lib/utils/textureloader.cpp
     lib/utils/assetloader.cpp
     )
