@@ -14,8 +14,7 @@ TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
 /*
  * startX and startZ are used to create seamless terrain, so different chunks fit together
  * lod is the detail level of the terrain. 
- * lod can be 1, 2, 4, 8, 16 -> needs to be factor of dimension - 1, so dimension is for example
- * 33 or 65 or 129
+ * dimension is the size
  */
 Mesh TerrainGenerator::generateTerrain(int startX, int startZ, int dimension, int lod) {
     //std::vector<float> heights = generateHeights(dimension, startX, startZ, lod, pNoise_);

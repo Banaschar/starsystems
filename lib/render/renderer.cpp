@@ -41,7 +41,7 @@ Renderer::~Renderer() {
 
 void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
                       DrawableList &water, DrawableList *gui, Game *game) {
-
+    
     processEntities(entities);
     /* 
      * Render to waterFrameBuffer only if there is water to render

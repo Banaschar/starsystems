@@ -10,7 +10,7 @@
 #define DEFAULT_FAR_PLANE 1000.0f
 const float YAW = 90.0f;
 const float PITCH = -30.0f;
-const float SPEED = 10.0f;
+const float SPEED = 20.0f;
 const float SENSITIVITY = 0.1f;
 const float FOV = 45.0f;
 const bool CONSTRAIN_PITCH = true;
@@ -161,6 +161,14 @@ void View::processInputs() {
     if (glfwGetKey(window_, GLFW_KEY_R) == GLFW_PRESS) {
         camPosition_ += glm::vec3(0, 1, 0) * g_deltaTime * speed_;
         flagUpdate_ = true;
+    }
+
+    if (glfwGetKey(window_, GLFW_KEY_SLASH) == GLFW_PRESS) {
+        speed_ = speed_ <= 2 ? 1 : speed_ - 1;
+    }
+
+    if (glfwGetKey(window_, GLFW_KEY_RIGHT_BRACKET) == GLFW_PRESS) {
+        speed_ = speed_ >= 50 ? 50 : speed_ + 1;
     }
 }
 

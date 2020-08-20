@@ -1,7 +1,10 @@
 #include "terrainmanager.hpp"
 
 #include <glm/gtx/norm.hpp>
+#include <cmath>
 #include "global.hpp"
+
+#include <glm/gtx/string_cast.hpp>
 
 TerrainManager::TerrainManager() {
     createDefaultTerrainGenerator();
@@ -44,7 +47,7 @@ bool TerrainManager::createQuadTree(int initialDimension, int minChunkSize) {
         tmp *= 2;
     }
 
-    terrainQuadTree_ = new TerrainQuadTree(initialDimension+1, minChunkSize+1, lod,
+    terrainQuadTree_ = new TerrainQuadTree(initialDimension, minChunkSize, lod,
                                             terrainGenerator_);
 
     return true;
@@ -55,6 +58,9 @@ void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tli
         terrainQuadTree_->update(camPosition, tlist);
 }
 
+/*
+ * TODO: Make numrootchunks depend on max view distance
+ */
 TerrainQuadTree::TerrainQuadTree(int initialDimension, int minChunkSize, int maxLod, 
                                 TerrainGenerator *terrainGen, int numRootChunks) :
                                 rootDimension_(initialDimension), minDimension_(minChunkSize), 
@@ -64,14 +70,16 @@ TerrainQuadTree::TerrainQuadTree(int initialDimension, int minChunkSize, int max
 }
 
 TerrainQuadTree::~TerrainQuadTree() {
-    for (TerrainChunk *t : rootNodes_)
-        delete t;
+    for (auto &kv : rootMap_)
+        delete kv.second;
 }
 
+/*
 void TerrainQuadTree::initTree() {
     fprintf(stdout, "MAX LOD: %i\n", maxLod_);
+    currentPosition_ = glm::vec2(0,0);
     rootNodes_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                            rootDimension_, 0, 0, maxLod_),
+                                            rootDimension_ + 1, 0, 0, maxLod_),
                                             NULL));
     createChildren(rootNodes_[0]);
 
@@ -80,13 +88,42 @@ void TerrainQuadTree::initTree() {
         int zoff[] = {1, 1, 1, 0, 0, -1, -1, -1};
         for (int i = 0; i < 8; i++) {
             rootNodes_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                                rootDimension_, xoff[i] * (rootDimension_ - 1), zoff[i] * (rootDimension_ - 1), maxLod_),
+                                                rootDimension_ + 1, xoff[i] * rootDimension_, zoff[i] * rootDimension_, maxLod_),
                                                 NULL));
         }
     }
 }
+*/
+
+void TerrainQuadTree::initTree() {
+    currentMiddleChunk_ = glm::vec2(0,0);
+
+    for (int z = -1; z < 2; z++) {
+        for (int x = -1; x < 2; x++) {
+            glm::vec2 pos(x,z);
+            TerrainChunk *chunk = NULL;
+            rootMap_.insert(RootNodeMap::value_type(pos, chunk));
+            createRootNode(pos);
+        }
+    }
+
+    createChildren(rootMap_.at(currentMiddleChunk_));
+}
+
+/*
+ * position should be an existing key in rootMap_
+ */
+void TerrainQuadTree::createRootNode(glm::vec2 position) {
+    rootMap_[position] = new TerrainChunk(new Terrain(terrainGenerator_,
+                                                rootDimension_ + 1,
+                                                position.x * rootDimension_,
+                                                position.y * rootDimension_, maxLod_), NULL);  
+}
 
 void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist) {
+    if (!node) // Unfinished chunk, waiting for thread
+        return;
+
     if ((node->getLod() == 1) ||
         (glm::distance2(camPosition, node->getPosition()) > 
         glm::pow(node->getDimension(), 2))) {
@@ -97,7 +134,6 @@ void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::v
             tlist->push_back(node->getTerrain());
             if (!node->isScheduled()) {
                 node->setChildrenScheduled();
-                //createChildren(node);
                 threadPool->addJob(std::bind(&TerrainQuadTree::createChildren, this, node));
             }
         } else {
@@ -109,9 +145,40 @@ void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::v
 
 void TerrainQuadTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist) {
     tlist->clear();
+    updateRoots(camPosition);
+    for (auto &kv : rootMap_)
+        update_(kv.second, camPosition, tlist);
+}
 
-    for (TerrainChunk *root : rootNodes_)
-        update_(root, camPosition, tlist);
+void TerrainQuadTree::updateRoots(glm::vec3 &camPosition) {
+    glm::vec2 currentPos = glm::vec2((int)std::round(camPosition.x / rootDimension_), (int)std::round(camPosition.z / rootDimension_));
+
+    if (currentPos != currentMiddleChunk_) {
+        glm::vec2 opp = (currentPos - currentMiddleChunk_);
+        opp.x *= 3; // If having 8 quadtrees around the central one
+        opp.y *= 3; // -> with numChunksvisible: numChunksVisible * 2 + 1
+        RootNodeMap::iterator it;
+        for (int z = -1; z < 2; z++) { // use numChunksVisible -> determined by maxViewDistance / rootDimension
+            for (int x = -1; x < 2; x++) {
+                glm::vec2 tmp = glm::vec2(currentPos.x + x, currentPos.y + z);
+                it = rootMap_.find(tmp);
+                /*
+                 * Node not yet in map
+                 * create and delete the one opposite
+                 */
+                if (it == rootMap_.end()) {
+                    TerrainChunk *t = NULL;
+                    rootMap_.insert(it, RootNodeMap::value_type(tmp, t));
+                    threadPool->addJob(std::bind(&TerrainQuadTree::createRootNode, this, tmp));
+                
+                    // delete opposite
+                    delete rootMap_.at(tmp - opp);
+                    rootMap_.erase(tmp - opp);
+                }
+            }
+        }
+        currentMiddleChunk_ = currentPos;
+    }
 }
 
 void TerrainQuadTree::createChildren(TerrainChunk *node) {

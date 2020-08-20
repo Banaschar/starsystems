@@ -172,7 +172,7 @@ Scene *createPlane(Engine *engine) {
 
     PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    TerrainManager *terr = new TerrainManager(1920, 60, terrainGen);
+    TerrainManager *terr = new TerrainManager(960, 60, terrainGen);
     game->addTerrainManager(terr);
     
     // SKYBOX

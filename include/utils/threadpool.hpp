@@ -6,6 +6,13 @@
 #include <queue>
 #include <cstdio>
 
+/*
+ * Thread Pool
+ * Available globally through global.hpp
+ * Initialized in Engine()
+ * Call threadPool.addJob(function) to add jobs.
+ * Use std::bind if arguments are required
+ */
 class ThreadPool {
 public:
     ThreadPool(int numThreads) {
