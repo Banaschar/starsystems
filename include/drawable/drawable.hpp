@@ -50,6 +50,8 @@ class Drawable {
 
     std::vector<Mesh> &getMeshes();
 
+    int getTriangleCount(int index = 0);
+
   protected:
     std::string type_;
     std::vector<Mesh> meshes_;

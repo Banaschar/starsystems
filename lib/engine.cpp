@@ -3,14 +3,20 @@
 #include "windowheader.hpp"
 
 float g_deltaTime = 0.0f;
+unsigned int g_triangleCount = 0;
+ThreadPool *threadPool = NULL;
 
 Engine::Engine(int width, int height, const std::string name) {
     initWindow(width, height, name);
+    initThreadPool();
 }
 
 Engine::~Engine() {
     if (scene_)
         delete scene_;
+
+    if (threadPool)
+        delete threadPool;
 }
 
 void Engine::initWindow(int width, int height, const std::string name) {
@@ -55,6 +61,11 @@ void Engine::initWindow(int width, int height, const std::string name) {
     glEnable(GL_CULL_FACE);
 }
 
+void Engine::initThreadPool() {
+    int numThreads = std::thread::hardware_concurrency();
+    threadPool = new ThreadPool(numThreads == 0 ? 4 : numThreads);
+}
+
 GLFWwindow *Engine::getWindow() {
     return window_;
 }
@@ -80,7 +91,7 @@ void Engine::render_() {
         lastFrame = currentFrame;
         nbFrames++;
         if (currentFrame - lastTime >= 1.0) {
-            fprintf(stdout, "%f ms/frame -> %i FPS\n", 1000.0 / float(nbFrames), nbFrames);
+            fprintf(stdout, "%f ms/frame -> %i FPS. Triangles: %u\n", 1000.0 / float(nbFrames), nbFrames, g_triangleCount);
             nbFrames = 0;
             lastTime += 1.0;
         }

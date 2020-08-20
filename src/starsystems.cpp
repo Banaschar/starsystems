@@ -170,28 +170,11 @@ Scene *createPlane(Engine *engine) {
     Game *game = new Game(view);
     game->addSun(sun);
 
-    // Terrain
-    /*
-    PerlinNoise pNoise = PerlinNoise(5, 10.0f, 0.09f);
-    TerrainGenerator terrainGen = TerrainGenerator(pNoise);
-    Terrain *terrain = new Terrain(&terrainGen, 33, 16, 16, 1);
-    //glm::vec3 s = glm::vec3(10,1,10);
-    //terrain->transform(&s, NULL,NULL);
-    game->addTerrain(terrain);
-    
-    Terrain *t2 = new Terrain(&terrainGen, 33, 16, -16, 1);
-    game->addTerrain(t2);
-
-    Terrain *t3 = new Terrain(&terrainGen, 33, -16, -16, 1);
-    game->addTerrain(t3);
-
-    Terrain *t4 = new Terrain(&terrainGen, 33, -16, 16, 1);
-    game->addTerrain(t4);
-    */
-    TerrainManager *terr = new TerrainManager(240, 60);
+    PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f);
+    TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
+    TerrainManager *terr = new TerrainManager(1920, 60, terrainGen);
     game->addTerrainManager(terr);
     
-
     // SKYBOX
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
     game->addSky(skybox);

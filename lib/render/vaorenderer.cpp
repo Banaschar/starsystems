@@ -3,7 +3,14 @@
 
 VaoRenderer::VaoRenderer() {}
 
+/*
+ * Draws the vertex array objects
+ * Checks if mesh is incomplete (so mesh data can be generated on different threads)
+ */
 void VaoRenderer::draw(Mesh &mesh) {
+    if (mesh.incomplete())
+        mesh.updateMesh();
+
     glBindVertexArray(mesh.getVao());
 
     if (mesh.isInstanced())

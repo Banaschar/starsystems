@@ -26,6 +26,7 @@ class Engine {
     Scene *scene_;
     GLFWwindow *window_ = NULL;
     void initWindow(int width, int height, const std::string name);
+    void initThreadPool();
     void render_();
 };
 #endif

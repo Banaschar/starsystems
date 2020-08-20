@@ -64,6 +64,10 @@ glm::vec3 Drawable::getPosition(int index) {
     return modelPositions_.at(index);
 }
 
+int Drawable::getTriangleCount(int index) {
+    return meshes_.at(index).getTriangleCount();
+}
+
 glm::vec3 Drawable::getScale(int index) {
     return scale_.at(index);
 }

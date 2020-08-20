@@ -95,7 +95,7 @@ std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension, i
             indices[cnt++] = dimensionLod * row + col + 1;
         }
     }
-    fprintf(stdout, "Num triangles: %lu\n", indices.size() / 3);
+    
     return indices;
 }
 
@@ -121,6 +121,7 @@ Mesh TerrainGenerator::generateMesh(int startX, int startZ, int dimension, int l
         col = 0;
         row++;
     }
+
     generateNormalVector(vertices, dimension, lod);
 
     return Mesh(vertices, generateIndexVector(dimension, lod));

@@ -34,8 +34,12 @@ class TerrainChunk {
 
     int getIndex();
 
+    bool isScheduled();
+    void setChildrenScheduled();
+
   private:
     int index_ = 0;
+    bool childrenScheduled_ = false;
     TerrainChunk *parent_ = NULL;
     std::array<TerrainChunk *, 4> children_{NULL};
     Terrain *terrain_;

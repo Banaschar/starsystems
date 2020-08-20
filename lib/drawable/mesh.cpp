@@ -6,13 +6,12 @@
 
 Mesh::Mesh() {}
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) : vertices_(vertices), indices_(indices) {
-    initMesh();
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) 
+                        : vertices_(vertices), indices_(indices) {
 }
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices)
     : vertices_(vertices), textures_(textures), indices_(indices) {
-    initMesh();
 }
 /*
 Mesh::Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices) :
@@ -21,18 +20,11 @@ Mesh::Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices) 
 }
 */
 
-void Mesh::generateIndices() {
-    for (int i = 0; i < vertices_.size(); i++) {
-        indices_.push_back(i);
-        indices_.push_back(i + 1);
-        indices_.push_back(i + 2);
-    }
-}
-
 void Mesh::initMesh() {
+    if (incomplete_)
+        incomplete_ = false;
+
     drawInstances_ = 0;
-    if (indices_.size() == 0)
-        generateIndices();
     glGenVertexArrays(1, &vao_);
     glGenBuffers(1, &vbo_);
     glGenBuffers(1, &ebo_);
@@ -93,6 +85,9 @@ void optimize() {
  *
  */
 void Mesh::updateMesh() {
+    if (incomplete_)
+        initMesh();
+
     glBindVertexArray(vao_);
 
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
@@ -118,6 +113,9 @@ void Mesh::updateMesh() {
 }
 
 void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
+    if (incomplete_)
+        initMesh();
+
     isInstanced_ = true;
     drawInstances_ = instanceMatrices->size();
 
@@ -149,6 +147,12 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
  * for instanced draw calls
  */
 void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices) {
+    if (incomplete_)
+        initMesh();
+
+    if (!isInstanced_)
+        makeInstances(instanceMatrices);
+
     drawInstances_ = instanceMatrices->size();
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
     glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
@@ -165,6 +169,10 @@ void Mesh::addColor(glm::vec4 color) {
         vert.color = color;
     }
     updateMesh();
+}
+
+bool Mesh::incomplete() {
+    return incomplete_;
 }
 
 unsigned int Mesh::getVao() {
@@ -185,4 +193,8 @@ bool &Mesh::isInstanced() {
 
 std::vector<Texture> &Mesh::getTextures() {
     return textures_;
+}
+
+int Mesh::getTriangleCount() {
+    return indices_.size() / 3;
 }

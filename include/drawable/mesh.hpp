@@ -13,9 +13,9 @@ class Mesh {
     std::vector<Vertex> vertices_;
     std::vector<unsigned int> indices_;
     bool isInstanced_ = false;
+    bool incomplete_ = true;
     unsigned int drawInstances_ = 0;
     unsigned int vao_, vbo_, ebo_, ibo_;
-    void generateIndices();
     void initMesh();
 
   public:
@@ -23,8 +23,8 @@ class Mesh {
      * TODO: Incomplete type. Handle this
      */
     Mesh();
-    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices = {});
-    Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices = {});
+    Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices);
+    Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices);
     void updateMesh();
     void updateInstances(std::vector<glm::mat4> *instanceMatrices);
     void optimize();
@@ -36,5 +36,7 @@ class Mesh {
     unsigned int getIndicesSize();
     unsigned int getInstanceSize();
     bool &isInstanced();
+    bool incomplete();
+    int getTriangleCount();
 };
 #endif

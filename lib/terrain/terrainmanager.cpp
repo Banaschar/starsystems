@@ -1,6 +1,7 @@
 #include "terrainmanager.hpp"
 
 #include <glm/gtx/norm.hpp>
+#include "global.hpp"
 
 TerrainManager::TerrainManager() {
     createDefaultTerrainGenerator();
@@ -36,8 +37,14 @@ bool TerrainManager::createQuadTree(int initialDimension, int minChunkSize) {
         fprintf(stdout, "TERRAINMANAGER: Dimension or chunk size invalid\n");
         return false;
     } 
+    int tmp = minChunkSize;
+    int lod = 1;
+    while (tmp < initialDimension) {
+        lod = lod == 1 ? 2 : lod + 2;
+        tmp *= 2;
+    }
 
-    terrainQuadTree_ = new TerrainQuadTree(initialDimension+1, minChunkSize+1, glm::max(12, ((initialDimension / minChunkSize) - 1) * 2),
+    terrainQuadTree_ = new TerrainQuadTree(initialDimension+1, minChunkSize+1, lod,
                                             terrainGenerator_);
 
     return true;
@@ -62,7 +69,7 @@ TerrainQuadTree::~TerrainQuadTree() {
 }
 
 void TerrainQuadTree::initTree() {
-
+    fprintf(stdout, "MAX LOD: %i\n", maxLod_);
     rootNodes_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, 
                                             rootDimension_, 0, 0, maxLod_),
                                             NULL));
@@ -86,11 +93,17 @@ void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::v
 
         tlist->push_back(node->getTerrain());
     } else {
-        if (node->getIndex() == 0)
-            createChildren(node);
-
-        for (TerrainChunk *child : node->getChildren())
-            update_(child, camPosition, tlist);
+        if (node->getIndex() != 4) {
+            tlist->push_back(node->getTerrain());
+            if (!node->isScheduled()) {
+                node->setChildrenScheduled();
+                //createChildren(node);
+                threadPool->addJob(std::bind(&TerrainQuadTree::createChildren, this, node));
+            }
+        } else {
+            for (TerrainChunk *child : node->getChildren())
+                update_(child, camPosition, tlist);
+        }
     }
 }
 

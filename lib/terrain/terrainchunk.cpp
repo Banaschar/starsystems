@@ -52,6 +52,14 @@ int TerrainChunk::getIndex() {
     return index_;
 }
 
+bool TerrainChunk::isScheduled() {
+    return childrenScheduled_;
+}
+
+void TerrainChunk::setChildrenScheduled() {
+    childrenScheduled_ = !childrenScheduled_;
+}
+
 void TerrainChunk::update() {
     /*
     terrain_->update();
