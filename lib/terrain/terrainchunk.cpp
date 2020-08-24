@@ -48,6 +48,10 @@ Terrain *TerrainChunk::getTerrain() {
     return terrain_;
 }
 
+Drawable *TerrainChunk::getWater() {
+    return water_;
+}
+
 int TerrainChunk::getIndex() {
     return index_;
 }

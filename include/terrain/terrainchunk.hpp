@@ -25,6 +25,7 @@ class TerrainChunk {
     std::array<TerrainChunk *, 4> &getChildren();
 
     Terrain *getTerrain();
+    Drawable *getWater();
 
     int getDimension();
 

@@ -18,6 +18,9 @@ Game::~Game() {
         for (Drawable *m : terrain_) {
             delete m;
         }
+        for (Drawable *m : water_) {
+            delete m;
+        }
     }
     for (Drawable *m : entities_) {
         delete m;
@@ -25,9 +28,7 @@ Game::~Game() {
     for (Drawable *m : lights_) {
         delete m;
     }
-    for (Drawable *m : water_) {
-        delete m;
-    }
+
     for (Drawable *m : sky_) {
         delete m;
     }
@@ -40,7 +41,7 @@ void Game::update() {
      * if neccessary
      */ 
     if (terrainManager_)
-        terrainManager_->update(view_.getCameraPosition(), &terrain_);
+        terrainManager_->update(view_.getCameraPosition(), &terrain_, &water_);
 }
 
 void Game::addTerrainManager(TerrainManager *terrainManager) {

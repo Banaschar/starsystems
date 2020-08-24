@@ -33,11 +33,13 @@ void WaterRenderer::render(std::vector<Drawable *> water, Game *game) {
         prepareQuality();
 
     for (Drawable *drawable : water) {
-        drawable->update(game);
-        shader_->prepare(drawable, game);
+        if (drawable) {
+            drawable->update(game);
+            shader_->prepare(drawable, game);
 
-        for (Mesh &mesh : drawable->getMeshes())
-            vaoRenderer_->draw(mesh);
+            for (Mesh &mesh : drawable->getMeshes())
+                vaoRenderer_->draw(mesh);
+        }
     }
     shader_->end();
 

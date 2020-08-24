@@ -34,24 +34,26 @@ void TerrainRenderer::bindTextures() {
 void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm::vec4 &clipPlane) {
     if (terrains.empty())
         return;
+
     shader_->use();
     shader_->uniform("clipPlane", clipPlane);
     shader_->uniform("waterLevel", game->getWaterLevel());
     bindTextures();
     g_triangleCount = 0;
     for (Drawable *drawable : terrains) {
-        Terrain *terrain = static_cast<Terrain *>(drawable);
-        shader_->uniform("amplitude", terrain->getAmplitude());
-        shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
-        drawable->update(game);
-        shader_->prepare(drawable, game);
+        if (drawable) {
+            Terrain *terrain = static_cast<Terrain *>(drawable);
+            shader_->uniform("amplitude", terrain->getAmplitude());
+            shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
+            drawable->update(game);
+            shader_->prepare(drawable, game);
 
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        for (Mesh &mesh : drawable->getMeshes())
-            vaoRenderer_->draw(mesh);
-        //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-        g_triangleCount += drawable->getTriangleCount();
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            for (Mesh &mesh : drawable->getMeshes())
+                vaoRenderer_->draw(mesh);
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            g_triangleCount += drawable->getTriangleCount();
+        }
     }
     shader_->end();
 

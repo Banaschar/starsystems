@@ -12,7 +12,7 @@ void VaoRenderer::draw(Mesh &mesh) {
         mesh.updateMesh();
 
     glBindVertexArray(mesh.getVao());
-
+    
     if (mesh.isInstanced())
         glDrawElementsInstanced(GL_TRIANGLES, mesh.getIndicesSize(), GL_UNSIGNED_INT, 0, mesh.getInstanceSize());
     else

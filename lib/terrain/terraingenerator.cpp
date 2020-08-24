@@ -61,7 +61,7 @@ void TerrainGenerator::generateNormalVector(std::vector<Vertex> &vertices, int d
 }
 
 /*
- * Generate height map.
+ * Generate height points. Averages between neighbouring points. SLOW
  * TODO: Fix normal vectors, if I take only abs values as heights, the lighting sucks
  *
  * TODO: Improve averages and USE them

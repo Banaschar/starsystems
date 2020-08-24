@@ -13,6 +13,7 @@ class DrawableFactory {
     static Drawable *createCubeMap(std::vector<std::string> cubeTexPaths, std::string type);
     static Drawable *createModel(const std::string &path, const std::string &type);
     static Drawable *createLight(const std::string &path, const std::string &type);
+    static Drawable *createWaterTile(glm::vec3 position, int scale, glm::vec3 color);
     static Drawable *createLight(PrimitiveType prim, std::string type, int size = 1);
 
   private:

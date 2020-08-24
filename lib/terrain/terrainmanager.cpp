@@ -1,10 +1,11 @@
 #include "terrainmanager.hpp"
 
 #include <glm/gtx/norm.hpp>
-#include <cmath>
-#include "global.hpp"
-
 #include <glm/gtx/string_cast.hpp>
+#include <cmath>
+
+#include "global.hpp"
+#include "drawablefactory.hpp"
 
 TerrainManager::TerrainManager() {
     createDefaultTerrainGenerator();
@@ -53,9 +54,9 @@ bool TerrainManager::createQuadTree(int initialDimension, int minChunkSize) {
     return true;
 }
 
-void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist) {
+void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (terrainQuadTree_)
-        terrainQuadTree_->update(camPosition, tlist);
+        terrainQuadTree_->update(camPosition, tlist, wlist);
 }
 
 /*
@@ -73,27 +74,6 @@ TerrainQuadTree::~TerrainQuadTree() {
     for (auto &kv : rootMap_)
         delete kv.second;
 }
-
-/*
-void TerrainQuadTree::initTree() {
-    fprintf(stdout, "MAX LOD: %i\n", maxLod_);
-    currentPosition_ = glm::vec2(0,0);
-    rootNodes_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                            rootDimension_ + 1, 0, 0, maxLod_),
-                                            NULL));
-    createChildren(rootNodes_[0]);
-
-    if (numRootChunks_ > 1) {
-        int xoff[] = {-1, 0, 1, -1, 1, -1, 0, 1};
-        int zoff[] = {1, 1, 1, 0, 0, -1, -1, -1};
-        for (int i = 0; i < 8; i++) {
-            rootNodes_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                                rootDimension_ + 1, xoff[i] * rootDimension_, zoff[i] * rootDimension_, maxLod_),
-                                                NULL));
-        }
-    }
-}
-*/
 
 void TerrainQuadTree::initTree() {
     currentMiddleChunk_ = glm::vec2(0,0);
@@ -117,10 +97,11 @@ void TerrainQuadTree::createRootNode(glm::vec2 position) {
     rootMap_[position] = new TerrainChunk(new Terrain(terrainGenerator_,
                                                 rootDimension_ + 1,
                                                 position.x * rootDimension_,
-                                                position.y * rootDimension_, maxLod_), NULL);  
+                                                position.y * rootDimension_, maxLod_), 
+                                            DrawableFactory::createWaterTile(glm::vec3(position.x * rootDimension_, 0, position.y * rootDimension_), rootDimension_ / 2, glm::vec3(0,0,1))); 
 }
 
-void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist) {
+void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node) // Unfinished chunk, waiting for thread
         return;
 
@@ -129,27 +110,34 @@ void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::v
         glm::pow(node->getDimension(), 2))) {
 
         tlist->push_back(node->getTerrain());
+        wlist->push_back(node->getWater());
     } else {
         if (node->getIndex() != 4) {
             tlist->push_back(node->getTerrain());
+            wlist->push_back(node->getWater());
             if (!node->isScheduled()) {
                 node->setChildrenScheduled();
                 threadPool->addJob(std::bind(&TerrainQuadTree::createChildren, this, node));
             }
         } else {
             for (TerrainChunk *child : node->getChildren())
-                update_(child, camPosition, tlist);
+                update_(child, camPosition, tlist, wlist);
         }
     }
 }
 
-void TerrainQuadTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist) {
+void TerrainQuadTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     tlist->clear();
+    wlist->clear();
     updateRoots(camPosition);
     for (auto &kv : rootMap_)
-        update_(kv.second, camPosition, tlist);
+        update_(kv.second, camPosition, tlist, wlist);
 }
 
+/*
+ * Creates new root nodes in visible distance and deletes old ones
+ * TODO: Implement maxViewDistance and numChunksVisible instead of the current hardcoded numbers
+ */
 void TerrainQuadTree::updateRoots(glm::vec3 &camPosition) {
     glm::vec2 currentPos = glm::vec2((int)std::round(camPosition.x / rootDimension_), (int)std::round(camPosition.z / rootDimension_));
 
@@ -188,27 +176,13 @@ void TerrainQuadTree::createChildren(TerrainChunk *node) {
 
     glm::vec3 nodePosition = node->getPosition();
 
-    node->addChild(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                    childDimension + 1, 
-                                    node->getPosition().x + childPosOffset,
-                                    node->getPosition().z + childPosOffset,
-                                    childLod), NULL));
-
-    node->addChild(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                    childDimension + 1, 
-                                    node->getPosition().x - childPosOffset,
-                                    node->getPosition().z - childPosOffset,
-                                    childLod), NULL));
-
-    node->addChild(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                    childDimension + 1, 
-                                    node->getPosition().x + childPosOffset,
-                                    node->getPosition().z - childPosOffset,
-                                    childLod), NULL));
-
-    node->addChild(new TerrainChunk(new Terrain(terrainGenerator_, 
-                                    childDimension + 1, 
-                                    node->getPosition().x - childPosOffset,
-                                    node->getPosition().z + childPosOffset,
-                                    childLod), NULL));
+    for (int z = -1; z < 2; z += 2) {
+        for (int x = -1; x < 2; x += 2) {
+            glm::vec3 pos(node->getPosition().x + x * childPosOffset, 0, node->getPosition().z + z * childPosOffset);
+            node->addChild(new TerrainChunk(new Terrain(terrainGenerator_,
+                                                childDimension + 1,
+                                                pos.x, pos.z, childLod),
+                                            DrawableFactory::createWaterTile(pos, childPosOffset, glm::vec3(0,0,1))));
+        }
+    }
 }

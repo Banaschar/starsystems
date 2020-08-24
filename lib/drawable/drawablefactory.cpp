@@ -61,6 +61,16 @@ Drawable *DrawableFactory::createModel(const std::string &path, const std::strin
         return new Drawable(meshes, type);
 }
 
+Drawable *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm::vec3 color) {
+    Drawable *tmp;
+    tmp = createPrimitive(PrimitiveType::QUAD, SHADER_TYPE_WATER);
+    tmp->addColor(glm::vec4(color, 0.6));
+    glm::vec3 scaleVec = glm::vec3(scale, 1, scale);
+    tmp->transform(&scaleVec, &position, NULL);
+
+    return tmp;
+}
+
 Drawable *DrawableFactory::createLight(const std::string &path, const std::string &type) {
     std::vector<Mesh> meshes;
     if (!AssetLoader::loadModel(path, &meshes))

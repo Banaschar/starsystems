@@ -170,10 +170,12 @@ Scene *createPlane(Engine *engine) {
     Game *game = new Game(view);
     game->addSun(sun);
 
-    PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f);
+    //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f);
+    PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
     TerrainManager *terr = new TerrainManager(960, 60, terrainGen);
     game->addTerrainManager(terr);
+    //game->addTerrain(new Terrain(terrainGen, 241, 0, 0, 1));
     
     // SKYBOX
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
@@ -183,14 +185,9 @@ Scene *createPlane(Engine *engine) {
     Gui *gui = new Gui();
 
     // WATER TEST
-    /*
-    Drawable *waterTile = DrawableFactory::createPrimitive(PrimitiveType::QUAD, SHADER_TYPE_WATER);
-    waterTile->addColor(glm::vec4(0.0, 0.0, 1.0, 0.6));
-    glm::vec3 trans = glm::vec3(0, 0, 0);
-    glm::vec3 scale = glm::vec3(1024, 1, 1024);
-    waterTile->transform(&scale, &trans, NULL);
-    game->addWater(waterTile);
-    */
+    //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
+    //game->addWater(waterTile);
+    
     Renderer *renderer = new Renderer(shaders);
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);

@@ -87,12 +87,10 @@ void optimize() {
 void Mesh::updateMesh() {
     if (incomplete_)
         initMesh();
-
+    
     glBindVertexArray(vao_);
-
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(Vertex), &vertices_[0], GL_STATIC_DRAW);
-
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), &indices_[0], GL_STATIC_DRAW);
 
@@ -168,7 +166,9 @@ void Mesh::addColor(glm::vec4 color) {
     for (Vertex &vert : vertices_) {
         vert.color = color;
     }
-    updateMesh();
+
+    if (!incomplete_)
+        updateMesh();
 }
 
 bool Mesh::incomplete() {

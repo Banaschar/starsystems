@@ -63,6 +63,7 @@ void Engine::initWindow(int width, int height, const std::string name) {
 
 void Engine::initThreadPool() {
     int numThreads = std::thread::hardware_concurrency();
+    fprintf(stdout, "ENGINE: ThreadPool created with %i threads.\n", numThreads);
     threadPool = new ThreadPool(numThreads == 0 ? 4 : numThreads);
 }
 

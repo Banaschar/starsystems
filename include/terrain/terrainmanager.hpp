@@ -14,7 +14,7 @@ class TerrainQuadTree {
                     TerrainGenerator *terrainGen, int numRootChunks = 9);
     ~TerrainQuadTree();
 
-    void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist);
+    void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 
   private:
     glm::vec2 currentMiddleChunk_;
@@ -28,7 +28,7 @@ class TerrainQuadTree {
     void createRootNode(glm::vec2 position);
     void createChildren(TerrainChunk *node);
     void updateRoots(glm::vec3 &camPosition);
-    void update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist);
+    void update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 };
 
 class TerrainManager {
@@ -45,7 +45,7 @@ public:
     TerrainManager(int initialDimension, int minChunkSize, TerrainGenerator *terrainGen = NULL);
     ~TerrainManager();
 
-    void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist);
+    void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
     bool createQuadTree(int initialDimension, int minChunkSize);
 
 private:

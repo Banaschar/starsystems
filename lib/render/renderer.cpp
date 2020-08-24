@@ -47,6 +47,7 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
      * Render to waterFrameBuffer only if there is water to render
      * and waterTypeQuiality is true 
      */
+
     if (waterTypeQuality_ && !water.empty()) {
         glEnable(GL_CLIP_DISTANCE0);
         float distance = 2 * (game->getView().getCameraPosition().y - water[0]->getPosition().y);
@@ -135,9 +136,12 @@ void Renderer::processEntities(std::vector<Drawable *> &entities) {
 void Renderer::renderScene(DrawableList &lights, DrawableList &terrain, DrawableList &sky, Game *game,
                            glm::vec4 clipPlane) {
     renderList(lightShader_, lights, game, clipPlane); // render lights
+
     if (terrainRenderer_)
         terrainRenderer_->render(terrain, game, clipPlane); // render terrain
+
     renderEntities(game, clipPlane);                        // render models
+    
     if (skyRenderer_)
         skyRenderer_->render(sky, game, clipPlane); // render skybox
 }
