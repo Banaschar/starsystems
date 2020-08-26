@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "primitives.hpp"
 
@@ -19,7 +20,14 @@ TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
 Mesh TerrainGenerator::generateTerrain(int startX, int startZ, int dimension, int lod) {
     //std::vector<float> heights = generateHeights(dimension, startX, startZ, lod, pNoise_);
     //std::vector<glm::vec4> colors = colorGen_.genColors(heights, dimension, pNoise_.getAmplitude());
-    return generateMesh(startX, startZ, dimension, lod);
+    if (sphereRadius_)
+        return generateMeshSphere(startX, startZ, dimension, sphereRadius_, lod);
+    else
+        return generateMesh(startX, startZ, dimension, lod);
+}
+
+Mesh TerrainGenerator::generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis) {
+    generateMeshSphere(start, dimension, radius, lod, axis);
 }
 
 ColorGenerator &TerrainGenerator::getColorGenerator() {
@@ -28,6 +36,22 @@ ColorGenerator &TerrainGenerator::getColorGenerator() {
 
 PerlinNoise &TerrainGenerator::getPerlinNoise() {
     return pNoise_;
+}
+
+void TerrainGenerator::setSphereRadius(int radius) {
+    sphereRadius_ = radius;
+}
+
+int TerrainGenerator::getSphereRadius() {
+    return sphereRadius_;
+}
+
+glm::vec3 TerrainGenerator::getSphereOrigin() {
+    return sphereOrigin_;
+}
+
+void TerrainGenerator::setSphereOrigin(glm::vec3 origin) {
+    sphereOrigin_ = origin;
 }
 
 float TerrainGenerator::getHeightN(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod) {
@@ -96,6 +120,113 @@ std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension, i
     }
     
     return indices;
+}
+
+glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int z) {
+    if (axis.x == 0)
+        return glm::vec3(radius, x, z);
+    else if (axis.y == 0)
+        return glm::vec3(x, radius, z);
+    else
+        return glm::vec3(x, z, radius);
+}
+
+Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis) {
+    if ((dimension - 1) % radius != 0)
+        fprintf(stdout, "[TERRAINGENERATOR] WARNING: Radius should be Dimension/2\n");
+
+    int dimensionLod = ((dimension - 1) / lod) + 1;
+    std::vector<Vertex> vertices(dimensionLod * dimensionLod);
+    int half = (dimension - 1) / 2;
+    int index = 0, row = 0, col = 0;
+
+    int direction;
+    if (axis.x != 0)
+        direction = axis.x;
+    else if (axis.y != 0)
+        direction = axis.y;
+    else
+        direction = axis.z;
+
+    glm::vec2 starts;
+    if (axis.x != 0) {
+        starts.x = start.x;
+        if (axis.y != 0)
+            starts.y = start.y;
+        else 
+            starts.y = start.z;
+    } else {
+        starts.x = start.y;
+        starts.y = start.z;
+    }
+    for (int z = starts.y; z < dimension + starts.y; z+=lod) {
+        for (int x = starts.x; x < dimension + starts.x; x+=lod) {
+
+            glm::vec3 tmpPos = getSpherePos(axis, direction * radius, x - half, z - half);
+            tmpPos = sphereOrigin_ + (float)radius * glm::normalize(tmpPos - sphereOrigin_);
+
+            float height = pNoise_.getNoise3d(tmpPos.x, tmpPos.y, tmpPos.z);
+            tmpPos = sphereOrigin_ + ((float)radius + height) * glm::normalize(tmpPos - sphereOrigin_);
+            
+            Vertex vertex;
+            vertex.position.x = tmpPos.x;
+            vertex.position.y = tmpPos.y;
+            vertex.position.z = tmpPos.z;
+            vertex.textureCoords.x = (float)col / ((float)dimensionLod - 1);
+            vertex.textureCoords.y = (float)row / ((float)dimensionLod - 1);
+            //vertex.color = colors[z * dimension + x];
+            vertices[index] = vertex;
+            index++;
+            col++;
+        }
+        col = 0;
+        row++;
+    }
+
+    generateNormalVector(vertices, dimension, lod);
+
+    return Mesh(vertices, generateIndexVector(dimension, lod));    
+}
+
+Mesh TerrainGenerator::generateMeshSphere(int startX, int startZ, int dimension, int radius, int lod) {
+    if ((dimension - 1) % radius != 0)
+        fprintf(stdout, "[TERRAINGENERATOR] WARNING: Radius should be Dimension/2\n");
+
+    int dimensionLod = ((dimension - 1) / lod) + 1;
+    std::vector<Vertex> vertices(dimensionLod * dimensionLod);
+    int half = (dimension - 1) / 2;
+    int index = 0, row = 0, col = 0;
+    
+    for (int z = startZ; z < dimension + startZ; z+=lod) {
+        for (int x = startX; x < dimension + startX; x+=lod) {
+            Vertex vertex;
+            float height = pNoise_.getNoise2d(x - half, z - half);
+            //glm::vec3 tmpPos(x - half, radius + height, z - half);
+            glm::vec3 tmpPos(x - half, radius, z - half);
+            //float distanceToCenter = radius + height;
+            float distanceToCenter = radius;
+            tmpPos = sphereOrigin_ + distanceToCenter * glm::normalize(tmpPos - sphereOrigin_);
+            // find the point on a line from the center to tmpPos, that is exactly distanceToCenter away from the center
+            // need a sphere color shader, that colors based on distance from origin, instead of height y
+            // --> distance - radius = height for the color function
+            
+            vertex.position.x = tmpPos.x;
+            vertex.position.y = tmpPos.y;
+            vertex.position.z = tmpPos.z;
+            vertex.textureCoords.x = (float)col / ((float)dimensionLod - 1);
+            vertex.textureCoords.y = (float)row / ((float)dimensionLod - 1);
+            //vertex.color = colors[z * dimension + x];
+            vertices[index] = vertex;
+            index++;
+            col++;
+        }
+        col = 0;
+        row++;
+    }
+
+    generateNormalVector(vertices, dimension, lod);
+
+    return Mesh(vertices, generateIndexVector(dimension, lod));    
 }
 
 Mesh TerrainGenerator::generateMesh(int startX, int startZ, int dimension, int lod) {

@@ -20,7 +20,7 @@ void main()
     color = vertexColor;
     normal = normalMatrix * vertexNormal;
     vec4 modelPos = modelMatrix * vec4(vertexPosition, 1.0);
-    fragPos_worldspace = modelPos.xyz;
+    fragPos_worldspace = vertexPosition;//modelPos.xyz;
     texCoords = textureCoords * tiling; // Tile texture over terrain
     gl_ClipDistance[0] = dot(modelPos, clipPlane); // water render clipping
     gl_Position = MVP * vec4(vertexPosition, 1.0);

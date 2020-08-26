@@ -17,6 +17,8 @@ uniform vec3 cameraPos;
 uniform Light light;
 uniform float amplitude;
 uniform float waterLevel;
+uniform int sphereRadius;
+uniform vec3 sphereOrigin;
 
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_diffuse2;
@@ -52,15 +54,20 @@ vec4 calculateLighting(vec3 normal) {
  *
  */
 vec4 blendTextures() {
+    float height = fragPos_worldspace.y;
+
+    if (sphereRadius > 0)
+        height = distance(fragPos_worldspace, sphereOrigin) - sphereRadius; // Subtract radius to get height relative to zero
+
     float spread = 0.45;
     float part = 1.0 / 4.0;
     vec4 seaGround = texture(texture_diffuse1, texCoords);
     vec4 sand = texture(texture_diffuse2, texCoords);
-    if (fragPos_worldspace.y < waterLevel-1.0)
+    if (height < waterLevel-1.0)
         return seaGround;
 
-    if (fragPos_worldspace.y < waterLevel)
-        return mix(seaGround, sand, 1 - abs(fragPos_worldspace.y));
+    if (height < waterLevel)
+        return mix(seaGround, sand, 1 - abs(height));
     
     vec4 grass = texture(texture_diffuse3, texCoords);
     vec4 ground = texture(texture_diffuse4, texCoords);
@@ -68,7 +75,7 @@ vec4 blendTextures() {
     vec4 snow = texture(texture_diffuse6, texCoords);
 
     //float value = (fragPos_worldspace.y + amplitude) / (amplitude * 2);
-    float value = min(fragPos_worldspace.y + 2.0f, amplitude) / amplitude;
+    float value = min(height + 2.0f, amplitude) / amplitude;
     value = clamp((value - spread/2.0) * (1.0 / spread), 0.0, 0.9999);
     int firstPalette = int(floor(value / part));
     float blend = (value - (firstPalette * part)) / part;

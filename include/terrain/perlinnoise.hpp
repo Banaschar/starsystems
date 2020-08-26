@@ -3,10 +3,10 @@
 
 #include <vector>
 
-#define DEFAULT_OCTAVES 6
-#define DEFAULT_AMPLITUDE 10
-#define DEFAULT_ROUGHNESS 0.35f
-
+const int DEFAULT_OCTAVES = 6;
+const int DEFAULT_AMPLITUDE = 10;
+const float DEFAULT_ROUGHNESS = 0.35f;
+const int DEFAULT_HEIGHT_OFFSET_FACTOR = 2;
 /*
  * Based on the improved Perlin Noise
  * https://mrl.nyu.edu/~perlin/noise/
@@ -16,26 +16,29 @@
 class PerlinNoise {
   public:
     PerlinNoise();
-    PerlinNoise(int octaves, float amplitude, float roughness, unsigned int seed = 0);
+    PerlinNoise(int octaves, float amplitude, float roughness, int heightOffsetFactor, unsigned int seed = 0);
 
     float getNoise2d(int x, int y);
-
+    float getNoise3d(int x, int y, int z);
     float getAmplitude();
 
   private:
     int octaves_;
+    int heightOffset_;
     float amplitude_;
     float roughness_;
     unsigned int seed_;
 
     std::vector<int> generateRandomPerm();
     float noise2d(float x, float y);
+    float noise3d(float x, float y, float z);
 
     float fade(float t);
 
     float lerp(float t, float a, float b);
 
     float grad(int hash, float x, float y);
+    float grad(int hash, float x, float y, float z);
     std::vector<int> p;
     std::vector<int> perm_ = {
         151, 160, 137, 91,  90,  15, // permutation vector

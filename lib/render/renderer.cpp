@@ -47,7 +47,6 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
      * Render to waterFrameBuffer only if there is water to render
      * and waterTypeQuiality is true 
      */
-
     if (waterTypeQuality_ && !water.empty()) {
         glEnable(GL_CLIP_DISTANCE0);
         float distance = 2 * (game->getView().getCameraPosition().y - water[0]->getPosition().y);

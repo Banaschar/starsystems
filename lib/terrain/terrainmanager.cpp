@@ -7,19 +7,8 @@
 #include "global.hpp"
 #include "drawablefactory.hpp"
 
-TerrainManager::TerrainManager() {
-    createDefaultTerrainGenerator();
-}
-
-TerrainManager::TerrainManager(TerrainGenerator *terrainGen) : terrainGenerator_(terrainGen) {}
-
-TerrainManager::TerrainManager(int initialDimension, int minChunkSize, TerrainGenerator *terrainGen) {
-    if (terrainGen)
-        terrainGenerator_ = terrainGen;
-    else
-        createDefaultTerrainGenerator();
-
-    if (!createQuadTree(initialDimension, minChunkSize)) {
+TerrainManager::TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) : terrainGenerator_(terrainGen) {
+    if (!createQuadTree(initialDimension, lodLevels, type, origin)) {
         fprintf(stdout, "TERRAINMANAGER: Could not create Quad Tree\n");
     }
 }
@@ -32,24 +21,35 @@ TerrainManager::~TerrainManager() {
 }
 
 void TerrainManager::createDefaultTerrainGenerator() {
-    PerlinNoise pNoise = PerlinNoise(5, 10.0f, 0.09f);
+    PerlinNoise pNoise = PerlinNoise(5, 10.0f, 0.09f, 0);
     terrainGenerator_ = new TerrainGenerator(pNoise);
 }
 
-bool TerrainManager::createQuadTree(int initialDimension, int minChunkSize) {
-    if (minChunkSize % 60 != 0 || initialDimension % 120 != 0) {
-        fprintf(stdout, "TERRAINMANAGER: Dimension or chunk size invalid\n");
-        return false;
-    } 
-    int tmp = minChunkSize;
-    int lod = 1;
-    while (tmp < initialDimension) {
-        lod = lod == 1 ? 2 : lod + 2;
-        tmp *= 2;
+/*
+ * TODO: FIX ISSUE IF DIMENSION IS LARGER THAN 2^6 * 60 = 3840
+ * PROVIDE a list of possible lod levels
+ */
+bool TerrainManager::createQuadTree(int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) {
+    for (int i = 2; i <= 12; i += 2) {
+        if (initialDimension % i != 0) {
+            fprintf(stdout, "[TERRAINMANAGER] Error: Dimension not divisible by %i\n", i);
+            return false;
+        }
     }
 
-    terrainQuadTree_ = new TerrainQuadTree(initialDimension, minChunkSize, lod,
-                                            terrainGenerator_);
+    int tmp = initialDimension;
+    int lod = 1;
+    while (tmp > 60) {
+        lod = lod == 1 ? 2 : lod + 2;
+        tmp /= 2;
+    }
+
+    if (type == TerrainType::SPHERE) {
+        terrainGenerator_->setSphereRadius(initialDimension / 2);
+        terrainGenerator_->setSphereOrigin(origin);
+        terrainCubeTree_ = new TerrainCubeTree(terrainGenerator_, initialDimension, lod);
+    } else
+        terrainQuadTree_ = new TerrainQuadTree(initialDimension, lod, terrainGenerator_);
 
     return true;
 }
@@ -57,16 +57,84 @@ bool TerrainManager::createQuadTree(int initialDimension, int minChunkSize) {
 void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (terrainQuadTree_)
         terrainQuadTree_->update(camPosition, tlist, wlist);
+    else
+        terrainCubeTree_->update(camPosition, tlist, wlist);
+}
+
+TerrainCubeTree::TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, int lod) : terrainGenerator_(terrainGen) {
+    initTree(dimension, lod);
+}
+
+TerrainCubeTree::~TerrainCubeTree() {
+    for (Terrain *t : cubeSides_) {
+        if (t)
+            delete t;
+    }
+}
+
+void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+    tlist->clear();
+    //wlist->clear();
+
+    for (Terrain *t : cubeSides_)
+        tlist->push_back(t);
+}
+
+void TerrainCubeTree::initTree(int dimension, int lod) {
+    
+    Terrain *t = new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), lod, glm::vec3(1,0,0));
+    Terrain *t1 = new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), lod, glm::vec3(-1,0,0));
+    Terrain *t2 = new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), lod, glm::vec3(0,1,0));
+    Terrain *t3 = new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), lod, glm::vec3(0,-1,0));
+    Terrain *t4 = new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), lod, glm::vec3(0,0,1));
+    Terrain *t5 = new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), lod, glm::vec3(0,0,-1));
+
+    /*
+    //x
+    glm::vec3 rotAx(1,0,0);
+    //glm::vec3 trans(0,0,radius);
+    t->transform(NULL, NULL, &rotAx, 90);
+    //-z
+    rotAx = glm::vec3(0,0,1);
+    //trans = glm::vec3(-radius,0,0);
+    t1->transform(NULL, NULL, &rotAx, 90);
+
+    //y
+    //rotAx = glm::vec3(0,1,0);
+    //trans = glm::vec3(0,dimension / 2,0);
+    //t2->transform(NULL, &trans, NULL);
+    //-y
+    rotAx = glm::vec3(1,0,0);
+    //trans = glm::vec3(0,-radius,0);
+    t3->transform(NULL, NULL, &rotAx, 180);
+
+    // -x
+    rotAx = glm::vec3(-1,0,0);
+    //trans = glm::vec3(0,0,-radius);
+    t4->transform(NULL, NULL, &rotAx, 90);
+
+    //z
+    rotAx = glm::vec3(0,0,-1);
+    //trans = glm::vec3(radius,0,0);
+    t5->transform(NULL, NULL, &rotAx, 90);
+    */
+
+
+    cubeSides_.push_back(t);
+    cubeSides_.push_back(t1);
+    cubeSides_.push_back(t2);
+    cubeSides_.push_back(t3);
+    cubeSides_.push_back(t4);
+    cubeSides_.push_back(t5);
 }
 
 /*
  * TODO: Make numrootchunks depend on max view distance
  */
-TerrainQuadTree::TerrainQuadTree(int initialDimension, int minChunkSize, int maxLod, 
-                                TerrainGenerator *terrainGen, int numRootChunks) :
-                                rootDimension_(initialDimension), minDimension_(minChunkSize), 
-                                maxLod_(maxLod), terrainGenerator_(terrainGen),
-                                numRootChunks_(numRootChunks) {
+TerrainQuadTree::TerrainQuadTree(int initialDimension, int maxLod, 
+                                TerrainGenerator *terrainGen) :
+                                rootDimension_(initialDimension), 
+                                maxLod_(maxLod), terrainGenerator_(terrainGen) {
     initTree();
 }
 
@@ -87,7 +155,8 @@ void TerrainQuadTree::initTree() {
         }
     }
 
-    createChildren(rootMap_.at(currentMiddleChunk_));
+    if (maxLod_ > 1)
+        createChildren(rootMap_.at(currentMiddleChunk_));
 }
 
 /*
@@ -101,6 +170,9 @@ void TerrainQuadTree::createRootNode(glm::vec2 position) {
                                             DrawableFactory::createWaterTile(glm::vec3(position.x * rootDimension_, 0, position.y * rootDimension_), rootDimension_ / 2, glm::vec3(0,0,1))); 
 }
 
+/*
+ * TODO: Better distance methods, to calculate from quad edges, not the center
+ */
 void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node) // Unfinished chunk, waiting for thread
         return;

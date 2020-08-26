@@ -45,6 +45,8 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
             Terrain *terrain = static_cast<Terrain *>(drawable);
             shader_->uniform("amplitude", terrain->getAmplitude());
             shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
+            shader_->uniform("sphereRadius", terrain->getSphereRadius());
+            shader_->uniform("sphereOrigin", terrain->getSphereOrigin());
             drawable->update(game);
             shader_->prepare(drawable, game);
 

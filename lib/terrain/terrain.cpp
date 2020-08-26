@@ -1,7 +1,11 @@
 #include "terrain.hpp"
 #include "perlinnoise.hpp"
 
-Terrain::Terrain(TerrainGenerator *terrainGen, int dimension, int posX, int posZ, int lod) : dimension_(dimension), position_(glm::vec3(posX, 0, posZ)), lod_(lod) {
+Terrain::Terrain(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis) : dimension_(dimension), position_(position), lod_(lod), axis_(axis) {
+    initTerrain(terrainGen);
+}
+
+Terrain::Terrain(TerrainGenerator *terrainGen, int dimension, int startX, int startZ, int lod, glm::vec3 axis) : dimension_(dimension), position_(glm::vec3(startX, 0, startZ)), lod_(lod), axis_(axis) {
     initTerrain(terrainGen);
 }
 
@@ -24,14 +28,27 @@ glm::vec3 &Terrain::getPosition() {
 int Terrain::getLod() {
     return lod_;
 }
+
+int Terrain::getSphereRadius() {
+    return sphereRadius_;
+}
+
+glm::vec3 &Terrain::getSphereOrigin() {
+    return sphereOrigin_;
+}
 /*
  * Create terrain of size dimension
  * and translate to specified position
  */
 void Terrain::initTerrain(TerrainGenerator *terrainGen) {
-    Drawable::addMesh(terrainGen->generateTerrain(position_.x, position_.z, dimension_, lod_));
+    sphereRadius_ = terrainGen->getSphereRadius();
+    sphereOrigin_ = terrainGen->getSphereOrigin();
+
+    if (sphereRadius_)
+        Drawable::addMesh(terrainGen->generateTerrain(position_, dimension_, sphereRadius_, lod_, axis_));
+    else
+        Drawable::addMesh(terrainGen->generateTerrain(position_.x, position_.z, dimension_, lod_));
+    
     Drawable::setType(SHADER_TYPE_TERRAIN);
     amplitude_ = terrainGen->getPerlinNoise().getAmplitude();
-    //glm::vec3 trans = glm::vec3(posX_, 0, posZ_);
-    //Drawable::transform(NULL, &trans, NULL);
 }
