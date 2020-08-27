@@ -17,6 +17,7 @@ class Terrain : public Drawable {
     int getLod();
     int getSphereRadius();
     glm::vec3 &getSphereOrigin();
+    glm::vec3 &getAxis();
 
   private:
     int dimension_;
@@ -26,6 +27,6 @@ class Terrain : public Drawable {
     float amplitude_;
     int sphereRadius_;
     glm::vec3 sphereOrigin_;
-    void initTerrain(TerrainGenerator *terrainGen);
+    void initTerrain(TerrainGenerator *terrainGen, bool sphere3d);
 };
 #endif

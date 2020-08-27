@@ -37,6 +37,7 @@ class TerrainChunk {
 
     bool isScheduled();
     void setChildrenScheduled();
+    void destroyChildren();
 
   private:
     int index_ = 0;

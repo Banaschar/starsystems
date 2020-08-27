@@ -52,7 +52,6 @@ class TerrainGenerator {
     std::vector<unsigned int> generateIndexVector(int dimension, int lod);
 
     Mesh generateMesh(int startX, int startZ, int dimension, int lod);
-    Mesh generateMeshSphere(int startX, int startZ, int dimension, int radius, int lod);
     Mesh generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis);
 };
 

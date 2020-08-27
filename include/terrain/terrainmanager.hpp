@@ -22,6 +22,9 @@ class TerrainQuadTree {
 
   private:
     glm::vec2 currentMiddleChunk_;
+    glm::vec3 currentMiddleChunkPosition_;
+    int sphereRadius_;
+    glm::vec3 sphereOrigin_;
     RootNodeMap rootMap_;
     int rootDimension_;
     int maxLod_;
@@ -41,8 +44,10 @@ public:
 
 private:
   TerrainGenerator *terrainGenerator_;
-  std::vector<Terrain *> cubeSides_;
-  void initTree(int dimension, int lod);
+  std::vector<TerrainChunk *> cubeSides_;
+  int planetSizeLod_ = 12;
+  int maxLodQuadTree_;
+  void initTree(int dimension);
   void createRootNode();
   void update_();
 };

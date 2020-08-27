@@ -64,6 +64,15 @@ void TerrainChunk::setChildrenScheduled() {
     childrenScheduled_ = !childrenScheduled_;
 }
 
+void TerrainChunk::destroyChildren() {
+    for (TerrainChunk *t : children_) {
+        if (t) {
+            delete t;
+            t = NULL;
+        }
+    }
+}
+
 void TerrainChunk::update() {
     /*
     terrain_->update();

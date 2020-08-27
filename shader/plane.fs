@@ -101,5 +101,6 @@ vec4 blendTextures() {
 void main()
 {
     //FragColor = calculateLighting(normal) * color;
-    FragColor = calculateLighting(normal) * blendTextures();
+    //FragColor = calculateLighting(normal) * blendTextures();
+    FragColor = vec4(0.8,0.8,0.8,1.0) * blendTextures();
 }

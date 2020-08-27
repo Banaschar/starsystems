@@ -166,7 +166,9 @@ Scene *createPlane(Engine *engine) {
 
     Light *sun = new Light(glm::vec3(200000, 200000, 10000));
 
-    View view = View(engine->getWindow(), glm::vec3(0, 20, -20));
+    //glm::vec3 camPos = glm::vec3(0, 20, -20);
+    glm::vec3 camPos = glm::vec3(0, 100, -250);
+    View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
 
