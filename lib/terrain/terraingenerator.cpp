@@ -173,7 +173,7 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
         for (int x = starts.x; x < dimension + starts.x; x+=lod) {
 
             glm::vec3 tmpPos = getSpherePos(axis, direction * radius, x - half, z - half);
-            // modify point so they are all have distance radius from origin 
+            // modify point so it has distance radius from origin 
             tmpPos = sphereOrigin_ + (float)radius * glm::normalize(tmpPos - sphereOrigin_);
             // Get height based on sphere point
             float height = pNoise_.getNoise3d(tmpPos.x, tmpPos.y, tmpPos.z); 

@@ -4,6 +4,8 @@
 #include <glm/gtx/string_cast.hpp>
 #include <cmath>
 
+//#include <cstdlib>
+
 #include "global.hpp"
 #include "drawablefactory.hpp"
 
@@ -62,10 +64,16 @@ void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tli
 }
 
 /*
+ * MINIMUM PLANET DIMENSION: 3 * 60! Then there fits exactly one quadtree with 9 root nodes inside one side
+ *
  * TODO: For big planets, I need to switch from terrainCubeTree to terrainQuadTree(with 9 root nodes) when close to the ground
  * e.g. Everything else needs to be deleted
  * If the camera reaches a certain distance, I create a quad tree where the central chunk has the coordinates directly below the camera
  * ----> how to get that point? The point on the line between the camera position and the planet origin that has distance radius from the origin
+ *
+ * ----->>> PRECALCULATE EDGE VALUES FOR EACH SIDE!
+ * E.G. if I'm initially on axis 0 (1,0,0), have a vec2 that contains the max y and z values which are still on the cube side
+ * -----------> NO! That does not help, because I need the position on the cube side for the quad tree movement...
  */
 TerrainCubeTree::TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, int lod) : terrainGenerator_(terrainGen), maxLodQuadTree_(lod) {
     initTree(dimension);
@@ -91,6 +99,10 @@ void TerrainCubeTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::v
     }
 }
 
+/*
+ * It's a LOT easier to just use each side as a quad tree. Trying to move over the sphere with multiple quadTrees is HARD
+ * But for really large planets, I can't do it that way
+ */
 void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     tlist->clear();
     wlist->clear();
@@ -255,6 +267,12 @@ void TerrainQuadTree::createChildren(TerrainChunk *node) {
     }
 }
 
+/*
+ *
+ * OLD cubetree stuff. Delete if the new one works.
+ */
+
+/*
 glm::vec3 TerrainQuadTree::getRootNodeSpherePosition(glm::vec3 &axis, glm::vec2 &position, glm::vec3 &middlePosition) {
     if (axis.x != 0) 
         return glm::vec3(radius * axis.x, middlePosition.y + position.y * dimension, middlePosition.z + position.x * dimension); 
@@ -279,10 +297,7 @@ glm::vec3 TerrainQuadTree::getRootNodeSpherePositionAxisChange(glm::vec3 &axis, 
         return glm::vec3(middlePosition.x + pos.x * axis.y * rootDimension_, middlePosition.y + axis.y * (rootDimension_ / 2), sphereRadius_ * axis.z);
 }
 
-/*
- * Get axis of new root node
- * If more then one axis ---> edge case, don't create, don't draw
- */
+
 glm::vec3 TerrainQuadTree::getSphereAxis(glm::vec3 &position) {
     glm::vec3 border(sphereOrigin_.x + (planetDimension_ / 2), sphereOrigin_.y + (planetDimension_ / 2), sphereOrigin_.z + (planetDimension_ / 2));
     glm::vec3 axis(0,0,0)
@@ -343,33 +358,130 @@ bool TerrainQuadTree::isEdgeCase(glm::vec3 &axis) {
 void TerrainQuadTree::initSphereConstants() {
     int dim = rootDimension_ / 2; 
     distanceCenterCorner_ = glm::sqrt(dim * dim + glm::sqrt(2*dim*dim));
+    int cnt = 0;
+
+    glm::vec3 tmp;
+    for (int i = 0; i < 3, i++) {
+        tmp = glm::vec3(0,0,0);
+        tmp[i] = 1;
+        cubeSideMap_[tmp] = cnt++;
+        tmp[i] = -1;
+        cubeSideMap_[tmp] = cnt++;
+    }
 }
 
-void TerrainQuadTree::computePositionAndAxis(glm::vec3 &camPos, glm::vec3 *axisOut, glm::vec3 *positionOut) {
+bool TerrainQuadTree::verifyPosIsOnAxis(glm::vec3 *axis, glm::vec3 *pos) {
+    glm::vec3 border(sphereOrigin_.x + sphereRadius_, sphereOrigin_.y + sphereRadius_, sphereOrigin_.z + sphereRadius_);
+    bool ret = true;
+    switch (cubeSideMap_[*axis]) {
+        case 0:
+        case 1:
+            if (abs(pos->y) > border.y || abs(pos->z) > border.z)
+                ret = false;
+            break;
+        case 2:
+        case 3:
+            if (abs(pos->x) > border.x || abs(pos->z) > border.z)
+                ret = false;
+            break;
+        case 4:
+        case 5:
+            if (abs(pos->x) > border.x || abs(pos->y) > border.y)
+                ret = false;
+            break;
+        default:
+            fprintf(stdout, "[TERRAINQUADTREE] Error: Unexpected Key in CubeSideMap: %i\n", cubeSideMap_[axis]);
+    }
+}
+
+void TerrainQuadTree::computeInitialCubePositionAndAxis(glm::vec3 &camPos, glm::vec3 *axisOut, glm::vec3 *positionOut) {
     int halfdim = rootDimension_ / 2;
     float intersectionDistance;
     
     for (int i = 0; i < 3; i++) {
         glm::vec3 axis(0,0,0);
         axis[i] = -1;
-        glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(-halfdim, - halfdim, -halfdim), axis, &intersectionDistance);
+        // intersectRayPlane(rayOrigin, rayDirection, planeOrigin, planeNormal, intersectionDistance)
+        glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(sphereOrigin_ - halfdim, sphereOrigin_ - halfdim, sphereOrigin_ - halfdim), axis, &intersectionDistance);
         if (intersectionDistance < distanceCenterCorner_) {
             *axisOut = axis;
-            break;
+            *positionOut = sphereOrigin_ + intersectionDistance * glm::normalize(camPos - sphereOrigin_);
+            if (verifyPosIsOnAxis(axisOut, positionOut))
+                break;
         }
         axis[i] = 1;
-        glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(halfdim, halfdim, halfdim), axis, &intersectionDistance);
+        glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(sphereOrigin_ + halfdim, sphereOrigin_ + halfdim, sphereOrigin_ + halfdim), axis, &intersectionDistance);
         if (intersectionDistance < distanceCenterCorner_) {
             *axisOut = axis;
+            *positionOut = sphereOrigin_ + intersectionDistance * glm::normalize(camPos - sphereOrigin_);
+            if (verifyPosIsOnAxis(axisOut, positionOut))
+                break;
         }
     }
 
     *positionOut = sphereOrigin_ + intersectionDistance * glm::normalize(camPos - sphereOrigin_);
 }
 
-/*
+void TerrainQuadTree::computeCubePosition(glm::vec3 &camPos, glm::vec3 &axis) {
+    int halfdim = rootDimension_ / 2;
+    float intersectionDistance;
+    int dir = (axis[0] < 0 || axis[1] < 0 || axis[2] < 0) ? -1 : 1;
+    glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(dir*halfdim, dir*halfdim, dir*halfdim), axis, &intersectionDistance)
+}
+
+glm::vec2 TerrainQuadTree::computeQuadMapPosition(glm::vec3 &pos, glm::vec3 &axis, glm::vec3 &current) {
+    glm::vec2 res(0,0)
+    switch (cubeSideMap_[axis]) {
+        case 0:
+        case 1:
+            if (abs(pos.y) > current.y + rootDimension_ / 2)  
+                res.x = pos.y / abs(pos.y);
+            if (abs(pos.z) > current.z + rootDimension_ / 2)
+                res.y = pos.z / abs(pos.z);
+            break;
+        case 2:
+        case 3:
+            if (abs(pos.x) > current.x + rootDimension_ / 2)
+                res.x = pos.x / abs(pos.x);
+            if (abs(pos.z) > current.z + rootDimension_ / 2)
+                res.y = pos.z / abs(pos.z):
+            break;
+        case 4:
+        case 5:
+            if (abs(pos.x) > current.x + rootDimension_ / 2)
+                res.x = pos.x / abs(pos.x);
+            if (abs(pos.y) > current.y + rootDimension_ / 2)
+                res.y = pos.y / abs(pos.y);
+            break;
+        default:
+            fprintf(stdout, "[TERRAINQUADTREE] Error: Unexpected Key in CubeSideMap: %i\n", cubeSideMap_[axis]);
+    }
+    return res;
+}
+
+glm::vec3 TerrainQuadTree::CubeToSpherePos(glm::vec3 &pos) {
+    return sphereOrigin_ + (float)sphereRadius_ * glm::normalize(pos - sphereOrigin_);
+}
+
+
  * Root node middle positions can't lie on the border of planet sides. Distance to border must be at leat rootDim/2 or mutliples of it
- */
+ *
+ * IDEA(not used yet): Divide each cube side in a board of root nodes (need to be at least 9 in reality of course)
+ * --> Current axis is in map position as well
+ * Current axis value is radius=? 
+ * 
+ * ---> JA, weil ich brauch verschiedene keys !
+ * |------------------|
+ * |         |        |
+ * |         |        |
+ * |(x,1,0   |(x,1,1) |
+ * |------------------|
+ * |         |        |
+ * |         |        |
+ * |(x,0,0)  |(x,0,1) | 
+ * |------------------|
+ *
+ 
 void TerrainQuadTree::updateRootsSphere(glm::vec3 &camPosition) {
     if (camPosition.x - currentMiddleChunkPosition_.x < rootDimension_ / 4 &&
         camPosition.y - currentMiddleChunkPosition_.y < rootDimension_ / 4 &&
@@ -380,32 +492,29 @@ void TerrainQuadTree::updateRootsSphere(glm::vec3 &camPosition) {
     glm::vec3 axis;
     computePositionAndAxis(camPosition, &axis, &positionOnCubeSide);
 
-    glm::vec2 currentPos;
-    if (abs(camPosition.x) > abs(currentMiddleChunkPosition_.x) + rootDimension_ / 2)
-
+    glm::vec2 currentPos = computeQuadMapPosition(positionOnCubeSide, axis, currentMiddleChunk_);
 
     if (currentPos != currentMiddleChunk_) {
         glm::vec2 opp = (currentPos - currentMiddleChunk_);
         currentMiddleChunkPosition_ = rootMap_[currentPos]->getPosition();
-        bool currentMiddleIsEdgeCase = isEdgeCase(currentMiddleChunkPosition_);
+        
         opp.x *= 3; // If having 8 quadtrees around the central one
         opp.y *= 3; // -> with numChunksvisible: numChunksVisible * 2 + 1
         RootNodeMap::iterator it;
         for (int z = -1; z < 2; z++) { // use numChunksVisible -> determined by maxViewDistance / rootDimension
             for (int x = -1; x < 2; x++) {
-                glm::vec2 tmp = glm::vec2(currentPos.x + x, currentPos.y + z);
+                glm::vec2 tmp = glm::vec2(currentPos.x + x, currentPos.y + z);  // FUCK FUCK FUCK. Wenn der key noch nicht existiert, ich aber immer die gleichen benutze...dat geht nicht
                 it = rootMap_.find(tmp);
-                /*
-                 * Node not yet in map
-                 * create and delete the one opposite
-                 */
+
                 if (it == rootMap_.end()) {
                     TerrainChunk *t = NULL;
                     rootMap_.insert(it, RootNodeMap::value_type(tmp, t));
                     threadPool->addJob(std::bind(&TerrainQuadTree::createRootNodeSphere, this, tmp, currentMiddleChunkPosition_));
                 
                     // delete opposite
-                    delete rootMap_.at(tmp - opp);
+                    TerrainChunk *d = rootMap_.at(tmp - opp);
+                    if (d)
+                        delete d;
                     rootMap_.erase(tmp - opp);
                 }
             }
@@ -448,3 +557,4 @@ void TerrainQuadTree::createChildrenSphere(TerrainChunk *node) {
         }
     }
 }
+*/
