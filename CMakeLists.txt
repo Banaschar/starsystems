@@ -56,7 +56,7 @@ add_definitions(
     -DGLEW_NO_GLU
     -D_CRT_SECURE_NO_WARNINGS)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ggdb")
 
 # Engine library
 add_library(engine STATIC

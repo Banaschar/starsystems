@@ -33,7 +33,7 @@ public:
   /*
    * .
    */
-  CubeSideTree(glm::vec3 axis, TerrainGenerator *terrainGen, CubeSideMap *cubeSideMap, AxisIntegerMap *axisIntegerMap, int planetDimension, int rootDimension, int rootLod);
+  CubeSideTree(glm::vec3 axis, TerrainGenerator *terrainGen, CubeSideMap *cubeSideMap, AxisIntegerMap *axisIntegerMap, glm::vec3 &sphereOrigin, int planetDimension, int rootDimension, int rootLod);
   ~CubeSideTree();
 /*
  * args: 
@@ -66,7 +66,7 @@ private:
   AxisIntegerMap *axisIntegerMap_; // maps the axis on integers -> initialized by TerrainCubeTree
   CubeSideMap *cubeSideMap_; // holds the references to the other cubeSides
 
-  void printDefaultCubeSideMapError();
+  void printDefaultCubeSideMapError(std::string name, int key);
   glm::vec3 computeCubeSideOrigin();
   glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
   void updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
@@ -89,7 +89,7 @@ private:
     /*
    * Sets axisOut to the new cubeSide axis if overflow
    */
-  bool overflow(glm::vec3 &pos, glm::vec3 *axisOut);
+  bool overflow(glm::vec3 &pos, glm::vec3 &axisOut);
 
   void destroyRootNode(glm::vec2 pos);
     /*
@@ -150,6 +150,10 @@ private:
   void updateCubeSides(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
   void computeInitialCubePositionAndAxis(glm::vec3 &camPos, glm::vec3 *axisOut, glm::vec3 *positionOut);
   bool verifyPosIsOnAxis(glm::vec3 &axis, glm::vec3 &pos);
+  glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
+  void createChildren(TerrainChunk *node);
+  glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int offset, glm::vec3 &axis);
+  void updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 };
 
 enum class TerrainType {SPHERE, PLANE};
