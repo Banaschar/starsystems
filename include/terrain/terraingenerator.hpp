@@ -49,7 +49,7 @@ class TerrainGenerator {
 
     float generateHeights(int x, int z, int lod);
 
-    std::vector<unsigned int> generateIndexVector(int dimension, int lod);
+    std::vector<unsigned int> generateIndexVector(int dimension, int lod, bool inverted = false);
 
     Mesh generateMesh(int startX, int startZ, int dimension, int lod);
     Mesh generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis);

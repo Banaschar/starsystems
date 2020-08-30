@@ -70,7 +70,7 @@ private:
   glm::vec3 computeCubeSideOrigin();
   glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
   void updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-  void handleRootNodeCreation(glm::vec2 pos);
+  bool handleRootNodeCreation(glm::vec2 pos);
   void createRootNode(glm::vec2 cubeSideGridPos);
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int childPosOffset);
   void createChildren(TerrainChunk *node);
@@ -85,7 +85,7 @@ private:
    * Returns true if handled on different
    * Modifies pos...
    */
-  bool handleOnDifferentCubeSide(glm::vec2 pos, bool destroy = false);
+  bool handleOnDifferentCubeSide(glm::vec2 &pos, glm::vec2 &change, bool &edgeCase);
     /*
    * Sets axisOut to the new cubeSide axis if overflow
    */

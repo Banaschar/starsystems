@@ -93,8 +93,8 @@ TerrainCubeTree::~TerrainCubeTree() {
 
 void TerrainCubeTree::createCubeSideTree(glm::vec3 &camPos) {
     // TODO: usefull value retrival of cubeSideRootNodeDimension
-    int cubeSideRootNodeDimension = cubeSideDimension_ / 8;
-    int lod = 1;
+    int cubeSideRootNodeDimension = cubeSideDimension_ / 4;
+    int lod = 4;
     for (auto &kv : axisIntegerMap_) {
         cubeSideMap_[kv.first] = new CubeSideTree(kv.first, terrainGenerator_, &cubeSideMap_, &axisIntegerMap_, sphereOrigin_, cubeSideDimension_, cubeSideRootNodeDimension, lod);
     }
@@ -224,7 +224,7 @@ void TerrainCubeTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std
     if (!node) // unfinished terrain chunk, waiting on thread
         return; 
 
-    if ((node->getLod() <= planetSizeLod_ - 4) ||
+    if ((node->getLod() <= planetSizeLod_ - 6) ||
             (glm::distance2(camWorldPos, cubeWorldPosToSpherePos(node->getPosition())) > glm::pow(node->getDimension() * 2.5f, 2))) {
         tlist->push_back(node->getTerrain());
     } else {
@@ -298,9 +298,9 @@ CubeSideTree::CubeSideTree(glm::vec3 axis, TerrainGenerator *terrainGen, CubeSid
                                 : axis_(axis), terrainGenerator_(terrainGen), cubeSideMap_(cubeSideMap), axisIntegerMap_(axisIntegerMap), 
                                 sphereOrigin_(sphereOrigin), cubeSideDimension_(cubeSideDimension), rootDimension_(rootDimension), rootLod_(rootLod) {
     if (cubeSideDimension_ % rootDimension_ != 0)
-        fprintf(stdout, "[CUBESIDETREE] Error: Planet dimension not divisible by QuadTree Dimension\n");
+        fprintf(stderr, "[CUBESIDETREE] Error: Planet dimension not divisible by QuadTree Dimension\n");
     if (cubeSideDimension_ % 2 != 0)
-        fprintf(stdout, "[CUBESIDETREE] Error: cubeSideDimension not divisible by 2\n");
+        fprintf(stderr, "[CUBESIDETREE] Error: cubeSideDimension not divisible by 2\n");
 
     sphereRadius_ = cubeSideDimension_ / 2;
     maxGridPosition_ = (cubeSideDimension_ / rootDimension_) - 1;
@@ -503,7 +503,7 @@ glm::vec2 CubeSideTree::mapPosOnNewAxis(glm::vec2 &pos, glm::vec2 &change, int o
             if (change.x != 0)
               newPos = glm::vec2(0 + offset, pos.y);
             if (change.y != 0)
-              newPos = glm::vec2(0 + offset, pos.x);
+              newPos = glm::vec2(pos.x, 0 + offset);
             break;
         default:
             printDefaultCubeSideMapError("mapPosOnNewAxis", axisIntegerMap_->at(axis_));
@@ -547,10 +547,8 @@ glm::vec3 CubeSideTree::getNextAxis(glm::vec2 &change) {
     return ret;
 }
 
-bool CubeSideTree::handleOnDifferentCubeSide(glm::vec2 pos, bool destroy) {
+bool CubeSideTree::handleOnDifferentCubeSide(glm::vec2 &pos, glm::vec2 &change, bool &edgeCase) {
     bool ret = false;
-    bool edgeCase = false;
-    glm::vec2 change;
     if (pos.x < 0) {
         if (pos.y < 0) // Edge case, no node here
             ret = edgeCase = true;
@@ -591,20 +589,6 @@ bool CubeSideTree::handleOnDifferentCubeSide(glm::vec2 pos, bool destroy) {
         }
     }
 
-    if (ret && !edgeCase && !destroy) {
-        glm::vec3 newAxis = getNextAxis(change);
-        cubeSideMap_->at(newAxis)->handleRootNodeCreation(mapPosOnNewAxis(pos, change));
-    } else if (ret && destroy) {
-        glm::vec3 newAxis = getNextAxis(change);
-        int offset;
-        if (change.x != 0)
-            offset = pos.x > 0 ? pos.x - (maxGridPosition_ + 1) : pos.x + 1;
-        else
-            offset = pos.y > 0 ? pos.y - (maxGridPosition_ + 1) : pos.y + 1;
-
-        cubeSideMap_->at(newAxis)->destroyRootNode(mapPosOnNewAxis(pos, change, offset));
-    }
-
     return ret;
 }
 
@@ -641,8 +625,6 @@ void CubeSideTree::createChildren(TerrainChunk *node) {
     int childPosOffset = childDimension / 2;
     int childLod = glm::max(1, node->getLod() - 2);
 
-    glm::vec3 nodePosition = node->getPosition();
-
     for (int z = -1; z < 2; z += 2) {
         for (int x = -1; x < 2; x += 2) {
             glm::vec3 pos = getChildPosition(node->getPosition(), x, z, childPosOffset);
@@ -659,16 +641,21 @@ void CubeSideTree::createRootNode(glm::vec2 cubeSideGridPos) {
     containsActiveRootNode_ = true;
 }
 
-void CubeSideTree::handleRootNodeCreation(glm::vec2 pos) {
-    //fprintf(stdout, "Create Root Node. Axis: %s. GridPos: %s. WorldPos: %s\n", glm::to_string(axis_).c_str(), glm::to_string(pos).c_str(), glm::to_string(gridPosToWorldCubePos(pos)).c_str());
-    TerrainChunk *t = NULL;
-    rootNodeMap_[pos] = t;
-    threadPool->addJob(std::bind(&CubeSideTree::createRootNode, this, pos));
+bool CubeSideTree::handleRootNodeCreation(glm::vec2 pos) {
+    bool ret = false;
+    if (rootNodeMap_.find(pos) == rootNodeMap_.end()) {
+        TerrainChunk *t = NULL;
+        rootNodeMap_[pos] = t;
+        threadPool->addJob(std::bind(&CubeSideTree::createRootNode, this, pos));
+        ret = true;
+        //fprintf(stdout, "[CreateRootNode] Axis: %s. GridPos: %s. WorldPos: %s\n", glm::to_string(axis_).c_str(), glm::to_string(pos).c_str(), glm::to_string(gridPosToWorldCubePos(pos)).c_str());
+    }
+
+    return ret;
 }
 
 void CubeSideTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
-    // Node center position is in cube world position. -> get spherePosition
-    if (!node) // unfinished terrain chunk, waiting on thread
+    if (!node)
         return; 
 
     if ((node->getLod() == 1) ||
@@ -699,15 +686,14 @@ CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere) {
     // Check for overflow
     glm::vec3 newAxis = axis_;
     if (overflow(cubeWorldPos, newAxis)) {
-        fprintf(stdout, "OVERFLOW\n");
+        //fprintf(stdout, "[UPDATE] OVERFLOW: Axis changed\n");
         containsCurrentCenterNode_ = false;
         return cubeSideMap_->at(newAxis)->update(posSphere); 
     } 
     else {
         glm::vec2 currentGridPosition = worldCubePosToGridPos(cubeWorldPos);
         
-        if (!containsCurrentCenterNode_ && !initialRun_) { // Axis change, create previousCenterNode outside, for deletion
-            //fprintf(stdout, "[CUBESIDETREE] Update: fake currentCenterNode \n");
+        if (!containsCurrentCenterNode_ && !initialRun_) { // Axis change, create previousCenterNode, for deletion
             currentCenterNode_ = currentGridPosition;
             if (currentGridPosition.x == 0)
                 currentCenterNode_.x = -1;
@@ -722,34 +708,45 @@ CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere) {
         }
 
         if (currentGridPosition != currentCenterNode_) {
-            //fprintf(stdout, "CamWorldSpherePos: %s, Axis: %s\n", glm::to_string(posSphere).c_str(), glm::to_string(axis_).c_str());
-            //fprintf(stdout, "CamWorldCubePos: %s. CamGridPos: %s\n", glm::to_string(cubeWorldPos).c_str(), glm::to_string(currentGridPosition).c_str());
+            //fprintf(stdout, "[UPDATE] CamWorldSpherePos: %s, Axis: %s\n", glm::to_string(posSphere).c_str(), glm::to_string(axis_).c_str());
+            //fprintf(stdout, "[UPDATE] CamWorldCubePos: %s. CamGridPos: %s\n", glm::to_string(cubeWorldPos).c_str(), glm::to_string(currentGridPosition).c_str());
             glm::vec2 opp = (currentGridPosition - currentCenterNode_) * 3.0f; // our structure is a 3*3 grid of quadTrees
             RootNodeMap::iterator it;
             for (int y = -1; y < 2; y++) {
                 for (int x = -1; x < 2; x++) {
                     glm::vec2 newRootGridPos = glm::vec2(currentGridPosition.x + x, currentGridPosition.y + y);
-    
-                    if (!handleOnDifferentCubeSide(newRootGridPos)) {
-                        it = rootNodeMap_.find(newRootGridPos);
-
-                        // Node not yet in map. Create and delete old
-                        if (it == rootNodeMap_.end()) {
-                            handleRootNodeCreation(newRootGridPos);
-
-                            // delete opposite
-                            if (!initialRun_) {
-                                if (!handleOnDifferentCubeSide(newRootGridPos - opp, true)) 
-                                    destroyRootNode(newRootGridPos - opp);
-                                
-                            }
-
+                    
+                    glm::vec2 change;
+                    glm::vec2 gridPosOverflow = newRootGridPos;
+                    bool edgeCase = false;
+                    bool inserted = false;
+                    if (handleOnDifferentCubeSide(gridPosOverflow, change, edgeCase)) {
+                        if (!edgeCase) {
+                            //fprintf(stdout, "[HandleOnDiff] HandleOnAxis: %s, oldAxis: %s\n", glm::to_string(getNextAxis(change)).c_str(), glm::to_string(axis_).c_str());
+                            //fprintf(stdout, "[HandleOnDiff] posOld: %s, posOnNewAxis: %s, change: %s\n", glm::to_string(newRootGridPos).c_str(), glm::to_string(mapPosOnNewAxis(gridPosOverflow, change)).c_str(), glm::to_string(change).c_str());
+                            inserted = cubeSideMap_->at(getNextAxis(change))->handleRootNodeCreation(mapPosOnNewAxis(gridPosOverflow, change));
+                        }
+                    } else {
+                        inserted = handleRootNodeCreation(newRootGridPos);
+                    }
+                    
+                    if (inserted && !initialRun_) {
+                        glm::vec2 destroyPos = newRootGridPos - opp;
+                        edgeCase = false;
+                        if (handleOnDifferentCubeSide(destroyPos, change, edgeCase)) {
+                            if (edgeCase)
+                                fprintf(stderr, "[CRITICALERROR] Delete. Edge case in destroy in different cube side. SHOULD NEVER HAPPEN\n");
+                            //fprintf(stdout, "[DELETE] Delete %s, from diff Axis: %s. Pos on new axis: %s\n", glm::to_string(newRootGridPos - opp).c_str(), glm::to_string(getNextAxis(change)).c_str(), glm::to_string(mapPosOnNewAxis(destroyPos, change, change.x ? abs((newRootGridPos - opp).x) - 1 : abs((newRootGridPos - opp).y) - 1)).c_str());
+                            cubeSideMap_->at(getNextAxis(change))->destroyRootNode(mapPosOnNewAxis(destroyPos, change, change.x ? abs((newRootGridPos - opp).x) - 1 : abs((newRootGridPos - opp).y) - 1));
+                        } else {
+                            //fprintf(stdout, "[DELETE] Delete %s, from Axis: %s\n", glm::to_string(newRootGridPos - opp).c_str(), glm::to_string(axis_).c_str());
+                            destroyRootNode(newRootGridPos - opp);
                         }
                     }
                 }
             }
             if (initialRun_)
-                initialRun_ == false;
+                initialRun_ = false;
             currentCenterNode_ = currentGridPosition;
         }
     }

@@ -102,19 +102,29 @@ float TerrainGenerator::generateHeights(int x, int z, int lod) {
 /*
  * TODO: Seems unresonable large and wasteful=? Think about it a bit
  */
-std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension, int lod) {
+std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension, int lod, bool inverted) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<unsigned int> indices((dimensionLod - 1) * (dimensionLod - 1) * 6);
     int cnt = 0;
     for (int row = 0; row < dimensionLod - 1; row++) {
         for (int col = 0; col < dimensionLod - 1; col++) {
-            indices[cnt++] = dimensionLod * row + col;
-            indices[cnt++] = dimensionLod * row + col + dimensionLod;
-            indices[cnt++] = dimensionLod * row + col + dimensionLod + 1;
+            if (inverted) {
+                indices[cnt++] = dimensionLod * row + col;
+                indices[cnt++] = dimensionLod * row + col + dimensionLod + 1;
+                indices[cnt++] = dimensionLod * row + col + dimensionLod;
+                
+                indices[cnt++] = dimensionLod * row + col;
+                indices[cnt++] = dimensionLod * row + col + 1;
+                indices[cnt++] = dimensionLod * row + col + dimensionLod + 1;
+            } else {
+                indices[cnt++] = dimensionLod * row + col;
+                indices[cnt++] = dimensionLod * row + col + dimensionLod;
+                indices[cnt++] = dimensionLod * row + col + dimensionLod + 1;
 
-            indices[cnt++] = dimensionLod * row + col;
-            indices[cnt++] = dimensionLod * row + col + dimensionLod + 1;
-            indices[cnt++] = dimensionLod * row + col + 1;
+                indices[cnt++] = dimensionLod * row + col;
+                indices[cnt++] = dimensionLod * row + col + dimensionLod + 1;
+                indices[cnt++] = dimensionLod * row + col + 1;
+            }
         }
     }
 
@@ -126,15 +136,15 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
         if (axis.x == 1)
             return glm::vec3(radius, z, x);
         else
-            return glm::vec3(radius, x, z);
+            return glm::vec3(radius, z, x); //was x, z
     } else if (axis.y != 0) {
         if (axis.y == 1)
             return glm::vec3(x, radius, z);
         else
-            return glm::vec3(z, radius, x);
+            return glm::vec3(x, radius, z); // was z, rad, x
     } else {
         if (axis.z == 1)
-            return glm::vec3(z, x, radius);
+            return glm::vec3(x, z, radius); // was x,z
         else
             return glm::vec3(x, z, radius);
     }
@@ -166,6 +176,11 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
         starts.y = start.y;
     }
 
+    // TODO: FIX THIS VERY UGLY HACK TO CHANGE WINDING ORDER FOR THESE
+    bool inverted = false;
+    if (axis.x == -1 || axis.z == 1 || axis.y == -1)
+        inverted = true;
+
     for (int z = starts.y; z < dimension + starts.y; z+=lod) {
         for (int x = starts.x; x < dimension + starts.x; x+=lod) {
 
@@ -193,7 +208,7 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
 
     generateNormalVector(vertices, dimension, lod);
 
-    return Mesh(vertices, generateIndexVector(dimension, lod));    
+    return Mesh(vertices, generateIndexVector(dimension, lod, inverted));    
 }
 
 /*
