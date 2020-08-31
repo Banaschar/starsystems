@@ -66,15 +66,6 @@ void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tli
 
 /*
  * MINIMUM PLANET DIMENSION: 3 * 60! Then there fits exactly one quadtree with 9 root nodes inside one side
- *
- * TODO: For big planets, I need to switch from terrainCubeTree to terrainQuadTree(with 9 root nodes) when close to the ground
- * e.g. Everything else needs to be deleted
- * If the camera reaches a certain distance, I create a quad tree where the central chunk has the coordinates directly below the camera
- * ----> how to get that point? The point on the line between the camera position and the planet origin that has distance radius from the origin
- *
- * ----->>> PRECALCULATE EDGE VALUES FOR EACH SIDE!
- * E.G. if I'm initially on axis 0 (1,0,0), have a vec2 that contains the max y and z values which are still on the cube side
- * -----------> NO! That does not help, because I need the position on the cube side for the quad tree movement...
  */
 TerrainCubeTree::TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, int lod, glm::vec3 sphereOrigin) 
             : terrainGenerator_(terrainGen), cubeSideDimension_(dimension), maxLodQuadTree_(lod), sphereOrigin_(sphereOrigin) {
@@ -99,12 +90,20 @@ void TerrainCubeTree::createCubeSideTree(glm::vec3 &camPos) {
         cubeSideMap_[kv.first] = new CubeSideTree(kv.first, terrainGenerator_, &cubeSideMap_, &axisIntegerMap_, sphereOrigin_, cubeSideDimension_, cubeSideRootNodeDimension, lod);
     }
 
-    // compute initial position, set appropriate cubeSide as initial and give it the needed stuff
     glm::vec3 axis;
     glm::vec3 cubePosition;
     computeInitialCubePositionAndAxis(camPos, &axis, &cubePosition);
     cubeSideMap_[axis]->setInitialRun();
     currentCubeSide_ = cubeSideMap_[axis];
+
+    fprintf(stdout, "[TERRAINCUBETREE]->(createCubeSideTree): Done. Current Axis: %s\n", glm::to_string(currentCubeSide_->getAxis()).c_str());
+}
+
+void TerrainCubeTree::destroyCubeSideTree() {
+    for (auto &kv : cubeSideMap_)
+        delete kv.second;
+
+    cubeSideMap_.clear();
 }
 
 bool TerrainCubeTree::verifyPosIsOnAxis(glm::vec3 &axis, glm::vec3 &pos) {
@@ -203,34 +202,40 @@ void TerrainCubeTree::createChildren(TerrainChunk *node) {
             node->addChild(new TerrainChunk(new Terrain(terrainGenerator_,
                                                 childDimension + 1,
                                                 pos, childLod, node->getTerrain()->getAxis()),
-                                            NULL));
+                                            new WaterTile(terrainGenerator_, childDimension + 1, pos, planetSizeLod_, node->getTerrain()->getAxis())));
         }
     }
 }
 
+// TODO: Move the update nodes function to terrainCubeTree, provide kv.second as first argument
 void TerrainCubeTree::updateCubeSides(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+    int cnt = 0;
     for (auto &kv : cubeSideMap_) {
-      if (kv.second->hasActiveNodes())
-        // TODO: Move the update nodes function to terrainCubeTree, provide kv.second as first argument
-        kv.second->updateNodes(camPosition, tlist, wlist);
+        if (kv.second->hasActiveNodes()) {
+            kv.second->updateNodes(camPosition, tlist, wlist);
+            cnt += kv.second->getNumRootNodes();
+        }
     }
+    if (cnt > 9)
+        fprintf(stdout, "[TERRAINCUBETREE] ERROR: Num root nodes: %i\n", cnt);
 }
 
 /*
  * Create children for CubeTree -> max 3 (more?) levels before switching to CubeSideTree
  */
 void TerrainCubeTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
-    // Node center position is in cube world position. -> get spherePosition
-    if (!node) // unfinished terrain chunk, waiting on thread
+    if (!node)
         return; 
 
     if ((node->getLod() <= planetSizeLod_ - 6) ||
             (glm::distance2(camWorldPos, cubeWorldPosToSpherePos(node->getPosition())) > glm::pow(node->getDimension() * 2.5f, 2))) {
         tlist->push_back(node->getTerrain());
+        wlist->push_back(node->getWater());
     } else {
         if (node->getIndex() != 4) {
             tlist->push_back(node->getTerrain());
-        
+            wlist->push_back(node->getWater());
+
             if (!node->isScheduled()) {
                 node->setChildrenScheduled();
                 threadPool->addJob(std::bind(&TerrainCubeTree::createChildren, this, node));
@@ -242,11 +247,6 @@ void TerrainCubeTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std
     }
 }
 
-/*
- * Each side needs at least one lod level below the whole side.
- * So when I get nearer to the planet, first the farAwayCubeSideList creates new children on the sides facing the player.
- * And only after that, when the camera is close to the planet, e.g. just the horizons are visible, the cubeSide datastructure is used.
- */
 void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     tlist->clear();
     wlist->clear();
@@ -259,6 +259,10 @@ void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tl
             createCubeSideTree(camPosition);
         }
     } else {
+        if (currentCubeSide_) {
+            destroyCubeSideTree();
+            currentCubeSide_ = NULL;
+        }
         for (TerrainChunk *t : cubeSides_)
             updateNode_(t, camPosition, tlist, wlist);
     }
@@ -276,21 +280,22 @@ void TerrainCubeTree::initTree(int dimension) {
     }
 
     for (auto &kv : axisIntegerMap_) {
-        cubeSides_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), planetSizeLod_, kv.first), NULL));
+        //cubeSides_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), planetSizeLod_, kv.first), NULL));
+        glm::vec3 pos = glm::vec3(0,0,0);
+        if (kv.first.x)
+            pos.x = kv.first.x;
+        else if (kv.first.y)
+            pos.y = kv.first.y;
+        else
+            pos.z = kv.first.z;
+        cubeSides_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first), 
+                                new WaterTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first)));
     }
 }
 
 /*
  *
- * CUBE SIDES
- *
- *
- *
- *
- *
- *
- *
- *
+ * CubeSideTree
  *
  */
 CubeSideTree::CubeSideTree(glm::vec3 axis, TerrainGenerator *terrainGen, CubeSideMap *cubeSideMap, AxisIntegerMap *axisIntegerMap, 
@@ -341,10 +346,24 @@ glm::vec3 CubeSideTree::computeCubeSideOrigin() {
 
 void CubeSideTree::setInitialRun() {
     initialRun_ = true;
+    containsCurrentCenterNode_ = true;
 }
 
 bool CubeSideTree::hasActiveNodes() {
     return containsActiveRootNode_;
+}
+
+unsigned int CubeSideTree::getNumRootNodes() {
+    return rootNodeMap_.size();
+}
+
+glm::vec3 &CubeSideTree::getAxis() {
+    return axis_;
+}
+
+// TODO: Remove, old debug function?
+RootNodeMap &CubeSideTree::getRootNodeMap() {
+    return rootNodeMap_;
 }
 
 void CubeSideTree::printDefaultCubeSideMapError(std::string name, int key) {
@@ -454,56 +473,66 @@ bool CubeSideTree::overflow(glm::vec3 &pos, glm::vec3 &axisOut) {
     return axisOut != axis_;
 }
 
-void CubeSideTree::destroyRootNode(glm::vec2 pos) {
+bool CubeSideTree::destroyRootNode(glm::vec2 pos) {
+    bool ret = false;
     if (rootNodeMap_.find(pos) != rootNodeMap_.end()) {
         TerrainChunk *t = rootNodeMap_[pos];
         if (t)
             delete t;
         rootNodeMap_.erase(pos);
+        ret = true;
+        //fprintf(stdout, "[CUBESIDETREE::destroyRootNode] Axis: %s, Node: %s\n", glm::to_string(axis_).c_str(), glm::to_string(pos).c_str());
     }
 
     if (rootNodeMap_.empty())
         containsActiveRootNode_ = false;
+
+    return ret;
 }
 
+/*
+ * Maps border positions on this axis on the adjacent axis in the direction specified by vector change
+ * Offset determines if the pos on the new axis is on the border or further inside
+ * Does NOT handle positions outside of this axis cube side!
+ */
 glm::vec2 CubeSideTree::mapPosOnNewAxis(glm::vec2 &pos, glm::vec2 &change, int offset) {
     glm::vec2 newPos;
     switch (axisIntegerMap_->at(axis_)) {
         case 0: // +x
             if (change.x != 0)
-              newPos = glm::vec2(maxGridPosition_ - offset, pos.y);
+                newPos = glm::vec2(maxGridPosition_ - offset, pos.y);
             else if (change.y != 0)
-              newPos = glm::vec2(maxGridPosition_ - offset, pos.x);
+                newPos = glm::vec2(maxGridPosition_ - offset, pos.x);
             break;
         case 1: // -x
             if (change.x != 0)
-              newPos = glm::vec2(0 + offset, pos.y);
+                newPos = glm::vec2(0 + offset, pos.y);
             else if (change.y != 0)
-              newPos = glm::vec2(0 + offset, pos.x);
+                newPos = glm::vec2(0 + offset, pos.x);
             break;
         case 2: // +y
             if (change.x != 0)
-              newPos = glm::vec2(pos.y, maxGridPosition_ - offset);
+                newPos = glm::vec2(pos.y, maxGridPosition_ - offset);
             if (change.y != 0)
-              newPos = glm::vec2(pos.x, maxGridPosition_ - offset);
+                newPos = glm::vec2(pos.x, maxGridPosition_ - offset);
             break;
         case 3: // -y
             if (change.x != 0)
-              newPos = glm::vec2(pos.y, 0 + offset);
+                newPos = glm::vec2(pos.y, 0 + offset);
             if (change.y != 0)
-              newPos = glm::vec2(pos.x, 0 + offset);
+                newPos = glm::vec2(pos.x, 0 + offset);
             break;
         case 4: // z
             if (change.x != 0)
-              newPos = glm::vec2(maxGridPosition_ - offset, pos.y);
+                newPos = glm::vec2(maxGridPosition_ - offset, pos.y);
             if (change.y != 0)
-              newPos = glm::vec2(pos.x, maxGridPosition_ - offset);
+                newPos = glm::vec2(pos.x, maxGridPosition_ - offset);
             break;
         case 5: // -z
             if (change.x != 0)
-              newPos = glm::vec2(0 + offset, pos.y);
+                newPos = glm::vec2(0 + offset, pos.y);
             if (change.y != 0)
-              newPos = glm::vec2(pos.x, 0 + offset);
+                newPos = glm::vec2(pos.x, 0 + offset);
             break;
         default:
             printDefaultCubeSideMapError("mapPosOnNewAxis", axisIntegerMap_->at(axis_));
@@ -550,44 +579,64 @@ glm::vec3 CubeSideTree::getNextAxis(glm::vec2 &change) {
 bool CubeSideTree::handleOnDifferentCubeSide(glm::vec2 &pos, glm::vec2 &change, bool &edgeCase) {
     bool ret = false;
     if (pos.x < 0) {
-        if (pos.y < 0) // Edge case, no node here
+        if (pos.y < 0 || pos.y > maxGridPosition_) { // Edge case, no node here
             ret = edgeCase = true;
-        else {
+            change = glm::vec2(-1, pos.y / abs(pos.y));
+        } else {
             ret = true;
             pos.x = 0;
-            change = glm::vec2(-1,0);
+            change = glm::vec2(-1, 0);
         }
-    }
-
-    if (pos.x > maxGridPosition_) {
-        if (pos.y > maxGridPosition_) // Edge case, no node here
+    } else if (pos.x > maxGridPosition_) {
+        if (pos.y < 0 || pos.y > maxGridPosition_) { // Edge case, no node here
             ret = edgeCase = true;
-        else {
+            change = glm::vec2(1, pos.y / abs(pos.y));
+        } else {
             ret = true;
             pos.x = maxGridPosition_;
-            change = glm::vec2(1,0);
+            change = glm::vec2(1, 0);
         }
+    } else if (pos.y < 0) {
+        ret = true;
+        pos.y = 0;
+        change = glm::vec2(0, -1);
+    } else if (pos.y > maxGridPosition_) {
+        ret = true;
+        pos.y = maxGridPosition_;
+        change = glm::vec2(0, 1);
     }
 
-    if (pos.y < 0) {
-        if (pos.x > maxGridPosition_) // edge case, no node here
-            ret = edgeCase = true;
-        else {
-            ret = true;
-            pos.y = 0;
-            change = glm::vec2(0,-1);
-        }
+    return ret;
+}
+
+glm::vec2 CubeSideTree::getPreviousCenterNode(glm::vec3 &newAxis, glm::vec2 &gridPos) {
+    if (gridPos.x != 0 && gridPos.x != maxGridPosition_ && gridPos.y != 0 && gridPos.y != maxGridPosition_)
+        fprintf(stderr, "[CUBESIDETREE::getPreviousCenterNode] Axis switch but new center node not at border\n");
+
+    glm::vec2 ret;
+    glm::vec2 change;
+    switch (axisIntegerMap_->at(axis_)) {
+        case 0:
+        case 1:
+            change = glm::vec2(newAxis.z, newAxis.y);
+            break;
+        case 2:
+        case 3:
+            change = glm::vec2(newAxis.x, newAxis.z);
+            break;
+        case 4:
+        case 5:
+            change = glm::vec2(newAxis.x, newAxis.y);
+            break;
+        default:
+            printDefaultCubeSideMapError("getPreviousCenterNode", axisIntegerMap_->at(axis_));
+            change = glm::vec2(0,0);
     }
-    
-    if (pos.y > maxGridPosition_) {
-        if (pos.x < 0) // edge case, no node here
-            ret = edgeCase = true;
-        else {
-            ret = true;
-            pos.y = maxGridPosition_;
-            change = glm::vec2(0, 1);
-        }
-    }
+
+    if (change.x)
+        ret = glm::vec2(gridPos.x == maxGridPosition_ ? maxGridPosition_ + 1 : -1, gridPos.y);
+    else
+        ret = glm::vec2(gridPos.x, gridPos.y == maxGridPosition_ ? maxGridPosition_ + 1 : -1);
 
     return ret;
 }
@@ -631,13 +680,15 @@ void CubeSideTree::createChildren(TerrainChunk *node) {
             node->addChild(new TerrainChunk(new Terrain(terrainGenerator_,
                                                 childDimension + 1,
                                                 pos, childLod, axis_),
-                                            NULL));
+                                            new WaterTile(terrainGenerator_, childDimension + 1, pos, rootLod_, axis_)));
         }
     }
 }
 
 void CubeSideTree::createRootNode(glm::vec2 cubeSideGridPos) {
-    rootNodeMap_[cubeSideGridPos] = new TerrainChunk(new Terrain(terrainGenerator_, rootDimension_ + 1, gridPosToWorldCubePos(cubeSideGridPos), rootLod_, axis_), NULL);
+    glm::vec3 worldPos = gridPosToWorldCubePos(cubeSideGridPos);
+    rootNodeMap_[cubeSideGridPos] = new TerrainChunk(new Terrain(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_), 
+                                                        new WaterTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_));
     containsActiveRootNode_ = true;
 }
 
@@ -648,7 +699,7 @@ bool CubeSideTree::handleRootNodeCreation(glm::vec2 pos) {
         rootNodeMap_[pos] = t;
         threadPool->addJob(std::bind(&CubeSideTree::createRootNode, this, pos));
         ret = true;
-        //fprintf(stdout, "[CreateRootNode] Axis: %s. GridPos: %s. WorldPos: %s\n", glm::to_string(axis_).c_str(), glm::to_string(pos).c_str(), glm::to_string(gridPosToWorldCubePos(pos)).c_str());
+        //fprintf(stdout, "[CUBESIDETREE::CreateRootNode] Axis: %s. GridPos: %s. WorldPos: %s\n", glm::to_string(axis_).c_str(), glm::to_string(pos).c_str(), glm::to_string(gridPosToWorldCubePos(pos)).c_str());
     }
 
     return ret;
@@ -661,10 +712,12 @@ void CubeSideTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::v
     if ((node->getLod() == 1) ||
             (glm::distance2(camWorldPos, cubeWorldPosToSpherePos(node->getPosition())) > glm::pow(node->getDimension(), 2))) {
         tlist->push_back(node->getTerrain());
+        wlist->push_back(node->getWater());
     } else {
         if (node->getIndex() != 4) {
             tlist->push_back(node->getTerrain());
-        
+            wlist->push_back(node->getWater());
+
             if (!node->isScheduled()) {
                 node->setChildrenScheduled();
                 threadPool->addJob(std::bind(&CubeSideTree::createChildren, this, node));
@@ -681,35 +734,28 @@ void CubeSideTree::updateNodes(glm::vec3 &camWorldPos, std::vector<Drawable *> *
     updateNode_(kv.second, camWorldPos, tlist, wlist);
 }
 
-CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere) {
+CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere, CubeSideTree *previous) {
     glm::vec3 cubeWorldPos = getCubePosFromSphere(posSphere);
-    // Check for overflow
+
     glm::vec3 newAxis = axis_;
     if (overflow(cubeWorldPos, newAxis)) {
-        //fprintf(stdout, "[UPDATE] OVERFLOW: Axis changed\n");
         containsCurrentCenterNode_ = false;
-        return cubeSideMap_->at(newAxis)->update(posSphere); 
+        return cubeSideMap_->at(newAxis)->update(posSphere, this); 
     } 
     else {
         glm::vec2 currentGridPosition = worldCubePosToGridPos(cubeWorldPos);
         
         if (!containsCurrentCenterNode_ && !initialRun_) { // Axis change, create previousCenterNode, for deletion
-            currentCenterNode_ = currentGridPosition;
-            if (currentGridPosition.x == 0)
-                currentCenterNode_.x = -1;
-            else if (currentGridPosition.x == maxGridPosition_)
-                currentCenterNode_.x == maxGridPosition_ + 1;
-            if (currentGridPosition.y == 0)
-                currentCenterNode_.y = -1;
-            else if (currentGridPosition.y == maxGridPosition_)
-                currentCenterNode_.y == maxGridPosition_ + 1;
-
+            if (!previous) {
+                fprintf(stdout, "[CUBESIDETREE::update] CRITICAL ERROR: PREVIOUS == NULL\n");
+                currentCenterNode_ = glm::vec2(0,0);
+            } else
+                currentCenterNode_ = getPreviousCenterNode(previous->getAxis(), currentGridPosition);
+                
             containsCurrentCenterNode_ = true;
         }
-
+    
         if (currentGridPosition != currentCenterNode_) {
-            //fprintf(stdout, "[UPDATE] CamWorldSpherePos: %s, Axis: %s\n", glm::to_string(posSphere).c_str(), glm::to_string(axis_).c_str());
-            //fprintf(stdout, "[UPDATE] CamWorldCubePos: %s. CamGridPos: %s\n", glm::to_string(cubeWorldPos).c_str(), glm::to_string(currentGridPosition).c_str());
             glm::vec2 opp = (currentGridPosition - currentCenterNode_) * 3.0f; // our structure is a 3*3 grid of quadTrees
             RootNodeMap::iterator it;
             for (int y = -1; y < 2; y++) {
@@ -721,27 +767,15 @@ CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere) {
                     bool edgeCase = false;
                     bool inserted = false;
                     if (handleOnDifferentCubeSide(gridPosOverflow, change, edgeCase)) {
-                        if (!edgeCase) {
-                            //fprintf(stdout, "[HandleOnDiff] HandleOnAxis: %s, oldAxis: %s\n", glm::to_string(getNextAxis(change)).c_str(), glm::to_string(axis_).c_str());
-                            //fprintf(stdout, "[HandleOnDiff] posOld: %s, posOnNewAxis: %s, change: %s\n", glm::to_string(newRootGridPos).c_str(), glm::to_string(mapPosOnNewAxis(gridPosOverflow, change)).c_str(), glm::to_string(change).c_str());
+                        if (!edgeCase) 
                             inserted = cubeSideMap_->at(getNextAxis(change))->handleRootNodeCreation(mapPosOnNewAxis(gridPosOverflow, change));
-                        }
-                    } else {
+                    } else 
                         inserted = handleRootNodeCreation(newRootGridPos);
-                    }
-                    
-                    if (inserted && !initialRun_) {
-                        glm::vec2 destroyPos = newRootGridPos - opp;
-                        edgeCase = false;
-                        if (handleOnDifferentCubeSide(destroyPos, change, edgeCase)) {
-                            if (edgeCase)
-                                fprintf(stderr, "[CRITICALERROR] Delete. Edge case in destroy in different cube side. SHOULD NEVER HAPPEN\n");
-                            //fprintf(stdout, "[DELETE] Delete %s, from diff Axis: %s. Pos on new axis: %s\n", glm::to_string(newRootGridPos - opp).c_str(), glm::to_string(getNextAxis(change)).c_str(), glm::to_string(mapPosOnNewAxis(destroyPos, change, change.x ? abs((newRootGridPos - opp).x) - 1 : abs((newRootGridPos - opp).y) - 1)).c_str());
-                            cubeSideMap_->at(getNextAxis(change))->destroyRootNode(mapPosOnNewAxis(destroyPos, change, change.x ? abs((newRootGridPos - opp).x) - 1 : abs((newRootGridPos - opp).y) - 1));
-                        } else {
-                            //fprintf(stdout, "[DELETE] Delete %s, from Axis: %s\n", glm::to_string(newRootGridPos - opp).c_str(), glm::to_string(axis_).c_str());
-                            destroyRootNode(newRootGridPos - opp);
-                        }
+
+                    bool deleted = false;
+                    if ((inserted && !initialRun_) || (edgeCase && !initialRun_)) {
+                        //fprintf(stdout, "[HANDLE DELETION] EdgeCase: %d, gridPos: %s, opp: %s, axis: %s\n", edgeCase, glm::to_string(newRootGridPos).c_str(), glm::to_string(opp).c_str(), glm::to_string(axis_).c_str());
+                        deleted = handleNodeDeletion(newRootGridPos - opp);
                     }
                 }
             }
@@ -753,20 +787,46 @@ CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere) {
 
     return this;
 }
-/*
- *
- *
- *
- *
- * TERRAIN QUAD TREE (2D)
- *
- *
- *
- *
- *
+
+bool CubeSideTree::handleNodeDeletion(glm::vec2 destroyPos) {
+    bool ret = false;
+    glm::vec2 tmp = destroyPos;
+    glm::vec2 change;
+    bool edgeCase = false;
+    if (handleOnDifferentCubeSide(tmp, change, edgeCase)) {
+        if (edgeCase)
+            ret = handleEdgeCaseNodeDeletion(destroyPos);
+        else {
+            int offset = change.x ? (destroyPos.x > maxGridPosition_ ? destroyPos.x - maxGridPosition_ : abs(destroyPos.x)) - 1 :
+                            (destroyPos.y > maxGridPosition_ ? destroyPos.y - maxGridPosition_ : abs(destroyPos.y)) - 1;
+            ret = cubeSideMap_->at(getNextAxis(change))->destroyRootNode(mapPosOnNewAxis(tmp, change, offset));
+        }
+    } else {
+        ret = destroyRootNode(destroyPos);
+    }
+
+    return ret;
+}
+
+bool CubeSideTree::handleEdgeCaseNodeDeletion(glm::vec2 &destroyPos) {
+    int x = destroyPos.x > maxGridPosition_ ? destroyPos.x - maxGridPosition_ : abs(destroyPos.x);
+    int y = destroyPos.y > maxGridPosition_ ? destroyPos.y - maxGridPosition_ : abs(destroyPos.y);
+    int offset = x > y ? x : y;
+    bool ret = false;
+    bool t = false;
+    glm::vec2 tmp = glm::vec2(destroyPos.x > maxGridPosition_ ? maxGridPosition_ : 0, destroyPos.y > maxGridPosition_ ? maxGridPosition_ + offset : 0 - offset);
+    ret = handleNodeDeletion(tmp);
+
+    tmp = glm::vec2(destroyPos.x > maxGridPosition_ ? maxGridPosition_ + offset : 0 - offset, destroyPos.y > maxGridPosition_ ? maxGridPosition_ : 0);
+    t = handleNodeDeletion(tmp);
+
+    return ret || t;
+}
 
 /*
- * TODO: Make numrootchunks depend on max view distance
+ *
+ * TERRAIN QUAD TREE (plane only)
+ *
  */
 TerrainQuadTree::TerrainQuadTree(int initialDimension, int maxLod, 
                                 TerrainGenerator *terrainGen) :

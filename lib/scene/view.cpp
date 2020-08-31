@@ -7,7 +7,7 @@
 #include "windowheader.hpp"
 
 #define DEFAULT_NEAR_PLANE 0.1f
-#define DEFAULT_FAR_PLANE 1000.0f
+#define DEFAULT_FAR_PLANE 2000.0f
 const float YAW = 90.0f;
 const float PITCH = -30.0f;
 const float SPEED = 20.0f;

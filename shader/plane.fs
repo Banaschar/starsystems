@@ -75,7 +75,8 @@ vec4 blendTextures() {
     vec4 snow = texture(texture_diffuse6, texCoords);
 
     //float value = (fragPos_worldspace.y + amplitude) / (amplitude * 2);
-    float value = min(height + 2.0f, amplitude) / amplitude;
+    float amp = amplitude + (amplitude / 2.0f);
+    float value = min(height + 2.0f, amp) / amp;
     value = clamp((value - spread/2.0) * (1.0 / spread), 0.0, 0.9999);
     int firstPalette = int(floor(value / part));
     float blend = (value - (firstPalette * part)) / part;
@@ -102,5 +103,10 @@ void main()
 {
     //FragColor = calculateLighting(normal) * color;
     //FragColor = calculateLighting(normal) * blendTextures();
-    FragColor = vec4(0.8,0.8,0.8,1.0) * blendTextures();
+    //FragColor = vec4(0.8,0.8,0.8,1.0) * blendTextures();
+    vec4 mix = vec4(0.8,0.8,0.8, 1.0) * blendTextures();
+    float distance = distance(cameraPos, fragPos_worldspace);
+    float opacity = clamp(distance / 1000, 0, 1);
+    mix.a = 1.0 - opacity;
+    FragColor = mix;
 }

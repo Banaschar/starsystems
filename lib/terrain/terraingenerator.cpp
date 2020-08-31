@@ -23,8 +23,8 @@ Mesh TerrainGenerator::generateTerrain(int startX, int startZ, int dimension, in
     return generateMesh(startX, startZ, dimension, lod);
 }
 
-Mesh TerrainGenerator::generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis) {
-    return generateMeshSphere(start, dimension, radius, lod, axis);
+Mesh TerrainGenerator::generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat) {
+    return generateMeshSphere(start, dimension, radius, lod, axis, flat);
 }
 
 ColorGenerator &TerrainGenerator::getColorGenerator() {
@@ -150,7 +150,7 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
     }
 }
 
-Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis) {
+Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
     int half = (dimension - 1) / 2;
@@ -176,7 +176,7 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
         starts.y = start.y;
     }
 
-    // TODO: FIX THIS VERY UGLY HACK TO CHANGE WINDING ORDER FOR THESE
+    // TODO: FIX THIS VERY UGLY HACK TO CHANGE WINDING ORDER FOR THESE AXIS
     bool inverted = false;
     if (axis.x == -1 || axis.z == 1 || axis.y == -1)
         inverted = true;
@@ -187,10 +187,13 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
             glm::vec3 tmpPos = getSpherePos(axis, direction * radius, x - half, z - half);
             // modify point so it has distance radius from origin 
             tmpPos = sphereOrigin_ + (float)radius * glm::normalize(tmpPos - sphereOrigin_);
-            // Get height based on sphere point
-            float height = pNoise_.getNoise3d(tmpPos.x, tmpPos.y, tmpPos.z); 
-            // modify point so it has distance radius+heigh from origin
-            tmpPos = sphereOrigin_ + ((float)radius + height) * glm::normalize(tmpPos - sphereOrigin_); 
+
+            if (!flat) {
+                // Get height based on sphere point
+                float height = pNoise_.getNoise3d(tmpPos.x, tmpPos.y, tmpPos.z); 
+                // modify point so it has distance radius+heigh from origin
+                tmpPos = sphereOrigin_ + ((float)radius + height) * glm::normalize(tmpPos - sphereOrigin_); 
+            }
 
             Vertex vertex;
             vertex.position.x = tmpPos.x;
@@ -210,64 +213,6 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
 
     return Mesh(vertices, generateIndexVector(dimension, lod, inverted));    
 }
-
-/*
-Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis) {
-    int dimensionLod = ((dimension - 1) / lod) + 1;
-    std::vector<Vertex> vertices(dimensionLod * dimensionLod);
-    int half = (dimension - 1) / 2;
-    int index = 0, row = 0, col = 0;
-
-    int direction;
-    if (axis.x != 0)
-        direction = axis.x;
-    else if (axis.y != 0)
-        direction = axis.y;
-    else
-        direction = axis.z;
-
-    glm::vec2 starts;
-    if (axis.x != 0) {
-        starts.x = start.x;
-        if (axis.y != 0)
-            starts.y = start.y;
-        else 
-            starts.y = start.z;
-    } else {
-        starts.x = start.y;
-        starts.y = start.z;
-    }
-
-    for (int z = starts.y; z < dimension + starts.y; z+=lod) {
-        for (int x = starts.x; x < dimension + starts.x; x+=lod) {
-
-            glm::vec3 tmpPos = getSpherePos(axis, direction * radius, x - half, z - half);
-            // modify point so it has distance radius from origin 
-            tmpPos = sphereOrigin_ + (float)radius * glm::normalize(tmpPos - sphereOrigin_);
-            // Get height based on sphere point
-            float height = pNoise_.getNoise3d(tmpPos.x, tmpPos.y, tmpPos.z); 
-            // modify point so it has distance radius+heigh from origin
-            tmpPos = sphereOrigin_ + ((float)radius + height) * glm::normalize(tmpPos - sphereOrigin_); 
-
-            Vertex vertex;
-            vertex.position.x = tmpPos.x;
-            vertex.position.y = tmpPos.y;
-            vertex.position.z = tmpPos.z;
-            vertex.textureCoords.x = (float)col / ((float)dimensionLod - 1);
-            vertex.textureCoords.y = (float)row / ((float)dimensionLod - 1);
-            vertices[index] = vertex;
-            index++;
-            col++;
-        }
-        col = 0;
-        row++;
-    }
-
-    generateNormalVector(vertices, dimension, lod);
-
-    return Mesh(vertices, generateIndexVector(dimension, lod));    
-}
-*/
 
 Mesh TerrainGenerator::generateMesh(int startX, int startZ, int dimension, int lod) {
     int dimensionLod = ((dimension - 1) / lod) + 1;

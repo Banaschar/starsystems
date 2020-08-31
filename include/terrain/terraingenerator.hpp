@@ -19,7 +19,7 @@ class TerrainGenerator {
      * lod = 2^X < (dimension - 1)
      */
     Mesh generateTerrain(int startX, int startZ, int dimension, int lod);
-    Mesh generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis);
+    Mesh generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat = false);
 
     ColorGenerator &getColorGenerator();
 
@@ -52,7 +52,7 @@ class TerrainGenerator {
     std::vector<unsigned int> generateIndexVector(int dimension, int lod, bool inverted = false);
 
     Mesh generateMesh(int startX, int startZ, int dimension, int lod);
-    Mesh generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis);
+    Mesh generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat);
 };
 
 #endif

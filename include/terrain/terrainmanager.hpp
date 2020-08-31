@@ -6,9 +6,6 @@
 #include <glm/gtx/hash.hpp>
 #include <unordered_map>
 
-/*
- * TODO: Create terrainTree base class and derive the others from it. TerrainManager only has a base TerrainTree
- */
 class CubeSideTree;
 typedef std::unordered_map<glm::vec2, TerrainChunk*> RootNodeMap;
 typedef std::unordered_map<glm::vec3, int> AxisIntegerMap;
@@ -16,17 +13,8 @@ typedef std::unordered_map<glm::vec3, CubeSideTree*> CubeSideMap;
 typedef std::unordered_map<glm::vec2, std::tuple<glm::vec3, glm::vec2>> CubeTreeMap;
  
  /*
-  * CONVENTION: On each side, x is always the first coordinate (x, ?), except on the x axis ((1,0,0) and (-1,0,0)), here z is the first (z, y)
-  *               Or more logically said: y is always the second coordiante
+  * Convention: On the x-axis sides of the cube, z is used as first (x-) coordinate
   *
-  * The corner is always where the x and y coordinates are lowest !!!!!!!!!!!!!!!!! (so it's not always the lowe left)
-  *
-  * That means, going sideways around the cube is easy, the (0,0) coordiantes are in the same place, along the first axis
-  * Going from -z to +y is also straigh forward. From +z to +y is inverted...etc.
-  *
-  *
-  * EDGE CASES: What if the camera is exactly on an edge of the cube. If PlanetDim = 120, rootDim = 30 -> maxGridPosition == 3, but 120 / 30 == 4
-  *               -> Hm, maybe the next edge handles that
   */
 class CubeSideTree {
 public:
@@ -38,15 +26,17 @@ public:
 /*
  * args: 
  *      pos: Current camera position on the plane made up by this cube side. Could be out of the cube side
- * 
+ *      previous: Contains the previous cubeSideTree instance on axis change
  * Returns the cubeSide that contains the current centerRootNode
- *
- * Manually set containsCurrentCenterNode_ in the appropriate cubeSide before first run!
+ * Call setInitialRun() in the appropriate cubeSide before first run!
  */
-CubeSideTree *update(glm::vec3 &posSphere);
+CubeSideTree *update(glm::vec3 &posSphere, CubeSideTree *previous = NULL);
 void updateNodes(glm::vec3 &camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 void setInitialRun();
 bool hasActiveNodes();
+unsigned int getNumRootNodes();
+glm::vec3 &getAxis();
+RootNodeMap &getRootNodeMap();
 
 private:
   glm::vec3 axis_;
@@ -63,8 +53,8 @@ private:
   glm::vec2 currentCenterNode_ = glm::vec2(-1,-1);
   TerrainGenerator *terrainGenerator_;
   RootNodeMap rootNodeMap_; // Map of terrain chunks
-  AxisIntegerMap *axisIntegerMap_; // maps the axis on integers -> initialized by TerrainCubeTree
-  CubeSideMap *cubeSideMap_; // holds the references to the other cubeSides
+  AxisIntegerMap *axisIntegerMap_; // Maps the axis on integers
+  CubeSideMap *cubeSideMap_; // Holds the references to the other cubeSides
 
   void printDefaultCubeSideMapError(std::string name, int key);
   glm::vec3 computeCubeSideOrigin();
@@ -75,15 +65,16 @@ private:
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int childPosOffset);
   void createChildren(TerrainChunk *node);
   glm::vec3 getNextAxis(glm::vec2 &change);
+  glm::vec2 getPreviousCenterNode(glm::vec3 &newAxis, glm::vec2 &gridPos);
     /*
    * Maps a position from this axis to the neighbor axis specified by change
    * Offset 0 means a border node.
-   * Offset > 0 only used to delete old nodes.
+   * Offset > 0 only used to delete nodes.
    */
   glm::vec2 mapPosOnNewAxis(glm::vec2 &pos, glm::vec2 &change, int offset = 0);
     /* 
    * Returns true if handled on different
-   * Modifies pos...
+   * Modifies pos to be a border node if it lies on another side. 
    */
   bool handleOnDifferentCubeSide(glm::vec2 &pos, glm::vec2 &change, bool &edgeCase);
     /*
@@ -91,7 +82,9 @@ private:
    */
   bool overflow(glm::vec3 &pos, glm::vec3 &axisOut);
 
-  void destroyRootNode(glm::vec2 pos);
+  bool handleNodeDeletion(glm::vec2 destroyPos);
+  bool handleEdgeCaseNodeDeletion(glm::vec2 &destroyPos);
+  bool destroyRootNode(glm::vec2 pos);
     /*
    * Calculate node grid position in the rootNodeMap of this side
    * Used as key in the rootNodeMap for a new TerrainChunk
@@ -154,6 +147,7 @@ private:
   void createChildren(TerrainChunk *node);
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int offset, glm::vec3 &axis);
   void updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void destroyCubeSideTree();
 };
 
 enum class TerrainType {SPHERE, PLANE};
@@ -161,9 +155,7 @@ enum class TerrainType {SPHERE, PLANE};
 class TerrainManager {
 public:
     /*
-     * Initial dimension is the maximum size of a terrain chunk
-     * minChunkSize is the minimum size
-     * initialDimension needs to be a multiple of minChunkSize
+     * Initial dimension is the maximum size of a terrain chunk or one side of a planet cubeTree
      * For performance, initialDimension should be divisible by all
      * even numbers up to at least 10, better 12 -> More different levels of detail 
      */

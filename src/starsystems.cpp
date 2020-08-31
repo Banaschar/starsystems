@@ -159,8 +159,8 @@ Scene *createPlane(Engine *engine) {
     std::vector<Shader *> shaders = {
         new Shader("shader/plane.vs", "shader/plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
         new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
-        //new Shader("shader/waterShader.vs", "shader/waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
-        new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
+        new Shader("shader/waterShader.vs", "shader/waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
+        //new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         new Shader("shader/flatColor.vs", "shader/flatColor.fs", "flat", flatColorCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)};
 
@@ -173,7 +173,7 @@ Scene *createPlane(Engine *engine) {
     game->addSun(sun);
 
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
-    PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.45f, 2);
+    PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
     TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
     game->addTerrainManager(terr);

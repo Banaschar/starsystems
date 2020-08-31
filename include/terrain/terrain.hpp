@@ -29,4 +29,19 @@ class Terrain : public Drawable {
     glm::vec3 sphereOrigin_;
     void initTerrain(TerrainGenerator *terrainGen, bool sphere3d);
 };
+
+class WaterTile : public Drawable {
+public:
+    WaterTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis, int waterLevel_ = 0);
+
+    glm::vec3 &getPosition();
+    int getDimension();
+
+private:
+    glm::vec3 position_;
+    int dimension_;
+    int lod_;
+    int waterLevel_;
+    void initWaterTile(TerrainGenerator *terrainGen, glm::vec3 axis);
+};
 #endif

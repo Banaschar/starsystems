@@ -56,3 +56,21 @@ void Terrain::initTerrain(TerrainGenerator *terrainGen, bool sphere3d) {
     Drawable::setType(SHADER_TYPE_TERRAIN);
     amplitude_ = terrainGen->getPerlinNoise().getAmplitude();
 }
+
+WaterTile::WaterTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis, int waterLevel) : position_(position), dimension_(dimension), lod_(lod), waterLevel_(waterLevel) {
+    initWaterTile(terrainGen, axis);
+}
+
+void WaterTile::initWaterTile(TerrainGenerator *terrainGen, glm::vec3 axis) {
+    Drawable::addMesh(terrainGen->generateTerrain(position_, dimension_, terrainGen->getSphereRadius(), lod_, axis, true));
+    Drawable::addColor(glm::vec4(0, 0, 1, 0.6));
+    Drawable::setType(SHADER_TYPE_WATER);
+}
+
+glm::vec3 &WaterTile::getPosition() {
+    return position_;
+}
+
+int WaterTile::getDimension() {
+    return dimension_;
+}
