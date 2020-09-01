@@ -24,12 +24,13 @@ set(ENGINE_LIBRARY_SOURCE_FILES
     lib/render/waterrenderer.cpp
     lib/render/skyrenderer.cpp
     lib/render/waterframebuffer.cpp
+    lib/render/postprocessor.cpp
     lib/scene/scene.cpp
     lib/scene/gui.cpp
     lib/scene/view.cpp
     lib/scene/game.cpp
-    lib/terrain/terrain.cpp
-    lib/terrain/terrainchunk.cpp
+    lib/terrain/terraintile.cpp
+    lib/terrain/terrainnode.cpp
     lib/terrain/terraingenerator.cpp
     lib/terrain/terrainmanager.cpp
     lib/terrain/colorgenerator.cpp

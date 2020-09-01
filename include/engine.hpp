@@ -8,7 +8,6 @@
 #include "global.hpp"
 #include "gui.hpp"
 #include "scene.hpp"
-#include "terrain.hpp"
 #include "terrainmanager.hpp"
 #include "view.hpp"
 

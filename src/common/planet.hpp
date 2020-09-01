@@ -7,12 +7,10 @@
 
 #include "drawable.hpp"
 
-const std::string DEFAULT_PLANET_TYPE = "planet";
-
 class Planet : public Drawable {
   public:
-    Planet(Mesh mesh, float orbitSpeed, glm::vec3 position, std::string type = DEFAULT_PLANET_TYPE);
-    Planet(std::vector<Mesh> meshes, float orbitSpeed, glm::vec3 position, std::string type = DEFAULT_PLANET_TYPE);
+    Planet(Mesh mesh, float orbitSpeed, glm::vec3 position, ShaderType type = ShaderType::SHADER_TYPE_DEFAULT);
+    Planet(std::vector<Mesh> meshes, float orbitSpeed, glm::vec3 position, ShaderType type = ShaderType::SHADER_TYPE_DEFAULT);
 
     void update(Game *game) override;
 

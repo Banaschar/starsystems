@@ -74,7 +74,7 @@ TerrainCubeTree::TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, in
 }
 
 TerrainCubeTree::~TerrainCubeTree() {
-    for (TerrainChunk *t : cubeSides_) {
+    for (TerrainNode *t : cubeSides_) {
         delete t;
     }
 
@@ -189,7 +189,7 @@ glm::vec3 TerrainCubeTree::cubeWorldPosToSpherePos(glm::vec3 &cubePos) {
     return glm::vec3(sphereOrigin_ + (float)sphereRadius_ * glm::normalize(cubePos - sphereOrigin_));
 }
 
-void TerrainCubeTree::createChildren(TerrainChunk *node) {
+void TerrainCubeTree::createChildren(TerrainNode *node) {
     int childDimension = (node->getDimension() - 1) / 2;
     int childPosOffset = childDimension / 2;
     int childLod = glm::max(1, node->getLod() - 2);
@@ -199,10 +199,10 @@ void TerrainCubeTree::createChildren(TerrainChunk *node) {
     for (int z = -1; z < 2; z += 2) {
         for (int x = -1; x < 2; x += 2) {
             glm::vec3 pos = getChildPosition(node->getPosition(), x, z, childPosOffset, node->getTerrain()->getAxis());
-            node->addChild(new TerrainChunk(new Terrain(terrainGenerator_,
+            node->addChild(new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 childDimension + 1,
-                                                pos, childLod, node->getTerrain()->getAxis()),
-                                            new WaterTile(terrainGenerator_, childDimension + 1, pos, planetSizeLod_, node->getTerrain()->getAxis())));
+                                                pos, childLod, node->getTerrain()->getAxis(), GenerationType::SPHERE),
+                                            new TerrainTile(terrainGenerator_, childDimension + 1, pos, planetSizeLod_, node->getTerrain()->getAxis(), GenerationType::SPHERE_FLAT)));
         }
     }
 }
@@ -223,7 +223,7 @@ void TerrainCubeTree::updateCubeSides(glm::vec3 &camPosition, std::vector<Drawab
 /*
  * Create children for CubeTree -> max 3 (more?) levels before switching to CubeSideTree
  */
-void TerrainCubeTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainCubeTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node)
         return; 
 
@@ -241,7 +241,7 @@ void TerrainCubeTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std
                 threadPool->addJob(std::bind(&TerrainCubeTree::createChildren, this, node));
             }
         } else {
-            for (TerrainChunk *child : node->getChildren())
+            for (TerrainNode *child : node->getChildren())
                 updateNode_(child, camWorldPos, tlist, wlist);
         }
     }
@@ -263,7 +263,7 @@ void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tl
             destroyCubeSideTree();
             currentCubeSide_ = NULL;
         }
-        for (TerrainChunk *t : cubeSides_)
+        for (TerrainNode *t : cubeSides_)
             updateNode_(t, camPosition, tlist, wlist);
     }
 }
@@ -280,7 +280,7 @@ void TerrainCubeTree::initTree(int dimension) {
     }
 
     for (auto &kv : axisIntegerMap_) {
-        //cubeSides_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), planetSizeLod_, kv.first), NULL));
+        //cubeSides_.push_back(new TerrainNode(new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), planetSizeLod_, kv.first), NULL));
         glm::vec3 pos = glm::vec3(0,0,0);
         if (kv.first.x)
             pos.x = kv.first.x;
@@ -288,8 +288,8 @@ void TerrainCubeTree::initTree(int dimension) {
             pos.y = kv.first.y;
         else
             pos.z = kv.first.z;
-        cubeSides_.push_back(new TerrainChunk(new Terrain(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first), 
-                                new WaterTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first)));
+        cubeSides_.push_back(new TerrainNode(new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE), 
+                                new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE_FLAT)));
     }
 }
 
@@ -476,7 +476,7 @@ bool CubeSideTree::overflow(glm::vec3 &pos, glm::vec3 &axisOut) {
 bool CubeSideTree::destroyRootNode(glm::vec2 pos) {
     bool ret = false;
     if (rootNodeMap_.find(pos) != rootNodeMap_.end()) {
-        TerrainChunk *t = rootNodeMap_[pos];
+        TerrainNode *t = rootNodeMap_[pos];
         if (t)
             delete t;
         rootNodeMap_.erase(pos);
@@ -669,7 +669,7 @@ glm::vec3 CubeSideTree::getChildPosition(glm::vec3 &pos, int x, int z, int offse
     return ret;
 }
 
-void CubeSideTree::createChildren(TerrainChunk *node) {
+void CubeSideTree::createChildren(TerrainNode *node) {
     int childDimension = (node->getDimension() - 1) / 2;
     int childPosOffset = childDimension / 2;
     int childLod = glm::max(1, node->getLod() - 2);
@@ -677,25 +677,25 @@ void CubeSideTree::createChildren(TerrainChunk *node) {
     for (int z = -1; z < 2; z += 2) {
         for (int x = -1; x < 2; x += 2) {
             glm::vec3 pos = getChildPosition(node->getPosition(), x, z, childPosOffset);
-            node->addChild(new TerrainChunk(new Terrain(terrainGenerator_,
+            node->addChild(new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 childDimension + 1,
-                                                pos, childLod, axis_),
-                                            new WaterTile(terrainGenerator_, childDimension + 1, pos, rootLod_, axis_)));
+                                                pos, childLod, axis_, GenerationType::SPHERE),
+                                            new TerrainTile(terrainGenerator_, childDimension + 1, pos, rootLod_, axis_, GenerationType::SPHERE_FLAT)));
         }
     }
 }
 
 void CubeSideTree::createRootNode(glm::vec2 cubeSideGridPos) {
     glm::vec3 worldPos = gridPosToWorldCubePos(cubeSideGridPos);
-    rootNodeMap_[cubeSideGridPos] = new TerrainChunk(new Terrain(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_), 
-                                                        new WaterTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_));
+    rootNodeMap_[cubeSideGridPos] = new TerrainNode(new TerrainTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_, GenerationType::SPHERE), 
+                                                        new TerrainTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_, GenerationType::SPHERE_FLAT));
     containsActiveRootNode_ = true;
 }
 
 bool CubeSideTree::handleRootNodeCreation(glm::vec2 pos) {
     bool ret = false;
     if (rootNodeMap_.find(pos) == rootNodeMap_.end()) {
-        TerrainChunk *t = NULL;
+        TerrainNode *t = NULL;
         rootNodeMap_[pos] = t;
         threadPool->addJob(std::bind(&CubeSideTree::createRootNode, this, pos));
         ret = true;
@@ -705,7 +705,7 @@ bool CubeSideTree::handleRootNodeCreation(glm::vec2 pos) {
     return ret;
 }
 
-void CubeSideTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void CubeSideTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node)
         return; 
 
@@ -723,7 +723,7 @@ void CubeSideTree::updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::v
                 threadPool->addJob(std::bind(&CubeSideTree::createChildren, this, node));
             }
         } else {
-            for (TerrainChunk *child : node->getChildren())
+            for (TerrainNode *child : node->getChildren())
                 updateNode_(child, camWorldPos, tlist, wlist);
         }
     }
@@ -846,7 +846,7 @@ void TerrainQuadTree::initTree() {
     for (int z = -1; z < 2; z++) {
         for (int x = -1; x < 2; x++) {
             glm::vec2 pos(x,z);
-            TerrainChunk *chunk = NULL;
+            TerrainNode *chunk = NULL;
             rootMap_.insert(RootNodeMap::value_type(pos, chunk));
             createRootNode(pos);
         }
@@ -860,17 +860,17 @@ void TerrainQuadTree::initTree() {
  * position should be an existing key in rootMap_
  */
 void TerrainQuadTree::createRootNode(glm::vec2 position) {
-    rootMap_[position] = new TerrainChunk(new Terrain(terrainGenerator_,
+    rootMap_[position] = new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 rootDimension_ + 1,
-                                                position.x * rootDimension_,
-                                                position.y * rootDimension_, maxLod_), 
+                                                glm::vec3(position.x * rootDimension_, 0, position.y * rootDimension_), maxLod_,
+                                                GenerationType::PLANE), 
                                             DrawableFactory::createWaterTile(glm::vec3(position.x * rootDimension_, 0, position.y * rootDimension_), rootDimension_ / 2, glm::vec3(0,0,1))); 
 }
 
 /*
  * TODO: Better distance methods, to calculate from quad edges, not the center
  */
-void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainQuadTree::update_(TerrainNode *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node) // Unfinished chunk, waiting for thread
         return;
 
@@ -889,7 +889,7 @@ void TerrainQuadTree::update_(TerrainChunk *node, glm::vec3 &camPosition, std::v
                 threadPool->addJob(std::bind(&TerrainQuadTree::createChildren, this, node));
             }
         } else {
-            for (TerrainChunk *child : node->getChildren())
+            for (TerrainNode *child : node->getChildren())
                 update_(child, camPosition, tlist, wlist);
         }
     }
@@ -924,7 +924,7 @@ void TerrainQuadTree::updateRoots(glm::vec3 &camPosition) {
                  * create and delete the one opposite
                  */
                 if (it == rootMap_.end()) {
-                    TerrainChunk *t = NULL;
+                    TerrainNode *t = NULL;
                     rootMap_.insert(it, RootNodeMap::value_type(tmp, t));
                     threadPool->addJob(std::bind(&TerrainQuadTree::createRootNode, this, tmp));
                 
@@ -938,7 +938,7 @@ void TerrainQuadTree::updateRoots(glm::vec3 &camPosition) {
     }
 }
 
-void TerrainQuadTree::createChildren(TerrainChunk *node) {
+void TerrainQuadTree::createChildren(TerrainNode *node) {
     int childDimension = (node->getDimension() - 1) / 2;
     int childPosOffset = childDimension / 2;
     int childLod = glm::max(1, node->getLod() - 2);
@@ -948,9 +948,9 @@ void TerrainQuadTree::createChildren(TerrainChunk *node) {
     for (int z = -1; z < 2; z += 2) {
         for (int x = -1; x < 2; x += 2) {
             glm::vec3 pos(nodePosition.x + x * childPosOffset, 0, nodePosition.z + z * childPosOffset);
-            node->addChild(new TerrainChunk(new Terrain(terrainGenerator_,
+            node->addChild(new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 childDimension + 1,
-                                                pos.x, pos.z, childLod),
+                                                pos, childLod, GenerationType::PLANE),
                                             DrawableFactory::createWaterTile(pos, childPosOffset, glm::vec3(0,0,1))));
         }
     }

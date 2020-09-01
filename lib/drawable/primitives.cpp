@@ -51,14 +51,14 @@ Mesh Primitives::createQuad() {
 
 Mesh Primitives::createQuad2d() {
     std::vector<Vertex> vertices(4);
-    std::vector<glm::vec3> pos = {glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1, 0, 0), glm::vec3(1, 1, 0)};
-    std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 0), glm::vec2(1, 1)};
-    std::vector<unsigned int> indices = {2, 1, 0, 3, 1, 2};
+    std::vector<glm::vec3> pos = {glm::vec3(-1, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0), glm::vec3(1, -1, 0)};
+    std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(0, 1), glm::vec2(1, 0)};
+    std::vector<unsigned int> indices = {0, 1, 2, 0, 3, 1};
 
     for (int i = 0; i < 4; i++) {
         vertices[i].position = pos[i];
         vertices[i].textureCoords = texCoords[i];
-        vertices[i].normal = glm::vec3(0, 1, 0);
+        vertices[i].normal = glm::vec3(0, 0, -1);
     }
 
     return Mesh(vertices, indices);

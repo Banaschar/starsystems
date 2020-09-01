@@ -22,8 +22,10 @@ Gui::~Gui() {
  * TODO: Keep track of gui elements and warn if they overlap
  */
 void Gui::addGuiElement(Texture tex, glm::vec2 position, glm::vec2 scale) {
-    Drawable *tmp = DrawableFactory::createTexturedPrimitive(PrimitiveType::QUAD2D, "gui", tex);
+    Drawable *tmp = DrawableFactory::createTexturedPrimitive(PrimitiveType::QUAD2D, ShaderType::SHADER_TYPE_GUI, tex);
     glm::vec3 tmptrans = glm::vec3(position.x, position.y, 0.0f);
+    if (scale.x == 0 && scale.y == 0)
+        scale = glm::vec2(1,1);
     glm::vec3 tmpscale = glm::vec3(scale.x, scale.y, 0.0f);
     tmp->transform(&tmpscale, &tmptrans, NULL);
     guiElements_.push_back(tmp);

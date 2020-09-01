@@ -32,7 +32,7 @@ void Mesh::initMesh() {
     updateMesh();
 }
 /*
-void Mesh::initMesh2d(std::vector<glm::vec2d> positions) {
+void Mesh::updateMesh2D(std::vector<glm::vec2d> positions) {
     glGenVertexArrays(1, &vao_);
     glGenBuffers(1, &vbo_);
 
@@ -56,28 +56,6 @@ void Mesh::initMesh2d(std::vector<glm::vec2d> positions) {
 
 }
 */
-
-/*
- * TODO: Internally, create a Vertex struct that only holds the data types we actually
- * have and use
- * Also check if the vertices array contains any entries that are overlapping, e.g. any
- * vertices no index in the indices array is pointing to. Remove these and shrink the array
- * appropriately.
- * --> Can't create a struct dynamically. So the best possibilty would be
- * to create one char buffer and put everything inside interleaved
- *
- */
-void optimize() {
-    /*
-    char buffer[] = new char[sizeOfEverything]
-    for (int i = 0; i < vertices_.size(); i++) {
-        memcpy(buffer + (i * sizeOfOneTriangleData), vertices_[i].position, sizeof(glm::vec3));
-        memcpy(buffer + (i * sizeOfOneTriangleData) + sizeof(glm::vec3), vertices_[i].normal, sizeof(glm::vec3));
-        etc.
-    }
-    */
-    ;
-}
 
 /*
  * TODO: Either implement the optimize solution,

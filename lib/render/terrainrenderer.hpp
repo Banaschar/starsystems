@@ -2,7 +2,7 @@
 #define TERRAINRENDERER_H
 
 #include "shader.hpp"
-#include "terrain.hpp"
+#include "terraintile.hpp"
 #include "vaorenderer.hpp"
 
 class TerrainRenderer {

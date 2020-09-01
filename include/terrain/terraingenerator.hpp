@@ -6,6 +6,16 @@
 #include "mesh.hpp"
 #include "perlinnoise.hpp"
 
+enum class GenerationType {PLANE, SPHERE_FLAT, SPHERE};
+
+struct GenerationAttributes {
+    glm::vec3 position;
+    glm::vec3 axis;
+    int dimension;
+    int lod;
+    GenerationType genType;
+};
+
 class TerrainGenerator {
   public:
     TerrainGenerator();
@@ -18,8 +28,7 @@ class TerrainGenerator {
      * lod is the level of detail: Has to be a power of 2, smaller than dimension - 1
      * lod = 2^X < (dimension - 1)
      */
-    Mesh generateTerrain(int startX, int startZ, int dimension, int lod);
-    Mesh generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat = false);
+    Mesh generateTerrain(GenerationAttributes *attr);
 
     ColorGenerator &getColorGenerator();
 
@@ -51,8 +60,8 @@ class TerrainGenerator {
 
     std::vector<unsigned int> generateIndexVector(int dimension, int lod, bool inverted = false);
 
-    Mesh generateMesh(int startX, int startZ, int dimension, int lod);
-    Mesh generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat);
+    Mesh generateMesh(glm::vec3 &pos, int dimension, int lod);
+    Mesh generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat);
 };
 
 #endif

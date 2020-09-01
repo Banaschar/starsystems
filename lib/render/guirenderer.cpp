@@ -15,6 +15,7 @@ void GuiRenderer::render(std::vector<Drawable *> *guiElements, Game *game) {
         for (Mesh &mesh : gui->getMeshes()) {
             shader_->handleMeshTextures(mesh.getTextures());
             vaoRenderer_->draw(mesh);
+            shader_->resetTextureCount();
         }
     }
     // glDisable(GL_BLEND);

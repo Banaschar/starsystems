@@ -5,10 +5,9 @@
 #include <string>
 
 #include "mesh.hpp"
+#include "global.hpp"
 
 class Game;
-
-const std::string DEFAULT_TYPE = "type_default";
 
 /*
  *
@@ -16,15 +15,15 @@ const std::string DEFAULT_TYPE = "type_default";
 class Drawable {
   public:
     Drawable();
-    Drawable(Mesh mesh, std::string type, std::vector<glm::vec3> instancePositions = {});
-    Drawable(std::vector<Mesh> meshes, std::string type, std::vector<glm::vec3> instancePositions = {});
-    Drawable(Mesh mesh, Texture texture, std::string type, std::vector<glm::vec3> instancePositions = {});
+    Drawable(Mesh mesh, ShaderType type, std::vector<glm::vec3> instancePositions = {});
+    Drawable(std::vector<Mesh> meshes, ShaderType type, std::vector<glm::vec3> instancePositions = {});
+    Drawable(Mesh mesh, Texture texture, ShaderType type, std::vector<glm::vec3> instancePositions = {});
 
     virtual void update(Game *game);
 
-    std::string type();
+    ShaderType type();
 
-    void setType(std::string type);
+    void setType(ShaderType type);
 
     void addTexture(Texture tex, int index = 0);
 
@@ -53,7 +52,7 @@ class Drawable {
     int getTriangleCount(int index = 0);
 
   protected:
-    std::string type_;
+    ShaderType type_;
     std::vector<Mesh> meshes_;
     std::vector<glm::vec3> modelPositions_;
     std::vector<glm::mat4> modelMatrices_;

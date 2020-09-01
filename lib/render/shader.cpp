@@ -12,7 +12,7 @@
 #include "oglheader.hpp"
 #include "shader.hpp"
 
-Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type,
+Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type,
                const callback_t cb)
     : type_(type), drawCallback_(cb) {
     if (!openShaders(vertexShaderPath, fragmentShaderPath))
@@ -115,6 +115,10 @@ void Shader::end() {
     glActiveTexture(GL_TEXTURE0);
 }
 
+void Shader::resetTextureCount() {
+    textureCounter_ = 0;
+}
+
 void Shader::prepare(Drawable *drawable, Game *game) {
     drawCallback_(this, drawable, game);
 }
@@ -188,7 +192,7 @@ void Shader::uniform(const std::string &name, float value) {
     glUniform1f(glGetUniformLocation(shaderProgramId_, name.c_str()), value);
 }
 
-std::string Shader::type() {
+ShaderType Shader::type() {
     return type_;
 }
 

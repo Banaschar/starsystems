@@ -5,6 +5,7 @@
 #include "assetloader.hpp"
 #include "primitives.hpp"
 #include "textureloader.hpp"
+#include "terraintile.hpp"
 
 bool DrawableFactory::createPrimitiveMesh(PrimitiveType prim, Mesh *mesh, int size) {
     switch (prim) {
@@ -28,7 +29,7 @@ bool DrawableFactory::createPrimitiveMesh(PrimitiveType prim, Mesh *mesh, int si
     return true;
 }
 
-Drawable *DrawableFactory::createPrimitive(PrimitiveType prim, std::string type, int size) {
+Drawable *DrawableFactory::createPrimitive(PrimitiveType prim, ShaderType type, int size) {
     Mesh mesh;
     if (!createPrimitiveMesh(prim, &mesh))
         return NULL;
@@ -36,7 +37,7 @@ Drawable *DrawableFactory::createPrimitive(PrimitiveType prim, std::string type,
         return new Drawable(mesh, type);
 }
 
-Drawable *DrawableFactory::createTexturedPrimitive(PrimitiveType primType, std::string type, Texture texture) {
+Drawable *DrawableFactory::createTexturedPrimitive(PrimitiveType primType, ShaderType type, Texture texture) {
     Drawable *tmp;
     if (!(tmp = createPrimitive(primType, type)))
         return NULL;
@@ -45,7 +46,7 @@ Drawable *DrawableFactory::createTexturedPrimitive(PrimitiveType primType, std::
     return tmp;
 }
 
-Drawable *DrawableFactory::createCubeMap(std::vector<std::string> cubeTexPaths, std::string type) {
+Drawable *DrawableFactory::createCubeMap(std::vector<std::string> cubeTexPaths, ShaderType type) {
     unsigned int texId = TextureLoader::loadCubeMap(cubeTexPaths);
     Texture cubemapTexture;
     cubemapTexture.id = texId;
@@ -53,7 +54,7 @@ Drawable *DrawableFactory::createCubeMap(std::vector<std::string> cubeTexPaths, 
     return createTexturedPrimitive(PrimitiveType::CUBE, type, cubemapTexture);
 }
 
-Drawable *DrawableFactory::createModel(const std::string &path, const std::string &type) {
+Drawable *DrawableFactory::createModel(const std::string &path, ShaderType type) {
     std::vector<Mesh> meshes;
     if (!AssetLoader::loadModel(path, &meshes))
         return NULL;
@@ -61,9 +62,11 @@ Drawable *DrawableFactory::createModel(const std::string &path, const std::strin
         return new Drawable(meshes, type);
 }
 
-Drawable *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm::vec3 color) {
-    Drawable *tmp;
-    tmp = createPrimitive(PrimitiveType::QUAD, SHADER_TYPE_WATER);
+TerrainTile *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm::vec3 color) {
+    Mesh mesh;
+    if (!createPrimitiveMesh(PrimitiveType::QUAD, &mesh))
+        return NULL;
+    TerrainTile *tmp = new TerrainTile(mesh);
     tmp->addColor(glm::vec4(color, 0.6));
     glm::vec3 scaleVec = glm::vec3(scale, 1, scale);
     tmp->transform(&scaleVec, &position, NULL);
@@ -71,7 +74,7 @@ Drawable *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm::v
     return tmp;
 }
 
-Drawable *DrawableFactory::createLight(const std::string &path, const std::string &type) {
+Drawable *DrawableFactory::createLight(const std::string &path, ShaderType type) {
     std::vector<Mesh> meshes;
     if (!AssetLoader::loadModel(path, &meshes))
         return NULL;
@@ -79,7 +82,7 @@ Drawable *DrawableFactory::createLight(const std::string &path, const std::strin
         return new Light(meshes, type);
 }
 
-Drawable *DrawableFactory::createLight(PrimitiveType prim, std::string type, int size) {
+Drawable *DrawableFactory::createLight(PrimitiveType prim, ShaderType type, int size) {
     Mesh mesh;
     if (!createPrimitiveMesh(prim, &mesh))
         return NULL;

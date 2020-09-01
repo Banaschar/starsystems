@@ -6,19 +6,19 @@
 #include "drawable.hpp"
 #include "global.hpp"
 
-#define DEFAULT_AMBIENT glm::vec3(0.2f, 0.2f, 0.2f)
-#define DEFAULT_DIFFUSE glm::vec3(1.0f, 1.0f, 1.0f)
-#define DEFAULT_SPECULAR glm::vec3(0.5f, 0.5f, 0.5f)
-#define DEFAULT_COLOR glm::vec3(1.0f, 1.0f, 1.0f)
+const glm::vec3 DEFAULT_AMBIENT = glm::vec3(0.2f, 0.2f, 0.2f);
+const glm::vec3 DEFAULT_DIFFUSE = glm::vec3(1.0f, 1.0f, 1.0f);
+const glm::vec3 DEFAULT_SPECULAR = glm::vec3(0.5f, 0.5f, 0.5f);
+const glm::vec3 DEFAULT_COLOR = glm::vec3(1.0f, 1.0f, 1.0f);
 
 class Light : public Drawable {
   public:
-    Light(glm::vec3 lightPos = glm::vec3(0.0f, 0.0f, 0.0f)) {
+    Light(glm::vec3 lightPos, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
         Drawable::transform(NULL, &lightPos, NULL);
-        Drawable::setType(SHADER_TYPE_LIGHT);
+        Drawable::setType(type);
     }
-    Light(Mesh mesh, std::string type = SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
-    Light(std::vector<Mesh> meshes, std::string type = SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
+    Light(Mesh mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
+    Light(std::vector<Mesh> meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
 
     glm::vec3 setPosition(glm::vec3 pos) {
         glm::vec3 newpos = pos - Drawable::getPosition();

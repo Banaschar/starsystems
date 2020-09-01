@@ -20,14 +20,15 @@ class VaoRenderer;
 class TerrainRenderer;
 class WaterRenderer;
 class SkyRenderer;
+class PostProcessor;
 
-typedef std::map<std::string, Shader *> ShaderMap;
-typedef std::map<std::string, std::vector<Drawable *>> EntityMap;
+typedef std::map<ShaderType, Shader *> ShaderMap;
+typedef std::map<ShaderType, std::vector<Drawable *>> EntityMap;
 typedef std::vector<Drawable *> DrawableList;
 
 class Renderer {
   public:
-    Renderer(std::vector<Shader *> shaders);
+    Renderer(std::vector<Shader *> shaders, int winWidth, int winHeight);
     ~Renderer();
     /*
      *
@@ -48,6 +49,7 @@ class Renderer {
     GuiRenderer *guiRenderer_ = NULL;
     TerrainRenderer *terrainRenderer_ = NULL;
     WaterRenderer *waterRenderer_ = NULL;
+    PostProcessor *postProcessorAtmosphere_ = NULL;
     bool waterTypeQuality_ = false;
     /*
      *

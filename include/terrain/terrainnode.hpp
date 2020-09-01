@@ -1,7 +1,7 @@
-#ifndef TERRAINCHUNK_H
-#define TERRAINCHUNK_H
+#ifndef TERRAINNODE_H
+#define TERRAINNODE_H
 
-#include "terrain.hpp"
+#include "terraintile.hpp"
 #include <array>
 
 /*
@@ -11,21 +11,21 @@
  *
  * As a child has never more then 4 children in a quad tree, we can use a static array
  */
-class TerrainChunk {
+class TerrainNode {
   public:
-    TerrainChunk(Terrain *terrain, Drawable *water);
-    ~TerrainChunk();
+    TerrainNode(TerrainTile *terrain, TerrainTile *water);
+    ~TerrainNode();
 
-    void setParent(TerrainChunk *parent);
+    void setParent(TerrainNode *parent);
 
-    bool addChild(TerrainChunk *child);
+    bool addChild(TerrainNode *child);
 
     void update();
 
-    std::array<TerrainChunk *, 4> &getChildren();
+    std::array<TerrainNode *, 4> &getChildren();
 
-    Terrain *getTerrain();
-    Drawable *getWater();
+    TerrainTile *getTerrain();
+    TerrainTile *getWater();
 
     int getDimension();
 
@@ -42,9 +42,9 @@ class TerrainChunk {
   private:
     int index_ = 0;
     bool childrenScheduled_ = false;
-    TerrainChunk *parent_ = NULL;
-    std::array<TerrainChunk *, 4> children_{NULL};
-    Terrain *terrain_;
-    Drawable *water_;
+    TerrainNode *parent_ = NULL;
+    std::array<TerrainNode *, 4> children_{NULL};
+    TerrainTile *terrain_;
+    TerrainTile *water_;
 };
 #endif

@@ -3,10 +3,10 @@
 #include "drawable.hpp"
 
 Drawable::Drawable() {
-    type_ = DEFAULT_TYPE;
+    type_ = ShaderType::SHADER_TYPE_DEFAULT;
     initDrawable();
 }
-Drawable::Drawable(Mesh mesh, std::string type, std::vector<glm::vec3> instancePositions)
+Drawable::Drawable(Mesh mesh, ShaderType type, std::vector<glm::vec3> instancePositions)
     : type_(type), modelPositions_(instancePositions) {
     meshes_.push_back(mesh);
     if (instancePositions.empty())
@@ -14,7 +14,7 @@ Drawable::Drawable(Mesh mesh, std::string type, std::vector<glm::vec3> instanceP
     else
         initInstances();
 }
-Drawable::Drawable(std::vector<Mesh> meshes, std::string type, std::vector<glm::vec3> instancePositions)
+Drawable::Drawable(std::vector<Mesh> meshes, ShaderType type, std::vector<glm::vec3> instancePositions)
     : type_(type), modelPositions_(instancePositions) {
     meshes_ = meshes;
     if (instancePositions.empty())
@@ -22,7 +22,7 @@ Drawable::Drawable(std::vector<Mesh> meshes, std::string type, std::vector<glm::
     else
         initInstances();
 }
-Drawable::Drawable(Mesh mesh, Texture texture, std::string type, std::vector<glm::vec3> instancePositions)
+Drawable::Drawable(Mesh mesh, Texture texture, ShaderType type, std::vector<glm::vec3> instancePositions)
     : type_(type), modelPositions_(instancePositions) {
     meshes_.push_back(mesh);
     addTexture(texture);
@@ -36,11 +36,11 @@ void Drawable::update(Game *game) {
     ;
 }
 
-std::string Drawable::type() {
+ShaderType Drawable::type() {
     return type_;
 }
 
-void Drawable::setType(std::string type) {
+void Drawable::setType(ShaderType type) {
     type_ = type;
 }
 

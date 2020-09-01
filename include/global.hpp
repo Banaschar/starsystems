@@ -3,12 +3,9 @@
 
 #include "threadpool.hpp"
 
-#define SHADER_TYPE_LIGHT "default_light"
-#define SHADER_TYPE_TERRAIN "default_terrain"
-#define SHADER_TYPE_SKY "default_sky"
-#define SHADER_TYPE_WATER "default_water"
-#define SHADER_TYPE_WATER_PERFORMANCE "default_water_performance"
-#define SHADER_TYPE_GUI "default_gui"
+enum class ShaderType {SHADER_TYPE_DEFAULT, SHADER_TYPE_LIGHT, SHADER_TYPE_TERRAIN, SHADER_TYPE_SKY, SHADER_TYPE_WATER, SHADER_TYPE_WATER_PERFORMANCE,
+                        SHADER_TYPE_GUI, SHADER_TYPE_POST_PROCESSOR};
+
 
 extern float g_deltaTime;
 extern unsigned int g_triangleCount;

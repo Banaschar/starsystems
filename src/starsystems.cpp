@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "engine.hpp"
+#include "utils/textureloader.hpp"
 #include "planet.hpp"
 
 /*
@@ -48,17 +49,17 @@ Scene *createStarSystems(Engine *engine) {
 
     // Create and compile shaders
     std::vector<Shader *> shaders = {
-        new Shader("shader/StandardShading.vs", "shader/StandardShading.fs", "planet", standardShadingCb),
-        new Shader("shader/sun.vs", "shader/sun.fs", SHADER_TYPE_LIGHT, sunShaderCb),
-        new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb)};
+        new Shader("shader/StandardShading.vs", "shader/StandardShading.fs", ShaderType::SHADER_TYPE_DEFAULT, standardShadingCb),
+        new Shader("shader/sun.vs", "shader/sun.fs", ShaderType::SHADER_TYPE_LIGHT, sunShaderCb),
+        new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb)};
 
     View view = View(engine->getWindow(), glm::vec3(0.0f, 20.0f, -40.0f));
 
     // Sun
-    Drawable *sun = DrawableFactory::createModel("PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
+    Drawable *sun = DrawableFactory::createModel("PlanetFirstTry.obj", ShaderType::SHADER_TYPE_LIGHT);
 
     // Skybox
-    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
 
     // Add planets
     // These could be instances
@@ -96,7 +97,9 @@ Scene *createStarSystems(Engine *engine) {
     game->addEntity(planet2);
     game->addEntity(planet3);
 
-    Renderer *renderer = new Renderer(shaders);
+    int width,height;
+    view.getWindowSize(&width, &height);
+    Renderer *renderer = new Renderer(shaders, width, height);
     Scene *scene = new Scene(game, renderer);
 
     return scene;
@@ -140,34 +143,42 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("MVP", game->getView().getOrthoProjection() * drawable->getModelMatrix());
 }
 
+void postProcessorAtmoCb(Shader *shader, Drawable *drawable, Game *game) {
+    shader->uniform("camMatrix", game->getView().getCameraMatrix());
+    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
+}
+
 Scene *createPlane(Engine *engine) {
     std::cout << "Create Plane." << std::endl;
-    /*
+    
     std::vector<std::string> cubetex = {
-        "assets/skyboxSky/right.jpg",
-        "assets/skyboxSky/left.jpg",
-        "assets/skyboxSky/top.jpg",
-        "assets/skyboxSky/bottom.jpg",
-        "assets/skyboxSky/front.jpg",
-        "assets/skyboxSky/back.jpg"
+        "assets/skyboxSpace/right.png",
+        "assets/skyboxSpace/left.png",
+        "assets/skyboxSpace/top.png",
+        "assets/skyboxSpace/bottom.png",
+        "assets/skyboxSpace/front.png",
+        "assets/skyboxSpace/back.png"
     };
-    */
+    /*
     std::vector<std::string> cubetex = {"assets/skyboxSky2/right.png", "assets/skyboxSky2/left.png",
                                         "assets/skyboxSky2/top.png",   "assets/skyboxSky2/bottom.png",
                                         "assets/skyboxSky2/front.png", "assets/skyboxSky2/back.png"};
-
+    */
     std::vector<Shader *> shaders = {
-        new Shader("shader/plane.vs", "shader/plane.fs", SHADER_TYPE_TERRAIN, planeShaderCb),
-        new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
-        new Shader("shader/waterShader.vs", "shader/waterShader.fs", SHADER_TYPE_WATER, waterShaderCb),
-        //new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
-        new Shader("shader/flatColor.vs", "shader/flatColor.fs", "flat", flatColorCb),
-        new Shader("shader/guiShader.vs", "shader/guiShader.fs", SHADER_TYPE_GUI, guiShaderCb)};
+        new Shader("shader/plane.vs", "shader/plane.fs", ShaderType::SHADER_TYPE_TERRAIN, planeShaderCb),
+        new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
+        new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
+        //new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
+        //new Shader("shader/flatColor.vs", "shader/flatColor.fs", "flat", flatColorCb),
+        //new Shader("shader/screen.vs", "shader/postProcessorAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)};
+        //new Shader("shader/screen.vs", "shader/postProcessorAtmo.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)};
 
     Light *sun = new Light(glm::vec3(200000, 200000, 10000));
 
     //glm::vec3 camPos = glm::vec3(0, 20, -20);
-    glm::vec3 camPos = glm::vec3(0, 100, -800);
+    glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
@@ -179,17 +190,24 @@ Scene *createPlane(Engine *engine) {
     game->addTerrainManager(terr);
     
     // SKYBOX
-    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
     game->addSky(skybox);
 
     // GUI
     Gui *gui = new Gui();
+    Texture tex = TextureLoader::loadTextureFromFile("assets/container2.png", "texture_gui");
+    //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(1,1));
+
+    tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
+    //gui->addGuiElement(tex, glm::vec2(100,100), glm::vec2(100,100));
 
     // WATER TEST
     //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
     //game->addWater(waterTile);
-    
-    Renderer *renderer = new Renderer(shaders);
+    int width,height;
+    view.getWindowSize(&width, &height);
+    fprintf(stdout, "START. Resolution: %ix%i\n", width, height);
+    Renderer *renderer = new Renderer(shaders, width, height);
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);
 
@@ -201,19 +219,21 @@ Scene *test(Engine *engine) {
                                         "assets/skyboxSky2/top.png",   "assets/skyboxSky2/bottom.png",
                                         "assets/skyboxSky2/front.png", "assets/skyboxSky2/back.png"};
     std::vector<Shader *> shaders = {
-        new Shader("shader/skybox.vs", "shader/skybox.fs", SHADER_TYPE_SKY, skyBoxShaderCb),
-        new Shader("shader/sun.vs", "shader/sun.fs", SHADER_TYPE_LIGHT, sunShaderCb),
+        new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
+        new Shader("shader/sun.vs", "shader/sun.fs", ShaderType::SHADER_TYPE_LIGHT, sunShaderCb),
     };
 
     View view = View(engine->getWindow(), glm::vec3(0, 20, -20));
     Game *game = new Game(view);
 
-    Drawable *light = DrawableFactory::createLight("assets/PlanetFirstTry.obj", SHADER_TYPE_LIGHT);
-    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, SHADER_TYPE_SKY);
+    Drawable *light = DrawableFactory::createLight("assets/PlanetFirstTry.obj", ShaderType::SHADER_TYPE_LIGHT);
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
     game->addSky(skybox);
     game->addSun(light);
 
-    Renderer *renderer = new Renderer(shaders);
+    int width,height;
+    view.getWindowSize(&width, &height);
+    Renderer *renderer = new Renderer(shaders, width, height);
     Scene *scene = new Scene(game, renderer);
 
     return scene;

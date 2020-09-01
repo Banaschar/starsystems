@@ -42,7 +42,7 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
     g_triangleCount = 0;
     for (Drawable *drawable : terrains) {
         if (drawable) {
-            Terrain *terrain = static_cast<Terrain *>(drawable);
+            TerrainTile *terrain = static_cast<TerrainTile *>(drawable);
             shader_->uniform("amplitude", terrain->getAmplitude());
             shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
             shader_->uniform("sphereRadius", terrain->getSphereRadius());

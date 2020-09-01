@@ -21,11 +21,12 @@ enum TextureType {
 
 class Shader {
   public:
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const std::string type, const callback_t cb);
+    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type, const callback_t cb);
     void use();
     void end();
+    void resetTextureCount();
     void prepare(Drawable *drawable, Game *game);
-    std::string type();
+    ShaderType type();
     unsigned int id();
     void bindTexture(const std::string &name, unsigned int texId);
     void handleMeshTextures(std::vector<Texture> &textures);
@@ -38,7 +39,7 @@ class Shader {
 
   private:
     unsigned int shaderProgramId_;
-    const std::string type_;
+    ShaderType type_;
     callback_t drawCallback_;
     int textureCounter_;
     bool openShaders(const char *vertexShaderPath, const char *fragmentShaderPath);

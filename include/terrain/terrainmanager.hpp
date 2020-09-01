@@ -2,12 +2,12 @@
 #define TERRAINMANAGER_H
 
 #include "terraingenerator.hpp"
-#include "terrainchunk.hpp"
+#include "terrainnode.hpp"
 #include <glm/gtx/hash.hpp>
 #include <unordered_map>
 
 class CubeSideTree;
-typedef std::unordered_map<glm::vec2, TerrainChunk*> RootNodeMap;
+typedef std::unordered_map<glm::vec2, TerrainNode*> RootNodeMap;
 typedef std::unordered_map<glm::vec3, int> AxisIntegerMap;
 typedef std::unordered_map<glm::vec3, CubeSideTree*> CubeSideMap;
 typedef std::unordered_map<glm::vec2, std::tuple<glm::vec3, glm::vec2>> CubeTreeMap;
@@ -59,11 +59,11 @@ private:
   void printDefaultCubeSideMapError(std::string name, int key);
   glm::vec3 computeCubeSideOrigin();
   glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
-  void updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
   bool handleRootNodeCreation(glm::vec2 pos);
   void createRootNode(glm::vec2 cubeSideGridPos);
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int childPosOffset);
-  void createChildren(TerrainChunk *node);
+  void createChildren(TerrainNode *node);
   glm::vec3 getNextAxis(glm::vec2 &change);
   glm::vec2 getPreviousCenterNode(glm::vec3 &newAxis, glm::vec2 &gridPos);
     /*
@@ -87,7 +87,7 @@ private:
   bool destroyRootNode(glm::vec2 pos);
     /*
    * Calculate node grid position in the rootNodeMap of this side
-   * Used as key in the rootNodeMap for a new TerrainChunk
+   * Used as key in the rootNodeMap for a new TerrainNode
    */
   glm::vec2 worldCubePosToGridPos(glm::vec3 &pos);
 
@@ -116,9 +116,9 @@ class TerrainQuadTree {
     TerrainGenerator *terrainGenerator_;
     void initTree();
     void createRootNode(glm::vec2 position);
-    void createChildren(TerrainChunk *node);
+    void createChildren(TerrainNode *node);
     void updateRoots(glm::vec3 &camPosition);
-    void update_(TerrainChunk *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+    void update_(TerrainNode *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 };
 
 class TerrainCubeTree {
@@ -130,7 +130,7 @@ public:
 private:
   int cubeSideDimension_;
   TerrainGenerator *terrainGenerator_;
-  std::vector<TerrainChunk *> cubeSides_;
+  std::vector<TerrainNode *> cubeSides_;
   int planetSizeLod_ = 12;
   int maxLodQuadTree_;
   glm::vec3 sphereOrigin_;
@@ -144,9 +144,9 @@ private:
   void computeInitialCubePositionAndAxis(glm::vec3 &camPos, glm::vec3 *axisOut, glm::vec3 *positionOut);
   bool verifyPosIsOnAxis(glm::vec3 &axis, glm::vec3 &pos);
   glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
-  void createChildren(TerrainChunk *node);
+  void createChildren(TerrainNode *node);
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int offset, glm::vec3 &axis);
-  void updateNode_(TerrainChunk *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
   void destroyCubeSideTree();
 };
 

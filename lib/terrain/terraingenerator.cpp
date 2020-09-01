@@ -17,14 +17,21 @@ TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
  * lod is the detail level of the terrain. 
  * dimension is the size
  */
-Mesh TerrainGenerator::generateTerrain(int startX, int startZ, int dimension, int lod) {
-    //std::vector<float> heights = generateHeights(dimension, startX, startZ, lod, pNoise_);
-    //std::vector<glm::vec4> colors = colorGen_.genColors(heights, dimension, pNoise_.getAmplitude());
-    return generateMesh(startX, startZ, dimension, lod);
-}
-
-Mesh TerrainGenerator::generateTerrain(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat) {
-    return generateMeshSphere(start, dimension, radius, lod, axis, flat);
+Mesh TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
+    bool isFlat = false;
+    switch (attr->genType) {
+        case GenerationType::PLANE:
+            return generateMesh(attr->position, attr->dimension, attr->lod);
+            break;
+        case GenerationType::SPHERE_FLAT:
+            isFlat = true;
+        case GenerationType::SPHERE:
+            return generateMeshSphere(attr->position, attr->dimension, attr->lod, attr->axis, isFlat);
+            break;
+        default:
+            fprintf(stderr, "[TERRAINGENERATOR::generateTerrain] CRITICAL ERROR: Generation Type unknown\n");
+            return Mesh();
+    }
 }
 
 ColorGenerator &TerrainGenerator::getColorGenerator() {
@@ -150,7 +157,7 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
     }
 }
 
-Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int radius, int lod, glm::vec3 axis, bool flat) {
+Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
     int half = (dimension - 1) / 2;
@@ -166,14 +173,14 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
 
     glm::vec2 starts;
     if (axis.x != 0) {
-        starts.x = start.z;
-        starts.y = start.y;
+        starts.x = pos.z;
+        starts.y = pos.y;
     } else if (axis.y != 0) {
-            starts.x = start.x;
-            starts.y = start.z;
+            starts.x = pos.x;
+            starts.y = pos.z;
     } else {
-        starts.x = start.x;
-        starts.y = start.y;
+        starts.x = pos.x;
+        starts.y = pos.y;
     }
 
     // TODO: FIX THIS VERY UGLY HACK TO CHANGE WINDING ORDER FOR THESE AXIS
@@ -184,15 +191,15 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
     for (int z = starts.y; z < dimension + starts.y; z+=lod) {
         for (int x = starts.x; x < dimension + starts.x; x+=lod) {
 
-            glm::vec3 tmpPos = getSpherePos(axis, direction * radius, x - half, z - half);
+            glm::vec3 tmpPos = getSpherePos(axis, direction * sphereRadius_, x - half, z - half);
             // modify point so it has distance radius from origin 
-            tmpPos = sphereOrigin_ + (float)radius * glm::normalize(tmpPos - sphereOrigin_);
+            tmpPos = sphereOrigin_ + (float)sphereRadius_ * glm::normalize(tmpPos - sphereOrigin_);
 
             if (!flat) {
                 // Get height based on sphere point
                 float height = pNoise_.getNoise3d(tmpPos.x, tmpPos.y, tmpPos.z); 
                 // modify point so it has distance radius+heigh from origin
-                tmpPos = sphereOrigin_ + ((float)radius + height) * glm::normalize(tmpPos - sphereOrigin_); 
+                tmpPos = sphereOrigin_ + ((float)sphereRadius_ + height) * glm::normalize(tmpPos - sphereOrigin_); 
             }
 
             Vertex vertex;
@@ -214,13 +221,16 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 start, int dimension, int ra
     return Mesh(vertices, generateIndexVector(dimension, lod, inverted));    
 }
 
-Mesh TerrainGenerator::generateMesh(int startX, int startZ, int dimension, int lod) {
+/*
+ * Plane: Only take pos.x and pos.z
+ */
+Mesh TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
     int half = (dimension - 1) / 2;
     int index = 0, row = 0, col = 0;
-    for (int z = startZ; z < dimension + startZ; z+=lod) {
-        for (int x = startX; x < dimension + startX; x+=lod) {
+    for (int z = pos.z; z < dimension + pos.z; z+=lod) {
+        for (int x = pos.x; x < dimension + pos.x; x+=lod) {
             Vertex vertex;
             vertex.position.x = x - half;
             //vertex.position.y = lod == 16 ? generateHeights(x - half, z - half, lod) : pNoise_.getNoise2d(x - half, z - half);
