@@ -1,12 +1,15 @@
 #version 330 core
 
 in vec2 texCoords;
+in vec4 worldPosition;
+in vec3 cameraUp;
+in vec3 cameraRight;
 
 out vec4 color;
 
 uniform sampler2D mainScreenTex;
+uniform sampler2D mainDepthTexture;
 
-uniform vec3 worldSpaceCamPos;
 uniform vec3 camDirection;
 uniform vec3 planetOrigin;
 uniform int planetRadius;
@@ -37,38 +40,36 @@ vec2 intersectRaySphere(vec3 sphereCenter, float sphereRadius, vec3 rayOrigin, v
     return vec2(100000000, 0);
 }
 
+float linearDepth(float depth) {
+    return 2.0 * 0.1 * 2000.0 / (2000 + 0.1 - (2.0 * depth - 1.0) * (2000 - 0.1));
+}
+
 void main() {
-    // Try to get frag pos in world space
-    
-    vec4 viewport = vec4(0,0,1280,720);
-    vec4 ndcPos;
-    ndcPos.xy = ((2.0 * gl_FragCoord.xy) - (2.0 * viewport.xy)) / (viewport.zw) - 1;
-    ndcPos.z = (2.0 * gl_FragCoord.z - gl_DepthRange.near - gl_DepthRange.far) /
-    (gl_DepthRange.far - gl_DepthRange.near);
-    ndcPos.w = 1.0;
-
-    //vec4 clipPos = ndcPos / gl_FragCoord.w;
-    //vec4 eyePos = inverse(projectionMatrix) * clipPos;
-    
-
-
-    //vec4 camPos = camMatrix * vec4(worldSpaceCamPos, 1);
-    vec3 camPos = worldSpaceCamPos;
-    vec3 rayDirection = normalize(camDirection);
-    vec2 intersect = intersectRaySphere(planetOrigin, planetRadius + atmosphereHeight_, ndcPos.xyz, rayDirection);
-    float dstToAtmosphere = intersect.x;
-    float dstThroughAtmosphere = intersect.y;
-
     vec4 screen = texture(mainScreenTex, texCoords);
+    float depth = texture(mainDepthTexture, texCoords).r;
+    float eyeDepth = linearDepth(depth) * length(camDirection);
+
+    vec3 rayDirection = normalize(camDirection);
+    vec3 vPos = worldPosition.xyz;
+    // the real way: translating the point y units in the direction of the cameraUp vector
+    // And then x units in the direction of a vector perpendicular to the cameraUp and the camera Direction vector
+    // Just try when I need the negative result of the cross product
+    float mX = gl_FragCoord.x > 640 ? gl_FragCoord.x - 640 : 0 - (640 - gl_FragCoord.x);
+    float mY = gl_FragCoord.y > 360 ? gl_FragCoord.y - 360 : 0 - (360 - gl_FragCoord.y);
+    vPos = vPos + mY * normalize(cameraUp);
+    vPos = vPos + mX * normalize(cameraRight);
+
+    //vPos.x -= gl_FragCoord.x > 640 ? gl_FragCoord.x - 640 : 0 - (640 - gl_FragCoord.x);
+    //vPos.y += gl_FragCoord.y > 360 ? gl_FragCoord.y - 360 : 0 - (360 - gl_FragCoord.y);
+    vec2 intersect = intersectRaySphere(planetOrigin, planetRadius + atmosphereHeight_, vPos, rayDirection);
+    float dstToAtmosphere = intersect.x;
+    float dstThroughAtmosphere = min(intersect.y, eyeDepth - dstToAtmosphere);
     float p = dstThroughAtmosphere / (planetRadius * 2);
     
+
     //color = 1 - screen;
-    color = screen;
-    //color = vec4(p,0,0,1);
-    /*
-    if (p > 1)
-        color = vec4(1,0,0,1);
-    else
-        color = vec4(0,1,0,1);
-    */
+    //color = screen;
+    color = vec4(p,p,p,p);
+    //color = vec4(1,0,0,0);
+
 }

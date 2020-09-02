@@ -53,12 +53,15 @@ Mesh Primitives::createQuad2d() {
     std::vector<Vertex> vertices(4);
     std::vector<glm::vec3> pos = {glm::vec3(-1, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0), glm::vec3(1, -1, 0)};
     std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(0, 1), glm::vec2(1, 0)};
+    //std::vector<glm::vec4> colorAsCorners = {glm::vec4(0,0,0,0), glm::vec4(0,0,1280,720), glm::vec4(0,0,1280,0), glm::vec4(0,0,0,720)};
     std::vector<unsigned int> indices = {0, 1, 2, 0, 3, 1};
+    //std::vector<unsigned int> indices = {0, 2, 1, 0, 1, 3};
 
     for (int i = 0; i < 4; i++) {
         vertices[i].position = pos[i];
         vertices[i].textureCoords = texCoords[i];
         vertices[i].normal = glm::vec3(0, 0, -1);
+        //vertices[i].color = colorAsCorners[i];
     }
 
     return Mesh(vertices, indices);

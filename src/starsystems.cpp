@@ -144,8 +144,12 @@ void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void postProcessorAtmoCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("camMatrix", game->getView().getCameraMatrix());
+    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
+                               drawable->getModelMatrix());
+    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
     shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("positionOriginal", drawable->getPosition());
 }
 
 Scene *createPlane(Engine *engine) {
@@ -169,7 +173,7 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         //new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
-        //new Shader("shader/flatColor.vs", "shader/flatColor.fs", "flat", flatColorCb),
+        new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
         //new Shader("shader/screen.vs", "shader/postProcessorAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
         new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)};
@@ -188,6 +192,11 @@ Scene *createPlane(Engine *engine) {
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
     TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
     game->addTerrainManager(terr);
+
+    //Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
+    //glm::vec3 scale = glm::vec3(2,2,2);
+    //cube->transform(&scale, NULL, NULL);
+    //game->addEntity(cube);
     
     // SKYBOX
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
@@ -199,7 +208,7 @@ Scene *createPlane(Engine *engine) {
     //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(1,1));
 
     tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
-    //gui->addGuiElement(tex, glm::vec2(100,100), glm::vec2(100,100));
+    //gui->addGuiElement(tex, glm::vec2(100,1), glm::vec2(200,200));
 
     // WATER TEST
     //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
