@@ -45,10 +45,16 @@ class TerrainGenerator {
     int sphereRadius_ = 0;
     glm::vec3 sphereOrigin_ = glm::vec3(0,0,0);
 
-    float getHeightN(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod);
+    float getHeightN(int x, int z, const std::vector<Vertex> &vertices, int dimLod);
     glm::vec3 getSpherePos(glm::vec3 &axis, int radius, int x, int z);
 
-    glm::vec3 calcNormal(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod);
+    glm::vec3 calcNormal(int x, int z, const std::vector<Vertex> &vertices, int dimLod);
+
+    void calculateVertexNormalSphere(std::vector<Vertex> &vertices,
+                                                                 std::vector<unsigned int> &indices,
+                                                                 std::vector<glm::vec3> &borderMap, int dimensionLod);
+    void addBorderNormals(std::vector<Vertex> &vertices, std::vector<glm::vec3> &borderMap, int dimensionLod);
+    glm::vec3 calculateNormal(glm::vec3 &v0, glm::vec3 &v1, glm::vec3 &v2);
 
     /*
      * Switch out for the normal generator in primitives
@@ -58,7 +64,7 @@ class TerrainGenerator {
 
     float generateHeights(int x, int z, int lod);
 
-    std::vector<unsigned int> generateIndexVector(int dimension, int lod, bool inverted = false);
+    std::vector<unsigned int> generateIndexVector(std::vector<unsigned int> &indices, int dimensionLod, bool inverted = false);
 
     Mesh generateMesh(glm::vec3 &pos, int dimension, int lod);
     Mesh generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat);

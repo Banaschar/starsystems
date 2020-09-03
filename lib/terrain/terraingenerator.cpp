@@ -58,7 +58,144 @@ void TerrainGenerator::setSphereOrigin(glm::vec3 origin) {
     sphereOrigin_ = origin;
 }
 
-float TerrainGenerator::getHeightN(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod) {
+glm::vec3 TerrainGenerator::calculateNormal(glm::vec3 &v0, glm::vec3 &v1, glm::vec3 &v2) {
+    glm::vec3 p1 = v1 - v0;
+    glm::vec3 p2 = v2 - v0;
+    return glm::normalize(glm::cross(p1, p2));
+}
+
+/*
+ * Border vertices:
+ * Index 0 to dimLod+1 are the top row
+ * Afterwards first and last in next row -> 2 * (borderDim - 2) vertices
+ * Until 
+ *
+ * v0     v0 v1
+ * v1 v2     v2
+ *
+ * NORMAL DIRECTION: If a problem, reverse the order of calling calculateNormal to calculateNormal(v0, v2, v1)
+ */
+void TerrainGenerator::addBorderNormals(std::vector<Vertex> &vertices, std::vector<glm::vec3> &borderMap, int dimensionLod) {
+    int borderDim = dimensionLod + 2;
+    glm::vec3 v0;
+    glm::vec3 v1;
+    glm::vec3 v2;
+    glm::vec3 normal;
+
+    // Top row
+    for (int x = 0; x < dimensionLod + 1; x++) {
+        v0 = borderMap.at(x);
+
+        if (x > 0)
+            v1 = vertices.at(x-1).position;
+        else
+            v1 = borderMap.at(borderDim);
+
+        if (x < dimensionLod)
+            v2 = vertices.at(x).position;
+        else
+            v2 = borderMap.at(borderDim-1);
+
+        normal = calculateNormal(v0, v1, v2);
+
+        if (x > 0)
+            vertices.at(x-1).normal += normal;
+        if (x < dimensionLod)
+            vertices.at(x).normal += normal;
+
+        // second triangle
+        v1 = borderMap.at(x+1);
+
+        normal = calculateNormal(v0, v1, v2);
+
+        if (x < dimensionLod)
+            vertices.at(x).normal += normal;
+    }
+
+    // Bottom row
+    // borderArray bottom row: borderDim + 2 * (borderDim - 2)
+    int bArrayBottomRow = borderDim + 2 * (borderDim - 2);
+    for (int x = 0; x < dimensionLod + 1; x++) {
+        if (x > 0)
+            v0 = vertices.at(dimensionLod * (dimensionLod - 1) + x - 1).position;
+        else
+            v0 = borderMap[bArrayBottomRow - 2];
+        v1 = borderMap.at(bArrayBottomRow + x);
+        v2 = borderMap.at(bArrayBottomRow + x + 1);
+
+        normal = calculateNormal(v0, v1, v2);
+
+        if (x > 0 && x < dimensionLod)
+            vertices.at(dimensionLod * (dimensionLod - 1) + x - 1).normal = normal;
+
+        // second triangle
+        if (x < dimensionLod)
+            v1 = vertices.at(dimensionLod * (dimensionLod - 1) + x).position; 
+        else
+            v1 = borderMap.at(bArrayBottomRow - 1);
+
+        normal = calculateNormal(v0, v1, v2);
+
+        if (x < dimensionLod)
+            vertices.at(dimensionLod * (dimensionLod - 1) + x).normal = normal;
+    }
+
+    // Side rows
+    for (int x = 0; x < dimensionLod - 1; x++) {
+        // left side, first
+        v0 = borderMap.at(borderDim + 2 * x);
+        v1 = borderMap.at(borderDim + 2 * x + 2);
+        v2 = vertices.at(dimensionLod * (x + 1)).position;
+
+        normal = calculateNormal(v0, v1, v2);
+        vertices.at(dimensionLod * (x + 1)).normal += normal;
+
+        // left side, second
+        v1 = vertices.at(dimensionLod * x).position;
+        normal = calculateNormal(v0, v1, v2);
+        vertices.at(dimensionLod * x).normal += normal;
+
+        // right side, first
+        v0 = vertices.at(dimensionLod * x + dimensionLod - 1).position;
+        v1 = vertices.at(dimensionLod * (x + 1) + dimensionLod - 1).position;
+        v2 = borderMap.at(borderDim + 2 * x + 3);
+
+        normal= calculateNormal(v0, v1, v2);
+        vertices.at(dimensionLod * x + dimensionLod - 1).normal += normal;
+        vertices.at(dimensionLod * (x + 1) + dimensionLod - 1).normal += normal;
+
+        //right side second
+        v1 = borderMap[borderDim + 2 * x + 1];
+        normal = calculateNormal(v0, v1, v2);
+        vertices.at(dimensionLod * (x + 1) + dimensionLod - 1).normal = normal;
+    }
+
+}
+
+void TerrainGenerator::calculateVertexNormalSphere(std::vector<Vertex> &vertices,
+                                                                 std::vector<unsigned int> &indices,
+                                                                 std::vector<glm::vec3> &borderMap, int dimensionLod) {
+
+    for (int i = 0; i < indices.size() / 3; i++) {
+        glm::vec3 v0 = vertices.at(indices[i]).position;
+        glm::vec3 v1 = vertices.at(indices[i + 1]).position;
+        glm::vec3 v2 = vertices.at(indices[i + 2]).position;
+
+        glm::vec3 normal = calculateNormal(v0, v1, v2);
+
+        vertices.at(indices[i]).normal += normal;
+        vertices.at(indices[i + 1]).normal += normal;
+        vertices.at(indices[i + 2]).normal += normal;
+    }
+
+    addBorderNormals(vertices, borderMap, dimensionLod);
+
+    for (int i = 0; i < vertices.size(); i++) {
+        vertices[i].normal = glm::normalize(vertices[i].normal);
+    }
+}
+
+float TerrainGenerator::getHeightN(int x, int z, const std::vector<Vertex> &vertices, int dimLod) {
     x = x < 0 ? 0 : x;
     z = z < 0 ? 0 : z;
     x = x >= dimLod ? dimLod - 1 : x;
@@ -66,11 +203,11 @@ float TerrainGenerator::getHeightN(int x, int z, const std::vector<Vertex> &vert
     return vertices[z * dimLod + x].position.y;
 }
 
-glm::vec3 TerrainGenerator::calcNormal(int x, int z, const std::vector<Vertex> &vertices, int dim, int dimLod) {
-    float heightL = getHeightN(x - 1, z, vertices, dim, dimLod);
-    float heightR = getHeightN(x + 1, z, vertices, dim, dimLod);
-    float heightD = getHeightN(x, z - 1, vertices, dim, dimLod);
-    float heightU = getHeightN(x, z + 1, vertices, dim, dimLod);
+glm::vec3 TerrainGenerator::calcNormal(int x, int z, const std::vector<Vertex> &vertices, int dimLod) {
+    float heightL = getHeightN(x - 1, z, vertices, dimLod);
+    float heightR = getHeightN(x + 1, z, vertices, dimLod);
+    float heightD = getHeightN(x, z - 1, vertices, dimLod);
+    float heightU = getHeightN(x, z + 1, vertices, dimLod);
 
     return glm::normalize(glm::vec3(heightL - heightR, 2.0f, heightD - heightU));
 }
@@ -83,7 +220,7 @@ void TerrainGenerator::generateNormalVector(std::vector<Vertex> &vertices, int d
     int dimensionLod = ((dimension - 1) / lod) + 1;
     for (int z = 0; z < dimensionLod; z++) {
         for (int x = 0; x < dimensionLod; x++) {
-            vertices[z * dimensionLod + x].normal = calcNormal(x, z, vertices, dimension, dimensionLod);
+            vertices[z * dimensionLod + x].normal = calcNormal(x, z, vertices, dimensionLod);
         }
     }
 }
@@ -106,12 +243,12 @@ float TerrainGenerator::generateHeights(int x, int z, int lod) {
 
     return tmp / lod;
 }
+
 /*
  * TODO: Seems unresonable large and wasteful=? Think about it a bit
+ * -------> Put this into the generateMesh loop
  */
-std::vector<unsigned int> TerrainGenerator::generateIndexVector(int dimension, int lod, bool inverted) {
-    int dimensionLod = ((dimension - 1) / lod) + 1;
-    std::vector<unsigned int> indices((dimensionLod - 1) * (dimensionLod - 1) * 6);
+std::vector<unsigned int> TerrainGenerator::generateIndexVector(std::vector<unsigned int> &indices, int dimensionLod, bool inverted) {
     int cnt = 0;
     for (int row = 0; row < dimensionLod - 1; row++) {
         for (int col = 0; col < dimensionLod - 1; col++) {
@@ -157,11 +294,29 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
     }
 }
 
+/*
+ * Every chunk (except for the lowest lod level) should have a border of high resolution vertexes.
+ * https://www.youtube.com/watch?v=c2BUgXdjZkg&list=PLFt_AvWsXl0eBW2EiBtl_sxmDtSgZBxB3&index=21
+ * Better solution:
+ * Get the border vertex positions of surrounding chunks.
+ * Align the vertex positions.
+ * Lod = 2 | Lod = 1
+ *  x1          y1
+ *              y2
+ *  x2          y3
+ *
+ * So y1 = x1; y3 = x2;
+ * y2 = y1 + 1 * normalize(x2-x1) // distance(y1,y2) is always 1? otherwise distance(y1,y2)
+ * --> so the border vertices in the higher res chunk line up with the vertices in the lower res chunk
+ * CAVEAT: Slower performance, as I have to access very different memory locations (cache)
+ */
 Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
     int half = (dimension - 1) / 2;
-    int index = 0, row = 0, col = 0;
+    int index = 0;
+    int borderIndex = 0;
+    std::vector<glm::vec3> borderMap(2 * (dimensionLod + 2) + 2 * dimensionLod);
 
     int direction;
     if (axis.x != 0)
@@ -171,16 +326,16 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod
     else
         direction = axis.z;
 
-    glm::vec2 starts;
+    glm::vec2 offset;
     if (axis.x != 0) {
-        starts.x = pos.z;
-        starts.y = pos.y;
+        offset.x = pos.z;
+        offset.y = pos.y;
     } else if (axis.y != 0) {
-            starts.x = pos.x;
-            starts.y = pos.z;
+        offset.x = pos.x;
+        offset.y = pos.z;
     } else {
-        starts.x = pos.x;
-        starts.y = pos.y;
+        offset.x = pos.x;
+        offset.y = pos.y;
     }
 
     // TODO: FIX THIS VERY UGLY HACK TO CHANGE WINDING ORDER FOR THESE AXIS
@@ -188,10 +343,10 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod
     if (axis.x == -1 || axis.z == 1 || axis.y == -1)
         inverted = true;
 
-    for (int z = starts.y; z < dimension + starts.y; z+=lod) {
-        for (int x = starts.x; x < dimension + starts.x; x+=lod) {
+    for (int y = -lod; y < dimension + lod; y+=lod) {
+        for (int x = -lod; x < dimension + lod; x+=lod) {
 
-            glm::vec3 tmpPos = getSpherePos(axis, direction * sphereRadius_, x - half, z - half);
+            glm::vec3 tmpPos = getSpherePos(axis, direction * sphereRadius_, x + offset.x - half, y + offset.y - half);
             // modify point so it has distance radius from origin 
             tmpPos = sphereOrigin_ + (float)sphereRadius_ * glm::normalize(tmpPos - sphereOrigin_);
 
@@ -202,23 +357,25 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod
                 tmpPos = sphereOrigin_ + ((float)sphereRadius_ + height) * glm::normalize(tmpPos - sphereOrigin_); 
             }
 
-            Vertex vertex;
-            vertex.position.x = tmpPos.x;
-            vertex.position.y = tmpPos.y;
-            vertex.position.z = tmpPos.z;
-            vertex.textureCoords.x = (float)col / ((float)dimensionLod - 1);
-            vertex.textureCoords.y = (float)row / ((float)dimensionLod - 1);
-            vertices[index] = vertex;
-            index++;
-            col++;
+            if (x == -lod || x >= dimension || y == -lod || y >= dimension) {
+                borderMap[borderIndex++] = tmpPos;
+            } else {
+
+                Vertex vertex;
+                vertex.position = tmpPos;
+                vertex.textureCoords.x = (float)x / ((float)dimensionLod - 1);
+                vertex.textureCoords.y = (float)y / ((float)dimensionLod - 1);
+                vertices[index++] = vertex;
+            }
         }
-        col = 0;
-        row++;
     }
 
-    generateNormalVector(vertices, dimension, lod);
+    //generateNormalVector(vertices, dimension, lod);
+    std::vector<unsigned int> indices((dimensionLod - 1) * (dimensionLod - 1) * 6);
+    generateIndexVector(indices, dimensionLod, inverted);
+    calculateVertexNormalSphere(vertices, indices, borderMap, dimensionLod);
 
-    return Mesh(vertices, generateIndexVector(dimension, lod, inverted));    
+    return Mesh(vertices, indices);    
 }
 
 /*
@@ -247,7 +404,9 @@ Mesh TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod) {
         row++;
     }
 
+    std::vector<unsigned int> indices((dimensionLod - 1) * (dimensionLod - 1) * 6);
+    generateIndexVector(indices, dimensionLod);
     generateNormalVector(vertices, dimension, lod);
 
-    return Mesh(vertices, generateIndexVector(dimension, lod));
+    return Mesh(vertices, indices);
 }

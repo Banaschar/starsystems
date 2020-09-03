@@ -2,6 +2,7 @@
 out vec4 FragColor;
 
 struct Light {
+    vec3 position;
     vec3 direction;
     vec3 ambient;
     vec3 diffuse;
@@ -29,17 +30,17 @@ uniform sampler2D texture_diffuse6;
 
 vec4 calculateLighting(vec3 normal) {
     // ambient
-    vec3 ambient = light.ambient * 0.1;
+    vec3 ambient = light.ambient * 0.1; // TODO: Make ambientStrength a variable
 
     // diffuse
     vec3 lightDir = normalize(-light.direction);
-    vec3 norm = normalize(normal);
+    //vec3 norm = normalize(normal);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = light.diffuse * diff;
 
     //specular
     vec3 viewDirection = normalize(cameraPos - fragPos_worldspace);
-    vec3 reflectDirection = reflect(-light.direction, norm);
+    vec3 reflectDirection = reflect(-light.direction, normal);
     float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 32.0);
     vec3 specular = 0.5 * spec * light.specular;
 

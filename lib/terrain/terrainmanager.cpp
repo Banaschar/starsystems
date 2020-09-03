@@ -227,8 +227,8 @@ void TerrainCubeTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std:
     if (!node)
         return; 
 
-    if ((node->getLod() <= planetSizeLod_ - 6) ||
-            (glm::distance2(camWorldPos, cubeWorldPosToSpherePos(node->getPosition())) > glm::pow(node->getDimension() * 2.5f, 2))) {
+    if ((node->getLod() <= planetSizeLod_ - 4) ||
+            (glm::distance2(camWorldPos, cubeWorldPosToSpherePos(node->getPosition())) > glm::pow(node->getDimension(), 2))) {
         tlist->push_back(node->getTerrain());
         wlist->push_back(node->getWater());
     } else {
@@ -283,11 +283,11 @@ void TerrainCubeTree::initTree(int dimension) {
         //cubeSides_.push_back(new TerrainNode(new Terrain(terrainGenerator_, dimension + 1, glm::vec3(0,0,0), planetSizeLod_, kv.first), NULL));
         glm::vec3 pos = glm::vec3(0,0,0);
         if (kv.first.x)
-            pos.x = kv.first.x;
+            pos.x = kv.first.x * sphereRadius_;
         else if (kv.first.y)
-            pos.y = kv.first.y;
+            pos.y = kv.first.y * sphereRadius_;
         else
-            pos.z = kv.first.z;
+            pos.z = kv.first.z * sphereRadius_;
         cubeSides_.push_back(new TerrainNode(new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE), 
                                 new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE_FLAT)));
     }
@@ -929,8 +929,10 @@ void TerrainQuadTree::updateRoots(glm::vec3 &camPosition) {
                     threadPool->addJob(std::bind(&TerrainQuadTree::createRootNode, this, tmp));
                 
                     // delete opposite
-                    delete rootMap_.at(tmp - opp);
-                    rootMap_.erase(tmp - opp);
+                    if (rootMap_.find(tmp - opp) != rootMap_.end()) {
+                        delete rootMap_.at(tmp - opp);
+                        rootMap_.erase(tmp - opp);
+                    }
                 }
             }
         }

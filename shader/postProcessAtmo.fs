@@ -56,8 +56,8 @@ void main() {
     // Just try when I need the negative result of the cross product
     float mX = gl_FragCoord.x > 640 ? gl_FragCoord.x - 640 : 0 - (640 - gl_FragCoord.x);
     float mY = gl_FragCoord.y > 360 ? gl_FragCoord.y - 360 : 0 - (360 - gl_FragCoord.y);
-    vPos = vPos + mY * normalize(cameraUp);
-    vPos = vPos + mX * normalize(cameraRight);
+    vPos = vPos + mY * normalize(-cameraUp);
+    vPos = vPos + mX * normalize(-cameraRight);
 
     //vPos.x -= gl_FragCoord.x > 640 ? gl_FragCoord.x - 640 : 0 - (640 - gl_FragCoord.x);
     //vPos.y += gl_FragCoord.y > 360 ? gl_FragCoord.y - 360 : 0 - (360 - gl_FragCoord.y);

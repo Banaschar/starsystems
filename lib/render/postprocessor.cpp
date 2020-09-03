@@ -40,7 +40,7 @@ void PostProcessor::render(Game *game, std::vector<Drawable *> &terrains) {
         fprintf(stdout, "[POSTPROCESSOR::render] CRITICAL ERROR: Drawable is not a TerrainTile\n");
         return;
     }
-
+    
     //glm::vec3 newPos = game->getView().getCameraPosition() + 100.0f * glm::normalize(game->getView().getCameraDirection());
     //screen_->setPosition(newPos);
     screen_->setPosition(game->getView().getCameraPosition());

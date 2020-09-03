@@ -111,6 +111,7 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("cameraPos", game->getView().getCameraPosition());
+    shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
     shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
     shader->uniform("light.diffuse", glm::vec3(1.0, 1.0, 1.0));
@@ -173,16 +174,14 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         //new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
-        new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
-        //new Shader("shader/screen.vs", "shader/postProcessorAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
-        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
+        //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)};
-        //new Shader("shader/screen.vs", "shader/postProcessorAtmo.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)};
 
     Light *sun = new Light(glm::vec3(200000, 200000, 10000));
 
-    //glm::vec3 camPos = glm::vec3(0, 20, -20);
-    glm::vec3 camPos = glm::vec3(0, 700, -1300);
+    glm::vec3 camPos = glm::vec3(0, 20, -20);
+    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
@@ -190,9 +189,13 @@ Scene *createPlane(Engine *engine) {
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
     PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
-    game->addTerrainManager(terr);
+    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
+    //game->addTerrainManager(terr);
+    
+    TerrainTile *t = new TerrainTile(terrainGen, 240, glm::vec3(0,0,0), 1, GenerationType::PLANE);
+    game->addTerrain(t);
 
+    // Random Entity Test
     //Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
     //glm::vec3 scale = glm::vec3(2,2,2);
     //cube->transform(&scale, NULL, NULL);
@@ -211,11 +214,11 @@ Scene *createPlane(Engine *engine) {
     //gui->addGuiElement(tex, glm::vec2(100,1), glm::vec2(200,200));
 
     // WATER TEST
-    //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
-    //game->addWater(waterTile);
+    Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
+    game->addWater(waterTile);
+
     int width,height;
     view.getWindowSize(&width, &height);
-    fprintf(stdout, "START. Resolution: %ix%i\n", width, height);
     Renderer *renderer = new Renderer(shaders, width, height);
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);
