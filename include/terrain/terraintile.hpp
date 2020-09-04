@@ -7,9 +7,9 @@
 
 class TerrainTile : public Drawable {
   public:
-    TerrainTile(Mesh mesh);
-    TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis, GenerationType type);
-    TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, GenerationType type);
+    TerrainTile(Mesh *mesh);
+    TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis, GenerationType genType, ShaderType shaderType);
+    TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, GenerationType genType, ShaderType shaderType);
 
     void update(Game *game) override;
     float getAmplitude();

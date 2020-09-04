@@ -17,11 +17,13 @@ TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
  * lod is the detail level of the terrain. 
  * dimension is the size
  */
-Mesh TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
+Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
     bool isFlat = false;
     switch (attr->genType) {
+        case GenerationType::PLANE_FLAT:
+            isFlat = true;
         case GenerationType::PLANE:
-            return generateMesh(attr->position, attr->dimension, attr->lod);
+            return generateMesh(attr->position, attr->dimension, attr->lod, isFlat);
             break;
         case GenerationType::SPHERE_FLAT:
             isFlat = true;
@@ -30,7 +32,7 @@ Mesh TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
             break;
         default:
             fprintf(stderr, "[TERRAINGENERATOR::generateTerrain] CRITICAL ERROR: Generation Type unknown\n");
-            return Mesh();
+            return new Mesh();
     }
 }
 
@@ -181,7 +183,7 @@ void TerrainGenerator::calculateVertexNormalSphere(std::vector<Vertex> &vertices
         glm::vec3 v1 = vertices.at(indices[i + 1]).position;
         glm::vec3 v2 = vertices.at(indices[i + 2]).position;
 
-        glm::vec3 normal = calculateNormal(v0, v1, v2);
+        glm::vec3 normal = calculateNormal(v0, v2, v1);
 
         vertices.at(indices[i]).normal += normal;
         vertices.at(indices[i + 1]).normal += normal;
@@ -276,21 +278,12 @@ std::vector<unsigned int> TerrainGenerator::generateIndexVector(std::vector<unsi
 }
 
 glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int z) {
-    if (axis.x != 0) {
-        if (axis.x == 1)
-            return glm::vec3(radius, z, x);
-        else
-            return glm::vec3(radius, z, x); //was x, z
-    } else if (axis.y != 0) {
-        if (axis.y == 1)
-            return glm::vec3(x, radius, z);
-        else
-            return glm::vec3(x, radius, z); // was z, rad, x
+    if (axis.x) {
+        return glm::vec3(radius, z, x); //was x, z
+    } else if (axis.y) {
+        return glm::vec3(x, radius, z); // was z, rad, x
     } else {
-        if (axis.z == 1)
-            return glm::vec3(x, z, radius); // was x,z
-        else
-            return glm::vec3(x, z, radius);
+        return glm::vec3(x, z, radius);
     }
 }
 
@@ -310,7 +303,7 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
  * --> so the border vertices in the higher res chunk line up with the vertices in the lower res chunk
  * CAVEAT: Slower performance, as I have to access very different memory locations (cache)
  */
-Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat) {
+Mesh *TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
     int half = (dimension - 1) / 2;
@@ -319,21 +312,19 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod
     std::vector<glm::vec3> borderMap(2 * (dimensionLod + 2) + 2 * dimensionLod);
 
     int direction;
-    if (axis.x != 0)
-        direction = axis.x;
-    else if (axis.y != 0)
-        direction = axis.y;
-    else
-        direction = axis.z;
-
     glm::vec2 offset;
-    if (axis.x != 0) {
+    if (axis.x) {
+        direction = axis.x;
         offset.x = pos.z;
         offset.y = pos.y;
-    } else if (axis.y != 0) {
+    }
+    else if (axis.y) {
+        direction = axis.y;
         offset.x = pos.x;
         offset.y = pos.z;
-    } else {
+    }
+    else {
+        direction = axis.z;
         offset.x = pos.x;
         offset.y = pos.y;
     }
@@ -375,13 +366,13 @@ Mesh TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod
     generateIndexVector(indices, dimensionLod, inverted);
     calculateVertexNormalSphere(vertices, indices, borderMap, dimensionLod);
 
-    return Mesh(vertices, indices);    
+    return new Mesh(vertices, indices);    
 }
 
 /*
  * Plane: Only take pos.x and pos.z
  */
-Mesh TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod) {
+Mesh *TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod, bool flat) {
     int dimensionLod = ((dimension - 1) / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
     int half = (dimension - 1) / 2;
@@ -391,7 +382,10 @@ Mesh TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod) {
             Vertex vertex;
             vertex.position.x = x - half;
             //vertex.position.y = lod == 16 ? generateHeights(x - half, z - half, lod) : pNoise_.getNoise2d(x - half, z - half);
-            vertex.position.y = pNoise_.getNoise2d(x - half, z - half);
+            if (flat)
+                vertex.position.y = 0;
+            else
+                vertex.position.y = pNoise_.getNoise2d(x - half, z - half);
             vertex.position.z = z - half;
             vertex.textureCoords.x = (float)col / ((float)dimensionLod - 1);
             vertex.textureCoords.y = (float)row / ((float)dimensionLod - 1);
@@ -408,5 +402,18 @@ Mesh TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod) {
     generateIndexVector(indices, dimensionLod);
     generateNormalVector(vertices, dimension, lod);
 
-    return Mesh(vertices, indices);
+    return new Mesh(vertices, indices);
 }
+
+
+/*
+ * IMPLEMENTATION LIKE SEB LAGUE
+ *
+ * UFF
+ */
+
+/*
+Mesh *TerrainGenerator::generateMesh() {
+    int numVertsPerLine = dimension + 5;
+}
+*/

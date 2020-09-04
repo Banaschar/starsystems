@@ -14,7 +14,6 @@
 /*
  * Forward declaration of classes from private headers
  */
-class WaterFrameBuffer;
 class GuiRenderer;
 class VaoRenderer;
 class TerrainRenderer;
@@ -45,12 +44,12 @@ class Renderer {
     VaoRenderer *vaoRenderer_ = NULL;
     Shader *lightShader_ = NULL;
     SkyRenderer *skyRenderer_ = NULL;
-    WaterFrameBuffer *waterFrameBuffer_ = NULL;
     GuiRenderer *guiRenderer_ = NULL;
     TerrainRenderer *terrainRenderer_ = NULL;
     WaterRenderer *waterRenderer_ = NULL;
     PostProcessor *postProcessorAtmosphere_ = NULL;
     bool waterTypeQuality_ = false;
+    Shader *debugShader_ = nullptr;
     /*
      *
      */
@@ -71,5 +70,9 @@ class Renderer {
      *
      */
     void renderEntities(Game *game, glm::vec4 clipPlane);
+    /*
+     *
+     */
+    void renderDebug(DrawableList &terrain, DrawableList &water, Game *game);
 };
 #endif

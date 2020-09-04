@@ -57,7 +57,7 @@ void PostProcessor::render(Game *game, std::vector<Drawable *> &terrains) {
     shader_->uniform("camDirection", game->getView().getCameraDirection());
     shader_->uniform("planetOrigin", t->getSphereOrigin());
     shader_->uniform("planetRadius", t->getSphereRadius());
-    for (Mesh &mesh : screen_->getMeshes()) {
+    for (Mesh *mesh : screen_->getMeshes()) {
         vaoRenderer_->draw(mesh);
     }
 

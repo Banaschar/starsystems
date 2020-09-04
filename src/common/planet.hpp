@@ -9,8 +9,8 @@
 
 class Planet : public Drawable {
   public:
-    Planet(Mesh mesh, float orbitSpeed, glm::vec3 position, ShaderType type = ShaderType::SHADER_TYPE_DEFAULT);
-    Planet(std::vector<Mesh> meshes, float orbitSpeed, glm::vec3 position, ShaderType type = ShaderType::SHADER_TYPE_DEFAULT);
+    Planet(Mesh *mesh, float orbitSpeed, glm::vec3 position, ShaderType type = ShaderType::SHADER_TYPE_DEFAULT);
+    Planet(std::vector<Mesh*> meshes, float orbitSpeed, glm::vec3 position, ShaderType type = ShaderType::SHADER_TYPE_DEFAULT);
 
     void update(Game *game) override;
 

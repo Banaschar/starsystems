@@ -1,6 +1,6 @@
 #include "primitives.hpp"
 
-Mesh Primitives::createPlane(int dimension) {
+Mesh *Primitives::createPlane(int dimension) {
     int numVertices = dimension * dimension;
     int half = dimension / 2;
     std::vector<Vertex> vertices(numVertices);
@@ -29,10 +29,10 @@ Mesh Primitives::createPlane(int dimension) {
         }
     }
 
-    return Mesh(vertices, indices);
+    return new Mesh(vertices, indices);
 }
 
-Mesh Primitives::createQuad() {
+Mesh *Primitives::createQuad() {
     std::vector<Vertex> vertices(4);
     std::vector<glm::vec3> pos = {glm::vec3(-1, 0, -1), glm::vec3(-1, 0, 1), glm::vec3(1, 0, -1), glm::vec3(1, 0, 1)};
     std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 0), glm::vec2(1, 1)};
@@ -46,10 +46,10 @@ Mesh Primitives::createQuad() {
         vertices[i].textureCoords = texCoords[i];
     }
 
-    return Mesh(vertices, indices);
+    return new Mesh(vertices, indices);
 }
 
-Mesh Primitives::createQuad2d() {
+Mesh *Primitives::createQuad2d() {
     std::vector<Vertex> vertices(4);
     std::vector<glm::vec3> pos = {glm::vec3(-1, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0), glm::vec3(1, -1, 0)};
     std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(0, 1), glm::vec2(1, 0)};
@@ -64,10 +64,10 @@ Mesh Primitives::createQuad2d() {
         //vertices[i].color = colorAsCorners[i];
     }
 
-    return Mesh(vertices, indices);
+    return new Mesh(vertices, indices);
 }
 
-Mesh Primitives::createCube(int side) {
+Mesh *Primitives::createCube(int side) {
 
     glm::vec3 vertList[] = {glm::vec3(-1, -1, -1), glm::vec3(1, -1, -1), glm::vec3(1, 1, -1), glm::vec3(-1, 1, -1),
                             glm::vec3(-1, -1, 1),  glm::vec3(1, -1, 1),  glm::vec3(1, 1, 1),  glm::vec3(-1, 1, 1)};
@@ -89,7 +89,7 @@ Mesh Primitives::createCube(int side) {
         // vertices[i].textureCoords = texCoords[texInds[i % 4]];
     }
 
-    return Mesh(vertices, indices);
+    return new Mesh(vertices, indices);
 }
 
 std::vector<glm::vec3> Primitives::calculateVertexNormalAverages(std::vector<glm::vec3> &pos,

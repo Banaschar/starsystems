@@ -11,8 +11,8 @@ void SkyRenderer::render(std::vector<Drawable *> skies, Game *game, glm::vec4 cl
     for (Drawable *sky : skies) {
         shader_->prepare(sky, game);
 
-        for (Mesh &mesh : sky->getMeshes()) {
-            shader_->handleMeshTextures(mesh.getTextures());
+        for (Mesh *mesh : sky->getMeshes()) {
+            shader_->handleMeshTextures(mesh->getTextures());
             vaoRenderer_->draw(mesh);
         }
     }

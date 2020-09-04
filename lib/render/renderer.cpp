@@ -4,7 +4,6 @@
 #include "skyrenderer.hpp"
 #include "terrainrenderer.hpp"
 #include "vaorenderer.hpp"
-#include "waterframebuffer.hpp"
 #include "waterrenderer.hpp"
 #include "terraintile.hpp"
 #include "postprocessor.hpp"
@@ -23,9 +22,6 @@ Renderer::~Renderer() {
 
     if (waterRenderer_)
         delete waterRenderer_;
-
-    if (waterFrameBuffer_)
-        delete waterFrameBuffer_;
 
     for (const auto &kv : shaderMap_) {
         delete shaderMap_[kv.first];
@@ -51,7 +47,7 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
      * AND don't do this if we are rendering a whole planet and we are far away
      */
     
-    if (waterTypeQuality_ && !water.empty()) {
+    if (!water.empty() && water[0]->type() == ShaderType::SHADER_TYPE_WATER) {
         glEnable(GL_CLIP_DISTANCE0);
         
         glm::vec3 normal;
@@ -83,16 +79,16 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
         game->getView().getCameraPosition() = tmpCamPos;
         game->getView().invertPitch();
         game->getView().updateForce();
-        waterFrameBuffer_->bindReflectionFrameBuffer();
+        waterRenderer_->bindReflectionFrameBuffer();
         renderScene(lights, terrain, sky, game, glm::vec4(normal, -distancePlane));
         
         game->getView().getCameraPosition() = saveCamPos;
         game->getView().invertPitch();
         game->getView().updateForce();
-        waterFrameBuffer_->bindRefractionFrameBuffer();
+        waterRenderer_->bindRefractionFrameBuffer();
         renderScene(lights, terrain, sky, game, glm::vec4(-1.0f * normal, distancePlane));
 
-        waterFrameBuffer_->unbindActiveFrameBuffer();
+        waterRenderer_->unbindActiveFrameBuffer();
         glDisable(GL_CLIP_DISTANCE0);
     }
 
@@ -108,7 +104,9 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
         postProcessorAtmosphere_->end();
         postProcessorAtmosphere_->render(game, terrain);
     }
-    
+
+    if (debugShader_)
+        renderDebug(terrain, water, game);
     
     if (gui && guiRenderer_)
         guiRenderer_->render(gui, game);
@@ -116,13 +114,31 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
     entityMap_.clear();
 }
 
+void Renderer::renderDebug(DrawableList &terrain, DrawableList &water, Game *game) {
+    debugShader_->use();
+
+    for (Drawable *drawable : terrain) {
+        debugShader_->prepare(drawable, game);
+        for (Mesh *m : drawable->getMeshes())
+            vaoRenderer_->draw(m);
+    }
+
+    for (Drawable *drawable : water) {
+        debugShader_->prepare(drawable, game);
+        for (Mesh *m : drawable->getMeshes())
+            vaoRenderer_->draw(m);
+    }
+
+    debugShader_->end();
+}
+
 void Renderer::resolutionChange(int width, int height) {
     fprintf(stdout, "[RENDERER::resolutionChange] Resolution changed to %ix%i\n", width, height);
     windowWidth_ = width;
     windowHeight_ = height;
 
-    if (waterFrameBuffer_)
-        waterFrameBuffer_->resolutionChange(windowWidth_, windowHeight_);
+    if (waterRenderer_)
+        waterRenderer_->resolutionChange(windowWidth_, windowHeight_);
 
     if (postProcessorAtmosphere_)
         postProcessorAtmosphere_->resolutionChange(windowWidth_, windowHeight_);
@@ -142,21 +158,23 @@ void Renderer::setupRenderer(std::vector<Shader *> shaders) {
                 skyRenderer_ = new SkyRenderer(shader, vaoRenderer_);
                 break;
             case ShaderType::SHADER_TYPE_WATER:
-                waterTypeQuality_ = true;
-                waterFrameBuffer_ = new WaterFrameBuffer(windowWidth_, windowHeight_);
-                waterRenderer_ = new WaterRenderer(shader, vaoRenderer_, 
-                                                   waterFrameBuffer_->getReflectionTexture(),
-                                                   waterFrameBuffer_->getRefractionTexture(),
-                                                   waterFrameBuffer_->getRefractionDepthTexture());
+                if (!waterRenderer_)
+                    waterRenderer_ = new WaterRenderer(vaoRenderer_, windowWidth_, windowHeight_);
+                waterRenderer_->addShader(shader);
                 break;
             case ShaderType::SHADER_TYPE_WATER_PERFORMANCE:
-                waterRenderer_ = new WaterRenderer(shader, vaoRenderer_);
+                if (!waterRenderer_)
+                    waterRenderer_ = new WaterRenderer(vaoRenderer_, windowWidth_, windowHeight_);
+                waterRenderer_->addShader(shader);
                 break;
             case ShaderType::SHADER_TYPE_GUI:
                 guiRenderer_ = new GuiRenderer(shader, vaoRenderer_);
                 break;
             case ShaderType::SHADER_TYPE_POST_PROCESSOR:
                 postProcessorAtmosphere_ = new PostProcessor(shader, vaoRenderer_, windowWidth_, windowHeight_);
+                break;
+            case ShaderType::SHADER_TYPE_DEBUG:
+                debugShader_ = shader;
                 break;
             default:
                 if (shaderMap_.count(shader->type()))
@@ -208,8 +226,8 @@ void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, g
             drawable->update(game);
             shader->prepare(drawable, game);
 
-            for (Mesh &mesh : drawable->getMeshes()) {
-                shader->handleMeshTextures(mesh.getTextures());
+            for (Mesh *mesh : drawable->getMeshes()) {
+                shader->handleMeshTextures(mesh->getTextures());
                 vaoRenderer_->draw(mesh);
             }
         }

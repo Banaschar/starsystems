@@ -9,11 +9,11 @@
 
 #include "textureloader.hpp"
 
-void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh> *meshes);
-Mesh processMesh(aiMesh *mesh, const aiScene *scene);
+void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh*> *meshes);
+Mesh *processMesh(aiMesh *mesh, const aiScene *scene);
 std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::string typeName);
 
-bool AssetLoader::loadModel(const std::string &path, std::vector<Mesh> *meshes) {
+bool AssetLoader::loadModel(const std::string &path, std::vector<Mesh*> *meshes) {
     std::string delimiter = ".";
     std::string extension = path.substr(path.find(delimiter) + 1, path.size());
 
@@ -25,7 +25,7 @@ bool AssetLoader::loadModel(const std::string &path, std::vector<Mesh> *meshes) 
     return false;
 }
 
-bool AssetLoader::loadObj(const char *path, std::vector<Mesh> *meshes) {
+bool AssetLoader::loadObj(const char *path, std::vector<Mesh*> *meshes) {
 
     Assimp::Importer importer;
     // Set second argument to 0 for no post processing
@@ -46,7 +46,7 @@ bool AssetLoader::loadObj(const char *path, std::vector<Mesh> *meshes) {
         return true;
 }
 
-void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh> *meshes) {
+void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh*> *meshes) {
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
         aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
         meshes->push_back(processMesh(mesh, scene));
@@ -57,7 +57,7 @@ void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh> *meshes)
     }
 }
 
-Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
+Mesh *processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
@@ -112,7 +112,7 @@ Mesh processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Texture> heightMaps = loadMatTexture(material, aiTextureType_AMBIENT, "tex_height");
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-    return Mesh(vertices, textures, indices);
+    return new Mesh(vertices, textures, indices);
 }
 
 /*

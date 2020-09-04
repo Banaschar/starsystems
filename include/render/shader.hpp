@@ -21,7 +21,7 @@ enum TextureType {
 
 class Shader {
   public:
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type, const callback_t cb);
+    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type, const callback_t cb, const char *geometryShaderPath = nullptr);
     void use();
     void end();
     void resetTextureCount();
@@ -42,6 +42,6 @@ class Shader {
     ShaderType type_;
     callback_t drawCallback_;
     int textureCounter_;
-    bool openShaders(const char *vertexShaderPath, const char *fragmentShaderPath);
+    bool openShaders(const char *vertexShaderPath, const char *fragmentShaderPath, const char *geometryShaderPath);
 };
 #endif

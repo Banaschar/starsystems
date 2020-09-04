@@ -1,24 +1,26 @@
 #include "terraintile.hpp"
 #include "perlinnoise.hpp"
 
-TerrainTile::TerrainTile(Mesh mesh) {
+TerrainTile::TerrainTile(Mesh *mesh) {
     Drawable::addMesh(mesh);
 }
 
-TerrainTile::TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis, GenerationType type) {
+TerrainTile::TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, glm::vec3 axis, GenerationType genType, ShaderType shaderType) {
     genAttr_.dimension = dimension;
     genAttr_.position = position;
     genAttr_.lod = lod;
     genAttr_.axis = axis;
-    genAttr_.genType = type;
+    genAttr_.genType = genType;
+    Drawable::setType(shaderType);
     initTerrain(terrainGen);
 }
 
-TerrainTile::TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, GenerationType type) {
+TerrainTile::TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 position, int lod, GenerationType genType, ShaderType shaderType) {
     genAttr_.dimension = dimension;
     genAttr_.position = position;
     genAttr_.lod = lod;
-    genAttr_.genType = type;
+    genAttr_.genType = genType;
+    Drawable::setType(shaderType);
     initTerrain(terrainGen);
 }
 

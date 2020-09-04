@@ -18,6 +18,6 @@ class DrawableFactory {
     static Drawable *createLight(PrimitiveType prim, ShaderType type, int size = 1);
 
   private:
-    static bool createPrimitiveMesh(PrimitiveType prim, Mesh *mesh, int size = 1);
+    static Mesh *createPrimitiveMesh(PrimitiveType prim, int size = 1);
 };
 #endif

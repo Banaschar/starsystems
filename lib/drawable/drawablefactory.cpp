@@ -7,31 +7,31 @@
 #include "textureloader.hpp"
 #include "terraintile.hpp"
 
-bool DrawableFactory::createPrimitiveMesh(PrimitiveType prim, Mesh *mesh, int size) {
+Mesh *DrawableFactory::createPrimitiveMesh(PrimitiveType prim, int size) {
     switch (prim) {
     case PrimitiveType::QUAD:
-        *mesh = Primitives::createQuad();
+        return Primitives::createQuad();
         break;
     case PrimitiveType::QUAD2D:
-        *mesh = Primitives::createQuad2d();
+        return Primitives::createQuad2d();
         break;
     case PrimitiveType::PLANE:
-        *mesh = Primitives::createPlane(size);
+        return Primitives::createPlane(size);
         break;
     case PrimitiveType::CUBE:
-        *mesh = Primitives::createCube(size);
+        return Primitives::createCube(size);
         break;
     default:
         fprintf(stdout, "Invalid primitive type\n");
-        return false;
+        return NULL;
     }
 
-    return true;
+    return NULL;
 }
 
 Drawable *DrawableFactory::createPrimitive(PrimitiveType prim, ShaderType type, int size) {
-    Mesh mesh;
-    if (!createPrimitiveMesh(prim, &mesh))
+    Mesh *mesh;
+    if (!(mesh = createPrimitiveMesh(prim)))
         return NULL;
     else
         return new Drawable(mesh, type);
@@ -55,7 +55,7 @@ Drawable *DrawableFactory::createCubeMap(std::vector<std::string> cubeTexPaths, 
 }
 
 Drawable *DrawableFactory::createModel(const std::string &path, ShaderType type) {
-    std::vector<Mesh> meshes;
+    std::vector<Mesh*> meshes;
     if (!AssetLoader::loadModel(path, &meshes))
         return NULL;
     else
@@ -63,8 +63,8 @@ Drawable *DrawableFactory::createModel(const std::string &path, ShaderType type)
 }
 
 TerrainTile *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm::vec3 color) {
-    Mesh mesh;
-    if (!createPrimitiveMesh(PrimitiveType::QUAD, &mesh))
+    Mesh *mesh;
+    if (!(mesh = createPrimitiveMesh(PrimitiveType::QUAD)))
         return NULL;
     TerrainTile *tmp = new TerrainTile(mesh);
     tmp->addColor(glm::vec4(color, 0.6));
@@ -75,7 +75,7 @@ TerrainTile *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm
 }
 
 Drawable *DrawableFactory::createLight(const std::string &path, ShaderType type) {
-    std::vector<Mesh> meshes;
+    std::vector<Mesh*> meshes;
     if (!AssetLoader::loadModel(path, &meshes))
         return NULL;
     else
@@ -83,8 +83,8 @@ Drawable *DrawableFactory::createLight(const std::string &path, ShaderType type)
 }
 
 Drawable *DrawableFactory::createLight(PrimitiveType prim, ShaderType type, int size) {
-    Mesh mesh;
-    if (!createPrimitiveMesh(prim, &mesh))
+    Mesh *mesh;
+    if (!(mesh = createPrimitiveMesh(prim)))
         return NULL;
     else
         return new Light(mesh, type);

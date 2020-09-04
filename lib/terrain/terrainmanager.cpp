@@ -201,8 +201,8 @@ void TerrainCubeTree::createChildren(TerrainNode *node) {
             glm::vec3 pos = getChildPosition(node->getPosition(), x, z, childPosOffset, node->getTerrain()->getAxis());
             node->addChild(new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 childDimension + 1,
-                                                pos, childLod, node->getTerrain()->getAxis(), GenerationType::SPHERE),
-                                            new TerrainTile(terrainGenerator_, childDimension + 1, pos, planetSizeLod_, node->getTerrain()->getAxis(), GenerationType::SPHERE_FLAT)));
+                                                pos, childLod, node->getTerrain()->getAxis(), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN),
+                                            new TerrainTile(terrainGenerator_, childDimension + 1, pos, planetSizeLod_, node->getTerrain()->getAxis(), GenerationType::SPHERE_FLAT, ShaderType::SHADER_TYPE_WATER_PERFORMANCE)));
         }
     }
 }
@@ -288,8 +288,8 @@ void TerrainCubeTree::initTree(int dimension) {
             pos.y = kv.first.y * sphereRadius_;
         else
             pos.z = kv.first.z * sphereRadius_;
-        cubeSides_.push_back(new TerrainNode(new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE), 
-                                new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE_FLAT)));
+        cubeSides_.push_back(new TerrainNode(new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN), 
+                                new TerrainTile(terrainGenerator_, dimension + 1, pos, planetSizeLod_, kv.first, GenerationType::SPHERE_FLAT, ShaderType::SHADER_TYPE_WATER_PERFORMANCE)));
     }
 }
 
@@ -679,16 +679,16 @@ void CubeSideTree::createChildren(TerrainNode *node) {
             glm::vec3 pos = getChildPosition(node->getPosition(), x, z, childPosOffset);
             node->addChild(new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 childDimension + 1,
-                                                pos, childLod, axis_, GenerationType::SPHERE),
-                                            new TerrainTile(terrainGenerator_, childDimension + 1, pos, rootLod_, axis_, GenerationType::SPHERE_FLAT)));
+                                                pos, childLod, axis_, GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN),
+                                            new TerrainTile(terrainGenerator_, childDimension + 1, pos, rootLod_, axis_, GenerationType::SPHERE_FLAT, ShaderType::SHADER_TYPE_WATER)));
         }
     }
 }
 
 void CubeSideTree::createRootNode(glm::vec2 cubeSideGridPos) {
     glm::vec3 worldPos = gridPosToWorldCubePos(cubeSideGridPos);
-    rootNodeMap_[cubeSideGridPos] = new TerrainNode(new TerrainTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_, GenerationType::SPHERE), 
-                                                        new TerrainTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_, GenerationType::SPHERE_FLAT));
+    rootNodeMap_[cubeSideGridPos] = new TerrainNode(new TerrainTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_, GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN), 
+                                                        new TerrainTile(terrainGenerator_, rootDimension_ + 1, worldPos, rootLod_, axis_, GenerationType::SPHERE_FLAT, ShaderType::SHADER_TYPE_WATER));
     containsActiveRootNode_ = true;
 }
 
@@ -863,7 +863,7 @@ void TerrainQuadTree::createRootNode(glm::vec2 position) {
     rootMap_[position] = new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 rootDimension_ + 1,
                                                 glm::vec3(position.x * rootDimension_, 0, position.y * rootDimension_), maxLod_,
-                                                GenerationType::PLANE), 
+                                                GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN), 
                                             DrawableFactory::createWaterTile(glm::vec3(position.x * rootDimension_, 0, position.y * rootDimension_), rootDimension_ / 2, glm::vec3(0,0,1))); 
 }
 
@@ -952,7 +952,7 @@ void TerrainQuadTree::createChildren(TerrainNode *node) {
             glm::vec3 pos(nodePosition.x + x * childPosOffset, 0, nodePosition.z + z * childPosOffset);
             node->addChild(new TerrainNode(new TerrainTile(terrainGenerator_,
                                                 childDimension + 1,
-                                                pos, childLod, GenerationType::PLANE),
+                                                pos, childLod, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN),
                                             DrawableFactory::createWaterTile(pos, childPosOffset, glm::vec3(0,0,1))));
         }
     }

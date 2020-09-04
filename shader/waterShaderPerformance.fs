@@ -84,7 +84,7 @@ vec4 fakeWater() {
     float spec = pow(max(dot(reflectedLight, toCameraVectorNorm), 0.0), shineDamper);
     vec3 specular = light.color * spec * reflectivity;
 
-    return mix(waterColor, vec4(0.0, 0.3, 0.5, 1.0), 0.2) + vec4(specular, 0.0);
+    return mix(waterColor, vec4(0.0, 0.3, 0.5, 1.0), 0.8) + vec4(specular, 0.0);
 }
 
 void main() {

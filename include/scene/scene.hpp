@@ -22,7 +22,6 @@ class Scene {
     Game *game_;
     Gui *gui_ = NULL;
     Renderer *renderer_;
-    WaterFrameBuffer *waterFrameBuffer_ = NULL;
     std::vector<Drawable *> &lights_;
     std::vector<Drawable *> &terrain_;
     std::vector<Drawable *> &entities_;

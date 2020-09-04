@@ -63,7 +63,7 @@ Scene *createStarSystems(Engine *engine) {
 
     // Add planets
     // These could be instances
-    std::vector<Mesh> planetMeshes;
+    std::vector<Mesh*> planetMeshes;
     if (!AssetLoader::loadModel("PlanetFirstTry.obj", &planetMeshes)) {
         std::cout << "Could not load model" << std::endl;
         return NULL;
@@ -153,6 +153,12 @@ void postProcessorAtmoCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("positionOriginal", drawable->getPosition());
 }
 
+void debugShaderCb(Shader *shader, Drawable *drawable, Game *game) {
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
+    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
+}
+
 Scene *createPlane(Engine *engine) {
     std::cout << "Create Plane." << std::endl;
     
@@ -173,15 +179,17 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/plane.vs", "shader/plane.fs", ShaderType::SHADER_TYPE_TERRAIN, planeShaderCb),
         new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
-        //new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
+        new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
+        new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb),
         //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
-        new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)};
+        new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs")
+    };
 
     Light *sun = new Light(glm::vec3(200000, 200000, 10000));
 
-    glm::vec3 camPos = glm::vec3(0, 20, -20);
-    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
+    //glm::vec3 camPos = glm::vec3(0, 20, -20);
+    glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
@@ -189,11 +197,11 @@ Scene *createPlane(Engine *engine) {
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
     PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
-    //game->addTerrainManager(terr);
+    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
+    game->addTerrainManager(terr);
     
-    TerrainTile *t = new TerrainTile(terrainGen, 240, glm::vec3(0,0,0), 1, GenerationType::PLANE);
-    game->addTerrain(t);
+    //TerrainTile *t = new TerrainTile(terrainGen, 241, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    //game->addTerrain(t);
 
     // Random Entity Test
     //Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
@@ -207,15 +215,13 @@ Scene *createPlane(Engine *engine) {
 
     // GUI
     Gui *gui = new Gui();
-    Texture tex = TextureLoader::loadTextureFromFile("assets/container2.png", "texture_gui");
-    //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(1,1));
-
-    tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
+    //tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
     //gui->addGuiElement(tex, glm::vec2(100,1), glm::vec2(200,200));
 
     // WATER TEST
-    Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
-    game->addWater(waterTile);
+    //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
+    //TerrainTile *waterTile = new TerrainTile(terrainGen, 241, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
+    //game->addWater(waterTile);
 
     int width,height;
     view.getWindowSize(&width, &height);

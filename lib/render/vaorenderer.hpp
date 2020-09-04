@@ -7,6 +7,6 @@ class VaoRenderer {
   public:
     VaoRenderer();
 
-    void draw(Mesh &mesh);
+    void draw(Mesh *mesh);
 };
 #endif

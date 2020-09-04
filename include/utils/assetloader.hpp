@@ -8,9 +8,9 @@
 
 class AssetLoader {
   public:
-    static bool loadModel(const std::string &path, std::vector<Mesh> *meshes);
+    static bool loadModel(const std::string &path, std::vector<Mesh*> *meshes);
 
   private:
-    static bool loadObj(const char *path, std::vector<Mesh> *meshes);
+    static bool loadObj(const char *path, std::vector<Mesh*> *meshes);
 };
 #endif

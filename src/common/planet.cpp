@@ -1,12 +1,12 @@
 #include "planet.hpp"
 #include "global.hpp"
 
-Planet::Planet(Mesh mesh, float orbitSpeed, glm::vec3 position, ShaderType type)
+Planet::Planet(Mesh *mesh, float orbitSpeed, glm::vec3 position, ShaderType type)
     : Drawable(mesh, type), orbitSpeed_(orbitSpeed) {
     initPlanet(position);
 }
 
-Planet::Planet(std::vector<Mesh> meshes, float orbitSpeed, glm::vec3 position, ShaderType type)
+Planet::Planet(std::vector<Mesh*> meshes, float orbitSpeed, glm::vec3 position, ShaderType type)
     : Drawable(meshes, type), orbitSpeed_(orbitSpeed) {
     initPlanet(position);
 }

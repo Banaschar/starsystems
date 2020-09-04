@@ -5,32 +5,41 @@
 
 #include "shader.hpp"
 #include "vaorenderer.hpp"
-
+#include "waterframebuffer.hpp"
 /*
  * Water Renderer
  * TODO: Load dudv texture somewhere else and pass it to the renderer
  */
 class WaterRenderer {
   public:
-    WaterRenderer(Shader *shader, VaoRenderer *vaoRenderer, unsigned int reflectionTexture,
-                  unsigned int refractionTexture, unsigned int depthTexture);
-    WaterRenderer(Shader *shader, VaoRenderer *vaoRenderer);
+    WaterRenderer(VaoRenderer *vaoRenderer, int width, int height);
+    ~WaterRenderer();
     void render(std::vector<Drawable *> water, Game *game);
+    void addShader(Shader *shader);
+    void bindReflectionFrameBuffer();
+    void bindRefractionFrameBuffer();
+    void unbindActiveFrameBuffer();
+    void resolutionChange(int width, int height);
 
   private:
-    Shader *shader_;
+    Shader *shaderQ_ = nullptr;
+    Shader *shaderP_ = nullptr;
     VaoRenderer *vaoRenderer_;
-    unsigned int waterTextureLow_;
+    WaterFrameBuffer *waterFrameBuffer_ = nullptr;
+    unsigned int waterTexturePerformance_;
     unsigned int reflectionTexture_;
     unsigned int refractionTexture_;
     unsigned int dudvTexture_;
+    unsigned int dudvTexturePerformance_;
+    unsigned int normalTexturePerformance_;
     unsigned int normalTexture_;
     unsigned int depthTexture_;
     float moveFactor_ = 0.0;
-    bool renderPerformance_;
+    int windowWidth_, windowHeight_;
 
+    void initPerformanceShader();
+    void initQualityShader();
     void preparePerformance();
-
     void prepareQuality();
 };
 #endif

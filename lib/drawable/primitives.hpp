@@ -6,13 +6,13 @@
 
 class Primitives {
   public:
-    static Mesh createPlane(int dimension);
+    static Mesh *createPlane(int dimension);
 
-    static Mesh createQuad();
+    static Mesh *createQuad();
 
-    static Mesh createQuad2d();
+    static Mesh *createQuad2d();
 
-    static Mesh createCube(int side);
+    static Mesh *createCube(int side);
 
   private:
     static std::vector<glm::vec3> calculateVertexNormalAverages(std::vector<glm::vec3> &pos,

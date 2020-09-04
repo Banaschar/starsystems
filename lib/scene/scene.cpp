@@ -18,12 +18,6 @@ Scene::~Scene() {
 
 void Scene::addGui(Gui *gui) {
     gui_ = gui;
-    /*
-    if (waterFrameBuffer_) {
-        gui_->addGuiElement(waterFrameBuffer_->getReflectionTexture(), glm::vec2(0.0,0.0), glm::vec2(320,180));
-        gui_->addGuiElement(waterFrameBuffer_->getRefractionTexture(), glm::vec2(0.0,2.0), glm::vec2(320,180));
-    }
-    */
 }
 
 void Scene::setupScene() {

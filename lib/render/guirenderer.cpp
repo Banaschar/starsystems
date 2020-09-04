@@ -12,8 +12,8 @@ void GuiRenderer::render(std::vector<Drawable *> *guiElements, Game *game) {
         gui->update(game);
         shader_->prepare(gui, game);
 
-        for (Mesh &mesh : gui->getMeshes()) {
-            shader_->handleMeshTextures(mesh.getTextures());
+        for (Mesh *mesh : gui->getMeshes()) {
+            shader_->handleMeshTextures(mesh->getTextures());
             vaoRenderer_->draw(mesh);
             shader_->resetTextureCount();
         }

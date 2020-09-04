@@ -13,13 +13,13 @@
 #include "shader.hpp"
 
 Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type,
-               const callback_t cb)
+               const callback_t cb, const char *geometryShaderPath)
     : type_(type), drawCallback_(cb) {
-    if (!openShaders(vertexShaderPath, fragmentShaderPath))
+    if (!openShaders(vertexShaderPath, fragmentShaderPath, geometryShaderPath))
         std::cout << "ERROR: SHADER COMPILATION FAILED!\n" << std::endl;
 }
 
-bool Shader::openShaders(const char *vertexShaderPath, const char *fragmentShaderPath) {
+bool Shader::openShaders(const char *vertexShaderPath, const char *fragmentShaderPath, const char *geometryShaderPath) {
 
     // Create the shaders
     GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
@@ -46,6 +46,23 @@ bool Shader::openShaders(const char *vertexShaderPath, const char *fragmentShade
         sstr << FragmentShaderStream.rdbuf();
         FragmentShaderCode = sstr.str();
         FragmentShaderStream.close();
+    } else {
+        printf("Impossible to open %s.\n", fragmentShaderPath);
+        return false;
+    }
+
+    std::string GeometryShaderCode;
+    if (geometryShaderPath) {
+        std::ifstream GeometryShaderStream(geometryShaderPath, std::ios::in);
+        if (GeometryShaderStream.is_open()) {
+            std::stringstream sstr;
+            sstr << GeometryShaderStream.rdbuf();
+            GeometryShaderCode = sstr.str();
+            GeometryShaderStream.close();
+        } else {
+            printf("Impossible to open %s.\n", fragmentShaderPath);
+            return false;
+        }
     }
 
     GLint result = GL_FALSE;
@@ -81,11 +98,31 @@ bool Shader::openShaders(const char *vertexShaderPath, const char *fragmentShade
         printf("%s\n", &FragmentShaderErrorMessage[0]);
     }
 
+    //If geometry
+    GLuint geometryShaderID;
+    if (geometryShaderPath) {
+        printf("Compiling shader : %s\n", geometryShaderPath);
+        geometryShaderID = glCreateShader(GL_GEOMETRY_SHADER);
+        char const *geometrySourcePointer = GeometryShaderCode.c_str();
+        glShaderSource(geometryShaderID, 1, &geometrySourcePointer, NULL);
+        glCompileShader(geometryShaderID);
+
+        glGetShaderiv(geometryShaderID, GL_COMPILE_STATUS, &result);
+        glGetShaderiv(geometryShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+        if (InfoLogLength > 0) {
+            std::vector<char> GeometryShaderErrorMessage(InfoLogLength + 1);
+            glGetShaderInfoLog(geometryShaderID, InfoLogLength, NULL, &GeometryShaderErrorMessage[0]);
+            printf("%s\n", &GeometryShaderErrorMessage[0]);
+        }
+    }
+
     // Link the program
     printf("Linking program\n");
     shaderProgramId_ = glCreateProgram();
     glAttachShader(shaderProgramId_, VertexShaderID);
     glAttachShader(shaderProgramId_, FragmentShaderID);
+    if (geometryShaderPath)
+        glAttachShader(shaderProgramId_, geometryShaderID);
     glLinkProgram(shaderProgramId_);
 
     // Check the program
@@ -99,9 +136,13 @@ bool Shader::openShaders(const char *vertexShaderPath, const char *fragmentShade
 
     glDetachShader(shaderProgramId_, VertexShaderID);
     glDetachShader(shaderProgramId_, FragmentShaderID);
+    if (geometryShaderPath)
+        glDetachShader(shaderProgramId_, geometryShaderID);
 
     glDeleteShader(shaderProgramId_);
     glDeleteShader(shaderProgramId_);
+    if (geometryShaderPath)
+        glDeleteShader(shaderProgramId_);
 
     return result ? true : false;
 }

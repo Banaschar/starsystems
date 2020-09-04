@@ -17,8 +17,8 @@ class Light : public Drawable {
         Drawable::transform(NULL, &lightPos, NULL);
         Drawable::setType(type);
     }
-    Light(Mesh mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
-    Light(std::vector<Mesh> meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
+    Light(Mesh *mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
+    Light(std::vector<Mesh*> meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
 
     glm::vec3 setPosition(glm::vec3 pos) {
         glm::vec3 newpos = pos - Drawable::getPosition();

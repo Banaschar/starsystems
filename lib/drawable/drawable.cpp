@@ -6,7 +6,7 @@ Drawable::Drawable() {
     type_ = ShaderType::SHADER_TYPE_DEFAULT;
     initDrawable();
 }
-Drawable::Drawable(Mesh mesh, ShaderType type, std::vector<glm::vec3> instancePositions)
+Drawable::Drawable(Mesh *mesh, ShaderType type, std::vector<glm::vec3> instancePositions)
     : type_(type), modelPositions_(instancePositions) {
     meshes_.push_back(mesh);
     if (instancePositions.empty())
@@ -14,7 +14,7 @@ Drawable::Drawable(Mesh mesh, ShaderType type, std::vector<glm::vec3> instancePo
     else
         initInstances();
 }
-Drawable::Drawable(std::vector<Mesh> meshes, ShaderType type, std::vector<glm::vec3> instancePositions)
+Drawable::Drawable(std::vector<Mesh*> meshes, ShaderType type, std::vector<glm::vec3> instancePositions)
     : type_(type), modelPositions_(instancePositions) {
     meshes_ = meshes;
     if (instancePositions.empty())
@@ -22,7 +22,7 @@ Drawable::Drawable(std::vector<Mesh> meshes, ShaderType type, std::vector<glm::v
     else
         initInstances();
 }
-Drawable::Drawable(Mesh mesh, Texture texture, ShaderType type, std::vector<glm::vec3> instancePositions)
+Drawable::Drawable(Mesh *mesh, Texture texture, ShaderType type, std::vector<glm::vec3> instancePositions)
     : type_(type), modelPositions_(instancePositions) {
     meshes_.push_back(mesh);
     addTexture(texture);
@@ -30,6 +30,13 @@ Drawable::Drawable(Mesh mesh, Texture texture, ShaderType type, std::vector<glm:
         initDrawable();
     else
         initInstances();
+}
+
+Drawable::~Drawable() {
+    for (Mesh *mesh : meshes_) {
+        if (mesh)
+            delete mesh;
+    }
 }
 
 void Drawable::update(Game *game) {
@@ -45,19 +52,22 @@ void Drawable::setType(ShaderType type) {
 }
 
 void Drawable::addTexture(Texture tex, int index) {
-    meshes_.at(index).addTexture(tex);
+    meshes_.at(index)->addTexture(tex);
 }
 
 void Drawable::addColor(glm::vec4 color, int index) {
-    meshes_.at(index).addColor(color);
+    meshes_.at(index)->addColor(color);
 }
 
-void Drawable::addMesh(Mesh mesh) {
-    meshes_.push_back(mesh);
+void Drawable::addMesh(Mesh *mesh) {
+    if (mesh)
+        meshes_.push_back(mesh);
+    else
+        fprintf(stdout, "[DRAWABLE::addMesh] WARNING: Empty Mesh added\n");
 }
 
 std::vector<Texture> &Drawable::getTextures(int index) {
-    return meshes_.at(index).getTextures();
+    return meshes_.at(index)->getTextures();
 }
 
 glm::vec3 Drawable::getPosition(int index) {
@@ -65,7 +75,7 @@ glm::vec3 Drawable::getPosition(int index) {
 }
 
 int Drawable::getTriangleCount(int index) {
-    return meshes_.at(index).getTriangleCount();
+    return meshes_.at(index)->getTriangleCount();
 }
 
 glm::vec3 Drawable::getScale(int index) {
@@ -118,13 +128,13 @@ void Drawable::setPosition(glm::vec3 pos, int index) {
     transform(index, NULL, NULL, NULL);
 }
 
-std::vector<Mesh> &Drawable::getMeshes() {
+std::vector<Mesh*> &Drawable::getMeshes() {
     return meshes_;
 }
 
 void Drawable::submitInstanceBuffer(std::vector<glm::mat4> *instanceMatrices) {
-    for (Mesh &mesh : meshes_) {
-        mesh.updateInstances(instanceMatrices);
+    for (Mesh *mesh : meshes_) {
+        mesh->updateInstances(instanceMatrices);
     }
 }
 
@@ -148,7 +158,7 @@ void Drawable::initInstances() {
         modelMatrices_[i] = glm::translate(base, modelPositions_[i]);
     }
 
-    for (Mesh &mesh : meshes_) {
-        mesh.makeInstances(&modelMatrices_);
+    for (Mesh *mesh : meshes_) {
+        mesh->makeInstances(&modelMatrices_);
     }
 }
