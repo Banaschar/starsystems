@@ -35,6 +35,17 @@ Renderer::~Renderer() {
 
     if (vaoRenderer_)
         delete vaoRenderer_;
+
+    if (postProcessorAtmosphere_)
+        delete postProcessorAtmosphere_;
+}
+
+unsigned int Renderer::DEBUG_getPostProcessingTexture() {
+    if (postProcessorAtmosphere_)
+        return postProcessorAtmosphere_->DEBUG_getTexture();
+    else
+        fprintf(stdout, "DEBUG: No post processor\n");
+    return 0;
 }
 
 void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,

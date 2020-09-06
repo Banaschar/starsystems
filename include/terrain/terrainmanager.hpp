@@ -31,7 +31,7 @@ public:
  * Call setInitialRun() in the appropriate cubeSide before first run!
  */
 CubeSideTree *update(glm::vec3 &posSphere, CubeSideTree *previous = NULL);
-void updateNodes(glm::vec3 &camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+void updateNodes(glm::vec3 &camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 void setInitialRun();
 bool hasActiveNodes();
 unsigned int getNumRootNodes();
@@ -59,7 +59,7 @@ private:
   void printDefaultCubeSideMapError(std::string name, int key);
   glm::vec3 computeCubeSideOrigin();
   glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
-  void updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void updateNode_(TerrainNode *node, glm::vec3 &camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
   bool handleRootNodeCreation(glm::vec2 pos);
   void createRootNode(glm::vec2 cubeSideGridPos);
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int childPosOffset);
@@ -102,7 +102,7 @@ class TerrainQuadTree {
                     TerrainGenerator *terrainGen);
     ~TerrainQuadTree();
 
-    void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+    void update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 
   private:
     glm::vec2 currentMiddleChunk_;
@@ -118,14 +118,14 @@ class TerrainQuadTree {
     void createRootNode(glm::vec2 position);
     void createChildren(TerrainNode *node);
     void updateRoots(glm::vec3 &camPosition);
-    void update_(TerrainNode *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+    void update_(TerrainNode *node, glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 };
 
 class TerrainCubeTree {
 public:
   TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, int lod, glm::vec3 sphereOrigin);
   ~TerrainCubeTree();
-  void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 
 private:
   int cubeSideDimension_;
@@ -140,13 +140,13 @@ private:
   CubeSideMap cubeSideMap_;
   void initTree(int dimension);
   void createCubeSideTree(glm::vec3 &camPos);
-  void updateCubeSides(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void updateCubeSides(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
   void computeInitialCubePositionAndAxis(glm::vec3 &camPos, glm::vec3 *axisOut, glm::vec3 *positionOut);
   bool verifyPosIsOnAxis(glm::vec3 &axis, glm::vec3 &pos);
   glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
   void createChildren(TerrainNode *node);
   glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int offset, glm::vec3 &axis);
-  void updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void updateNode_(TerrainNode *node, glm::vec3 camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
   void destroyCubeSideTree();
 };
 
@@ -162,7 +162,7 @@ public:
     TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
     ~TerrainManager();
 
-    void update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+    void update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
     bool createQuadTree(int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
 
 private:

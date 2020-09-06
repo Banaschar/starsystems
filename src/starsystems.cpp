@@ -182,8 +182,8 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb),
-        //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
-        new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs")
+        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb)
+        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs")
     };
 
     Light *sun = new Light(glm::vec3(200000, 200000, 10000));
@@ -215,8 +215,8 @@ Scene *createPlane(Engine *engine) {
 
     // GUI
     Gui *gui = new Gui();
-    //tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
-    //gui->addGuiElement(tex, glm::vec2(100,1), glm::vec2(200,200));
+    Texture tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
+    //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(500,500));
 
     // WATER TEST
     //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
@@ -226,6 +226,12 @@ Scene *createPlane(Engine *engine) {
     int width,height;
     view.getWindowSize(&width, &height);
     Renderer *renderer = new Renderer(shaders, width, height);
+    //DEBUG
+    Texture tex2;
+    tex2.id = renderer->DEBUG_getPostProcessingTexture();
+    tex2.type = "texture_gui";
+    //gui->addGuiElement(tex2, glm::vec2(0,0), glm::vec2(640,360));
+    // End Debug
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);
 

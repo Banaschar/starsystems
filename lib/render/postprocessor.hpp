@@ -15,6 +15,8 @@ public:
     void render(Game *game, std::vector<Drawable *> &terrains);
     void resolutionChange(int width, int height);
 
+    unsigned int DEBUG_getTexture();
+
 private:
     int windowWidth_;
     int windowHeight_;

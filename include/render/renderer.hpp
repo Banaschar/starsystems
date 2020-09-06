@@ -37,6 +37,8 @@ class Renderer {
 
     void resolutionChange(int width, int height);
 
+    unsigned int DEBUG_getPostProcessingTexture();
+
   private:
     ShaderMap shaderMap_;
     EntityMap entityMap_;

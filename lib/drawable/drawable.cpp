@@ -116,10 +116,9 @@ void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec
         }
     }
     glm::mat4 tmp = glm::mat4(1.0f);
-    tmp = glm::translate(tmp, modelPositions_[index]);
     tmp = glm::scale(tmp, scale_[index]);
     tmp = glm::rotate(tmp, glm::radians(rotationDegree_[index]), rotationAxis_[index]);
-    
+    tmp = glm::translate(tmp, modelPositions_[index]);
     modelMatrices_[index] = tmp;
 }
 

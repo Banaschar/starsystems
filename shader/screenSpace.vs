@@ -25,11 +25,12 @@ void main()
     vec3 camUp = vec3(cameraMatrix[0][1], cameraMatrix[1][1], cameraMatrix[2][1]);
 
     mat4 VP = projectionMatrix * cameraMatrix;
-    vec4 final_world = vec4(positionOriginal + camRight * vertexPosition.x * size.x + camUp * vertexPosition.y * size.y, 1.0);
+    vec4 final_world = vec4(worldSpaceCamPos + camRight * vertexPosition.x * size.x + camUp * vertexPosition.y * size.y, 1.0);
 
     //gl_Position = VP * final_world;
     texCoords = textureCoords;
     worldPosition = final_world;
+    //worldPosition = VP * vec4(vertexPosition, 1.0);
     cameraUp = camUp;
     cameraRight = camRight;
 }

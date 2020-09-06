@@ -19,12 +19,15 @@ class TerrainTile : public Drawable {
     int getSphereRadius();
     glm::vec3 &getSphereOrigin();
     glm::vec3 &getAxis();
+    std::array<glm::vec3, 4> &getCorners();
 
   private:
     GenerationAttributes genAttr_;
     float amplitude_;
     int sphereRadius_;
     glm::vec3 sphereOrigin_;
+    std::array<glm::vec3, 4> corners_;
+    void setCorners(glm::vec3 axis);
     void initTerrain(TerrainGenerator *terrainGen);
 };
 #endif

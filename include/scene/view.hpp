@@ -15,9 +15,15 @@ class View {
     glm::mat4 &getCameraMatrix();
     glm::mat4 &getProjectionMatrix();
     glm::vec3 &getCameraPosition();
+    /*
+     * The direction the camera is looking at.
+     * Already normalized
+     */
     glm::vec3 &getCameraDirection();
     glm::mat4 getOrthoProjection();
     glm::vec3 &getWorldNormal();
+    float getNearPlane();
+    float getFarPlane();
     void invertPitch();
     void update();
     void updateForce();

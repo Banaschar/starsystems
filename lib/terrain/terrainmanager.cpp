@@ -10,6 +10,23 @@
 #include "global.hpp"
 #include "drawablefactory.hpp"
 
+/*
+ * Frustum Culling - Well, not really. TODO: Make it real
+ */
+bool isInCurrentFieldOfView(TerrainTile *t, glm::vec3 &camPos, glm::vec3 &camDirection) {
+    std::array<glm::vec3, 4> corners = t->getCorners();
+    glm::vec3 p;
+    bool visible = false;
+    for (glm::vec3 &corner : corners) {
+        p = corner - camPos;
+        float dot = glm::dot(p, camDirection);
+        if (dot > 0)
+            visible = true;
+    }
+
+    return visible;
+}
+
 TerrainManager::TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) : terrainGenerator_(terrainGen) {
     if (!createQuadTree(initialDimension, lodLevels, type, origin)) {
         fprintf(stdout, "TERRAINMANAGER: Could not create Quad Tree\n");
@@ -57,11 +74,11 @@ bool TerrainManager::createQuadTree(int initialDimension, int lodLevels, Terrain
     return true;
 }
 
-void TerrainManager::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainManager::update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (terrainQuadTree_)
-        terrainQuadTree_->update(camPosition, tlist, wlist);
+        terrainQuadTree_->update(camPosition, camDirection, tlist, wlist);
     else
-        terrainCubeTree_->update(camPosition, tlist, wlist);
+        terrainCubeTree_->update(camPosition, camDirection, tlist, wlist);
 }
 
 /*
@@ -208,11 +225,11 @@ void TerrainCubeTree::createChildren(TerrainNode *node) {
 }
 
 // TODO: Move the update nodes function to terrainCubeTree, provide kv.second as first argument
-void TerrainCubeTree::updateCubeSides(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainCubeTree::updateCubeSides(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     int cnt = 0;
     for (auto &kv : cubeSideMap_) {
         if (kv.second->hasActiveNodes()) {
-            kv.second->updateNodes(camPosition, tlist, wlist);
+            kv.second->updateNodes(camPosition, camDirection, tlist, wlist);
             cnt += kv.second->getNumRootNodes();
         }
     }
@@ -223,7 +240,7 @@ void TerrainCubeTree::updateCubeSides(glm::vec3 &camPosition, std::vector<Drawab
 /*
  * Create children for CubeTree -> max 3 (more?) levels before switching to CubeSideTree
  */
-void TerrainCubeTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainCubeTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node)
         return; 
 
@@ -242,19 +259,19 @@ void TerrainCubeTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std:
             }
         } else {
             for (TerrainNode *child : node->getChildren())
-                updateNode_(child, camWorldPos, tlist, wlist);
+                updateNode_(child, camWorldPos, camDirection, tlist, wlist);
         }
     }
 }
 
-void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainCubeTree::update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     tlist->clear();
     wlist->clear();
 
     if (glm::distance2(camPosition, sphereOrigin_) < glm::pow(sphereRadius_ * 1.5f, 2)) {
         if (currentCubeSide_) {
             currentCubeSide_ = currentCubeSide_->update(camPosition);
-            updateCubeSides(camPosition, tlist, wlist);
+            updateCubeSides(camPosition, camDirection, tlist, wlist);
         } else {
             createCubeSideTree(camPosition);
         }
@@ -264,7 +281,7 @@ void TerrainCubeTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tl
             currentCubeSide_ = NULL;
         }
         for (TerrainNode *t : cubeSides_)
-            updateNode_(t, camPosition, tlist, wlist);
+            updateNode_(t, camPosition, camDirection, tlist, wlist);
     }
 }
 
@@ -705,10 +722,13 @@ bool CubeSideTree::handleRootNodeCreation(glm::vec2 pos) {
     return ret;
 }
 
-void CubeSideTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void CubeSideTree::updateNode_(TerrainNode *node, glm::vec3 &camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node)
         return; 
-
+    
+    if (!isInCurrentFieldOfView(node->getTerrain(), camWorldPos, camDirection))
+        return;
+    
     if ((node->getLod() == 1) ||
             (glm::distance2(camWorldPos, cubeWorldPosToSpherePos(node->getPosition())) > glm::pow(node->getDimension(), 2))) {
         tlist->push_back(node->getTerrain());
@@ -724,14 +744,14 @@ void CubeSideTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, std::ve
             }
         } else {
             for (TerrainNode *child : node->getChildren())
-                updateNode_(child, camWorldPos, tlist, wlist);
+                updateNode_(child, camWorldPos, camDirection, tlist, wlist);
         }
     }
 }
 
-void CubeSideTree::updateNodes(glm::vec3 &camWorldPos, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void CubeSideTree::updateNodes(glm::vec3 &camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
   for (auto &kv : rootNodeMap_)
-    updateNode_(kv.second, camWorldPos, tlist, wlist);
+    updateNode_(kv.second, camWorldPos, camDirection, tlist, wlist);
 }
 
 CubeSideTree *CubeSideTree::update(glm::vec3 &posSphere, CubeSideTree *previous) {
@@ -870,10 +890,13 @@ void TerrainQuadTree::createRootNode(glm::vec2 position) {
 /*
  * TODO: Better distance methods, to calculate from quad edges, not the center
  */
-void TerrainQuadTree::update_(TerrainNode *node, glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainQuadTree::update_(TerrainNode *node, glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     if (!node) // Unfinished chunk, waiting for thread
         return;
-
+    
+    if (!isInCurrentFieldOfView(node->getTerrain(), camPosition, camDirection))
+        return;
+    
     if ((node->getLod() == 1) ||
         (glm::distance2(camPosition, node->getPosition()) > 
         glm::pow(node->getDimension(), 2))) {
@@ -890,17 +913,17 @@ void TerrainQuadTree::update_(TerrainNode *node, glm::vec3 &camPosition, std::ve
             }
         } else {
             for (TerrainNode *child : node->getChildren())
-                update_(child, camPosition, tlist, wlist);
+                update_(child, camPosition, camDirection, tlist, wlist);
         }
     }
 }
 
-void TerrainQuadTree::update(glm::vec3 &camPosition, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
+void TerrainQuadTree::update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
     tlist->clear();
     wlist->clear();
     updateRoots(camPosition);
     for (auto &kv : rootMap_)
-        update_(kv.second, camPosition, tlist, wlist);
+        update_(kv.second, camPosition, camDirection, tlist, wlist);
 }
 
 /*

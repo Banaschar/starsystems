@@ -82,6 +82,13 @@ glm::vec3 &View::getWorldNormal() {
     return worldUp_;
 }
 
+float View::getNearPlane() {
+    return nearPlane_;
+}
+float View::getFarPlane() {
+    return farPlane_;
+}
+
 void View::getWindowSize(int *width, int *height) {
     glfwGetWindowSize(window_, width, height);
 }

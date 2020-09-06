@@ -41,7 +41,7 @@ void Game::update() {
      * if neccessary
      */ 
     if (terrainManager_)
-        terrainManager_->update(view_.getCameraPosition(), &terrain_, &water_);
+        terrainManager_->update(view_.getCameraPosition(), view_.getCameraDirection(), &terrain_, &water_);
 }
 
 void Game::addTerrainManager(TerrainManager *terrainManager) {
