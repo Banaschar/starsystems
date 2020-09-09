@@ -5,6 +5,7 @@
 
 #include "drawable.hpp"
 #include "global.hpp"
+#include "assetloader.hpp"
 
 const glm::vec3 DEFAULT_AMBIENT = glm::vec3(0.2f, 0.2f, 0.2f);
 const glm::vec3 DEFAULT_DIFFUSE = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -19,10 +20,12 @@ class Light : public Drawable {
     }
     Light(Mesh *mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
     Light(std::vector<Mesh*> meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
+    Light(const std::string &path, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
+        std::vector<Mesh*> meshes;
+        AssetLoader::loadModel(path, &meshes);
 
-    glm::vec3 setPosition(glm::vec3 pos) {
-        glm::vec3 newpos = pos - Drawable::getPosition();
-        Drawable::transform(NULL, &newpos, NULL);
+        for (Mesh *mesh : meshes)
+            Drawable::addMesh(mesh);
     }
 
     bool hasModel() {

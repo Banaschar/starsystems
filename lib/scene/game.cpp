@@ -110,9 +110,13 @@ Drawable *Game::getSun() {
     if (sun_)
         return sun_;
     else {
-        std::cout << "Requested non-existing sun, this returns NULL and therefore probably gives you a SegFault"
-                  << std::endl;
-        return NULL;
+        if (lights_.size())
+            return lights_.at(0);
+        else {
+            std::cout << "Requested non-existing Sun/Light, this returns NULL and therefore probably gives you a SegFault"
+                      << std::endl;
+            return NULL;
+        }
     }
 }
 

@@ -56,7 +56,10 @@ Scene *createStarSystems(Engine *engine) {
     View view = View(engine->getWindow(), glm::vec3(0.0f, 20.0f, -40.0f));
 
     // Sun
-    Drawable *sun = DrawableFactory::createModel("PlanetFirstTry.obj", ShaderType::SHADER_TYPE_LIGHT);
+    Drawable *sun = new Light("assets/PlanetFirstTry.obj");
+    glm::vec3 pos1 = glm::vec3(0, 1000, 1000);
+    glm::vec3 scale1 = glm::vec3(100,100,100);
+    sun->transform(&scale1, &pos1, NULL);
 
     // Skybox
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
@@ -64,7 +67,7 @@ Scene *createStarSystems(Engine *engine) {
     // Add planets
     // These could be instances
     std::vector<Mesh*> planetMeshes;
-    if (!AssetLoader::loadModel("PlanetFirstTry.obj", &planetMeshes)) {
+    if (!AssetLoader::loadModel("assets/PlanetFirstTry.obj", &planetMeshes)) {
         std::cout << "Could not load model" << std::endl;
         return NULL;
     }
@@ -151,6 +154,8 @@ void postProcessorAtmoCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("positionOriginal", drawable->getPosition());
+    //shader->uniform("sunPosition", game->getSun()->getPosition());
+    shader->uniform("sunPosition", glm::vec3(10000000.0f, 10000000.0f, 10000000.0f));
 }
 
 void debugShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -177,16 +182,25 @@ Scene *createPlane(Engine *engine) {
     */
     std::vector<Shader *> shaders = {
         new Shader("shader/plane.vs", "shader/plane.fs", ShaderType::SHADER_TYPE_TERRAIN, planeShaderCb),
+        new Shader("shader/sun.vs", "shader/sun.fs", ShaderType::SHADER_TYPE_LIGHT, sunShaderCb),
         new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
-        new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb),
-        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb)
-        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs")
+        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
+        new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
 
-    Light *sun = new Light(glm::vec3(200000, 200000, 10000));
+    //Light *sun = new Light(glm::vec3(200000, 200000, 10000));
+    Light *sun = new Light("assets/PlanetFirstTry.obj");
+    glm::vec3 pos = glm::vec3(5000, 5000, 5000);
+    glm::vec3 scale = glm::vec3(100,100,100);
+    sun->transform(&scale, &pos, NULL);
+
+    Texture sunT = TextureLoader::loadTextureFromFile("assets/sunTexture.jpg", "texture_diffuse");
+    sun->addTexture(sunT);
+    
 
     //glm::vec3 camPos = glm::vec3(0, 20, -20);
     glm::vec3 camPos = glm::vec3(0, 700, -1300);
@@ -269,7 +283,7 @@ int main() {
         return 0;
 
     // create starsystem scene
-    // Scene *scene = createStarSystems(engine.getWindow);
+    //Scene *scene = createStarSystems(&engine);
 
     // create plane
     Scene *scene = createPlane(&engine);

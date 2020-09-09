@@ -47,10 +47,6 @@ void PostProcessor::render(Game *game, std::vector<Drawable *> &terrains) {
         fprintf(stdout, "[POSTPROCESSOR::render] CRITICAL ERROR: Drawable is not a TerrainTile\n");
         return;
     }
-    
-    //glm::vec3 newPos = game->getView().getCameraPosition() + 25.0f * glm::normalize(game->getView().getCameraDirection());
-    //screen_->setPosition(newPos);
-    screen_->setPosition(game->getView().getCameraPosition());
 
     glDisable(GL_DEPTH_TEST);
 
@@ -58,15 +54,13 @@ void PostProcessor::render(Game *game, std::vector<Drawable *> &terrains) {
     shader_->prepare(screen_, game);
     shader_->bindTexture("mainScreenTex", mainTexture_);
     shader_->bindTexture("mainDepthTexture", mainDepthBuffer_);
-    //shader_->uniform("size", glm::vec3(1, 1, 0));
-    //shader_->uniform("size", glm::vec3(windowWidth_, windowHeight_, 0));
-    shader_->uniform("size", glm::vec3(1280, 720, 0));
     shader_->uniform("worldSpaceCamPos", game->getView().getCameraPosition());
     shader_->uniform("camDirection", game->getView().getCameraDirection());
     shader_->uniform("planetOrigin", t->getSphereOrigin());
     shader_->uniform("planetRadius", t->getSphereRadius());
     shader_->uniform("nearPlane", game->getView().getNearPlane());
     shader_->uniform("farPlane", game->getView().getFarPlane());
+    shader_->uniform("scatterCoeffs", scatterCoeffs_);
     for (Mesh *mesh : screen_->getMeshes()) {
         vaoRenderer_->draw(mesh);
     }
@@ -81,6 +75,11 @@ void PostProcessor::init() {
     mainDepthBuffer_ = FrameBuffer::createDepthTextureAttachment(windowWidth_, windowHeight_);
     FrameBuffer::unbindActiveFrameBuffer(windowWidth_, windowHeight_);
     screen_ = DrawableFactory::createPrimitive(PrimitiveType::QUAD2D, ShaderType::SHADER_TYPE_POST_PROCESSOR);
-    glm::vec3 scale = glm::vec3(1280, 720, 0);
-    //screen_->transform(&scale, NULL, NULL);
+
+    // Move to shader class
+    float scatterStrength = 10.0;
+    float scatterR = glm::pow(400 / waveLengths_.x, 4) * scatterStrength;
+    float scatterG = glm::pow(400 / waveLengths_.y, 4) * scatterStrength;
+    float scatterB = glm::pow(400 / waveLengths_.z, 4) * scatterStrength;
+    scatterCoeffs_ = glm::vec3(scatterR, scatterG, scatterB);
 }

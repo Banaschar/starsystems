@@ -183,6 +183,7 @@ void Shader::handleMeshTextures(std::vector<Texture> &textures) {
     unsigned int heightNr = 1;
     unsigned int guiNr = 1;
     unsigned int cubeNr = 1;
+    unsigned int def = 1;
 
     for (Texture &tex : textures) {
         std::string number;
@@ -202,6 +203,7 @@ void Shader::handleMeshTextures(std::vector<Texture> &textures) {
             number = std::to_string(cubeNr++);
         else {
             std::cout << "Texture with unknown type: " << type << std::endl;
+            number = std::to_string(def++);
             break;
         }
 
