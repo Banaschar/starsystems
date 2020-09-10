@@ -117,7 +117,7 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
     shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
-    shader->uniform("light.diffuse", glm::vec3(1.0, 1.0, 1.0));
+    shader->uniform("light.diffuse", glm::vec3(0.8, 0.8, 0.8));
     shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
 }
 
@@ -187,8 +187,8 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
-        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
-        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
+        //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
 

@@ -18,7 +18,8 @@ uniform float tiling;
 void main()
 {
     color = vertexColor;
-    normal = normalMatrix * vertexNormal;
+    //normal = normalMatrix * vertexNormal;
+    normal = vertexNormal;
     vec4 modelPos = modelMatrix * vec4(vertexPosition, 1.0);
     fragPos_worldspace = vertexPosition;//modelPos.xyz;
     texCoords = textureCoords * tiling; // Tile texture over terrain

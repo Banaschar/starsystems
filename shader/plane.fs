@@ -28,23 +28,26 @@ uniform sampler2D texture_diffuse4;
 uniform sampler2D texture_diffuse5;
 uniform sampler2D texture_diffuse6;
 
-vec4 calculateLighting(vec3 normal) {
+vec4 calculateLighting() {
     // ambient
     vec3 ambient = light.ambient * 0.1; // TODO: Make ambientStrength a variable
 
     // diffuse
-    vec3 lightDir = normalize(-light.direction);
-    //vec3 norm = normalize(normal);
+    vec3 lightDir = normalize(light.position - fragPos_worldspace);
     float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = light.diffuse * diff;
-
+    if (normal == 0.0)
+        return vec4(1.0,0.0,0.0,1.0);
     //specular
+    /*
     vec3 viewDirection = normalize(cameraPos - fragPos_worldspace);
-    vec3 reflectDirection = reflect(-light.direction, normal);
+    vec3 reflectDirection = reflect(lightDir, normal);
     float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 32.0);
     vec3 specular = 0.5 * spec * light.specular;
 
     return vec4(ambient + diffuse + specular, 1.0);
+    */
+    return vec4(ambient + diffuse, 1.0);
 }
 
 /*
@@ -102,12 +105,11 @@ vec4 blendTextures() {
 
 void main()
 {
-    //FragColor = calculateLighting(normal) * color;
-    //FragColor = calculateLighting(normal) * blendTextures();
-    //FragColor = vec4(0.8,0.8,0.8,1.0) * blendTextures();
-    vec4 mix = vec4(0.8,0.8,0.8, 1.0) * blendTextures();
-    float distance = distance(cameraPos, fragPos_worldspace);
-    float opacity = clamp(distance / 1000, 0, 1);
-    mix.a = 1.0 - opacity;
+    vec4 mix = calculateLighting() * blendTextures();
+    //vec4 mix = vec4(0.8,0.8,0.8, 1.0) * blendTextures();
+
+    //float distance = distance(cameraPos, fragPos_worldspace);
+    //float opacity = clamp(distance / 1000, 0, 1);
+    //mix.a = 1.0 - opacity;
     FragColor = mix;
 }

@@ -128,7 +128,7 @@ void TerrainGenerator::addBorderNormals(std::vector<Vertex> &vertices, std::vect
         normal = calculateNormal(v0, v1, v2);
 
         if (x > 0 && x < dimensionLod)
-            vertices.at(dimensionLod * (dimensionLod - 1) + x - 1).normal = normal;
+            vertices.at(dimensionLod * (dimensionLod - 1) + x - 1).normal += normal;
 
         // second triangle
         if (x < dimensionLod)
@@ -139,7 +139,7 @@ void TerrainGenerator::addBorderNormals(std::vector<Vertex> &vertices, std::vect
         normal = calculateNormal(v0, v1, v2);
 
         if (x < dimensionLod)
-            vertices.at(dimensionLod * (dimensionLod - 1) + x).normal = normal;
+            vertices.at(dimensionLod * (dimensionLod - 1) + x).normal += normal;
     }
 
     // Side rows
@@ -169,7 +169,7 @@ void TerrainGenerator::addBorderNormals(std::vector<Vertex> &vertices, std::vect
         //right side second
         v1 = borderMap[borderDim + 2 * x + 1];
         normal = calculateNormal(v0, v1, v2);
-        vertices.at(dimensionLod * (x + 1) + dimensionLod - 1).normal = normal;
+        vertices.at(dimensionLod * (x + 1) + dimensionLod - 1).normal += normal;
     }
 
 }
@@ -177,17 +177,17 @@ void TerrainGenerator::addBorderNormals(std::vector<Vertex> &vertices, std::vect
 void TerrainGenerator::calculateVertexNormalSphere(std::vector<Vertex> &vertices,
                                                                  std::vector<unsigned int> &indices,
                                                                  std::vector<glm::vec3> &borderMap, int dimensionLod) {
-
+    
     for (int i = 0; i < indices.size() / 3; i++) {
         glm::vec3 v0 = vertices.at(indices[i]).position;
         glm::vec3 v1 = vertices.at(indices[i + 1]).position;
         glm::vec3 v2 = vertices.at(indices[i + 2]).position;
 
-        glm::vec3 normal = calculateNormal(v0, v2, v1);
+        glm::vec3 normal = calculateNormal(v0, v1, v2);
 
-        vertices.at(indices[i]).normal += normal;
-        vertices.at(indices[i + 1]).normal += normal;
-        vertices.at(indices[i + 2]).normal += normal;
+        vertices.at(indices[i]).normal = normal;
+        vertices.at(indices[i + 1]).normal = normal;
+        vertices.at(indices[i + 2]).normal = normal;
     }
 
     addBorderNormals(vertices, borderMap, dimensionLod);
@@ -356,6 +356,7 @@ Mesh *TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lo
                 vertex.position = tmpPos;
                 vertex.textureCoords.x = (float)x / ((float)dimensionLod - 1);
                 vertex.textureCoords.y = (float)y / ((float)dimensionLod - 1);
+                vertex.normal = glm::vec3(0.0f, 0.0f, 0.0f);
                 vertices[index++] = vertex;
             }
         }

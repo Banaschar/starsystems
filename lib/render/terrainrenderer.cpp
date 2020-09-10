@@ -58,6 +58,4 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
         }
     }
     shader_->end();
-
-
 }
