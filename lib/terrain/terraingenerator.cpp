@@ -16,6 +16,15 @@ TerrainGenerator::TerrainGenerator(ColorGenerator colorGen, PerlinNoise pNoise)
  * startX and startZ are used to create seamless terrain, so different chunks fit together
  * lod is the detail level of the terrain. 
  * dimension is the size
+ *
+ * Normals from Noise:
+ * https://www.scratchapixel.com/lessons/procedural-generation-virtual-worlds/perlin-noise-part-2/perlin-noise-computing-derivatives
+ *
+ * LOD transitions:
+ * https://dexyfex.com/2016/07/14/voxels-and-seamless-lod-transitions/
+ *
+ * CDLOD (Best?)
+ * Paper: Procedural_Terrain_Generator.pdf
  */
 Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
     bool isFlat = false;
@@ -23,7 +32,7 @@ Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
         case GenerationType::PLANE_FLAT:
             isFlat = true;
         case GenerationType::PLANE:
-            return generateMesh(attr->position, attr->dimension, attr->lod, isFlat);
+            return generateMeshNew(attr->position, attr->dimension, attr->lod, isFlat);
             break;
         case GenerationType::SPHERE_FLAT:
             isFlat = true;
@@ -179,15 +188,16 @@ void TerrainGenerator::calculateVertexNormalSphere(std::vector<Vertex> &vertices
                                                                  std::vector<glm::vec3> &borderMap, int dimensionLod) {
     
     for (int i = 0; i < indices.size() / 3; i++) {
-        glm::vec3 v0 = vertices.at(indices[i]).position;
-        glm::vec3 v1 = vertices.at(indices[i + 1]).position;
-        glm::vec3 v2 = vertices.at(indices[i + 2]).position;
+        int index = i * 3;
+        glm::vec3 v0 = vertices.at(indices[index]).position;
+        glm::vec3 v1 = vertices.at(indices[index + 1]).position;
+        glm::vec3 v2 = vertices.at(indices[index + 2]).position;
 
         glm::vec3 normal = calculateNormal(v0, v1, v2);
 
-        vertices.at(indices[i]).normal = normal;
-        vertices.at(indices[i + 1]).normal = normal;
-        vertices.at(indices[i + 2]).normal = normal;
+        vertices.at(indices[index]).normal = normal;
+        vertices.at(indices[index + 1]).normal = normal;
+        vertices.at(indices[index + 2]).normal = normal;
     }
 
     addBorderNormals(vertices, borderMap, dimensionLod);
@@ -413,8 +423,196 @@ Mesh *TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod, boo
  * UFF
  */
 
-/*
-Mesh *TerrainGenerator::generateMesh() {
-    int numVertsPerLine = dimension + 5;
+struct MeshData {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
+    std::vector<glm::vec3> outOfMeshVertices;
+    std::vector<int> outOfMeshTriangles;
+    int outOfMeshTriangleIndex = 0;
+    int triangleIndex = 0;
+
+    MeshData(int numVertsPerLine, int skipIncrement) {
+        int numMeshEdgeVertices = (numVertsPerLine - 2) * 4 - 4;
+        int numEdgeConnectionVertices = (skipIncrement - 1) * (numVertsPerLine - 5) / skipIncrement * 4;
+        int numMainVerticesPerLine = (numVertsPerLine - 5) / skipIncrement + 1;
+        int numMainVertices = numMainVerticesPerLine * numMainVerticesPerLine;
+
+        vertices.resize(numMainVertices + numMeshEdgeVertices + numEdgeConnectionVertices);
+
+        int numMeshEdgeTriangles = 8 * (numVertsPerLine - 4);
+        int numMainTriangles = (numMainVerticesPerLine - 1) * (numMainVerticesPerLine - 1) * 2;
+        indices.resize((numMeshEdgeTriangles + numMainTriangles) * 3);
+
+        outOfMeshVertices.resize(numVertsPerLine * 4 - 4);
+        outOfMeshTriangles.resize(24 * (numVertsPerLine - 2));
+    }
+
+    void addVertex(glm::vec3 pos, glm::vec2 uv, int vertexIndex) {
+        if (vertexIndex < 0)
+            outOfMeshVertices[-vertexIndex - 1] = pos; // Because index starts with -1 for outOfMesh vertices
+        else {
+            vertices[vertexIndex].position = pos;
+            vertices[vertexIndex].textureCoords = uv;
+        }
+    }
+
+    void addTriangle(int a, int b, int c) {
+        if (a < 0 || b < 0 || c < 0) {
+            outOfMeshTriangles[outOfMeshTriangleIndex] = a;
+            outOfMeshTriangles[outOfMeshTriangleIndex + 1] = b;
+            outOfMeshTriangles[outOfMeshTriangleIndex + 2] = c;
+            outOfMeshTriangleIndex += 3;
+        } else {
+            indices[triangleIndex] = a;
+            indices[triangleIndex + 1] = b;
+            indices[triangleIndex + 2] = c;
+            triangleIndex += 3;
+        }
+    }
+
+    glm::vec3 calculateNormalFromIndices(int index0, int index1, int index2) {
+        glm::vec3 v0 = (index0 < 0) ? outOfMeshVertices[-index0 - 1] : vertices[index0].position;
+        glm::vec3 v1 = (index1 < 0) ? outOfMeshVertices[-index1 - 1] : vertices[index1].position;
+        glm::vec3 v2 = (index2 < 0) ? outOfMeshVertices[-index2 - 1] : vertices[index2].position;
+
+        glm::vec3 p0 = v1 - v0;
+        glm::vec3 p1 = v2 - v0;
+
+        return glm::normalize(glm::cross(p0, p1));
+    }
+
+    void calculateNormals() {
+        int triangleCount = indices.size() / 3;
+
+        for (int i = 0; i < triangleCount; ++i) {
+            int normalIndex = i * 3;
+            int index0 = indices[normalIndex];
+            int index1 = indices[normalIndex + 1];
+            int index2 = indices[normalIndex + 2];
+
+            glm::vec3 normal = calculateNormalFromIndices(index0, index1, index2);
+
+            vertices[index0].normal += normal;
+            vertices[index1].normal += normal;
+            vertices[index2].normal += normal;
+        }
+
+        int borderTriangleCount = outOfMeshTriangles.size() / 3;
+        for (int i = 0; i < borderTriangleCount; ++i) {
+            int normalIndex = i * 3;
+            int index0 = outOfMeshTriangles[normalIndex];
+            int index1 = outOfMeshTriangles[normalIndex + 1];
+            int index2 = outOfMeshTriangles[normalIndex + 2];
+
+            glm::vec3 normal = calculateNormalFromIndices(index0, index1, index2);
+
+            if (index0 >= 0)
+                vertices[index0].normal += normal;
+            if (index1 >= 0)
+                vertices[index1].normal += normal;
+            if (index2 >= 0)
+                vertices[index2].normal += normal;
+        }
+
+        for (int i = 0; i < vertices.size(); ++i) {
+            vertices[i].normal = glm::normalize(vertices[i].normal);
+        }
+    }
+};
+
+Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, bool flat) {
+    dimension = 120;
+    int half = 60;
+    int numVertsPerLine = dimension + 5; // dimension + 5 if dimension is even. But should be uneven, e.g. originalDimension + 1
+    int skipIncrement = 4;
+
+    //glm::vec2 topLeft = glm::vec2(-1, 1) * ((numVertsPerLine - 3) * scale) / 2.0f; // with scale = 2.5f???????
+
+    MeshData meshData(numVertsPerLine, skipIncrement);
+
+    int vertexIndicesMap[numVertsPerLine][numVertsPerLine];
+    int meshVertexIndex = 0;
+    int outOfMeshVertexIndex = -1;
+
+    for (int y = 0; y < numVertsPerLine; ++y) {
+        for (int x = 0; x < numVertsPerLine; ++x) {
+            bool isOutOfMeshVertex = y == 0 || y == numVertsPerLine - 1 || x == 0 || x == numVertsPerLine - 1;
+            bool isSkippedVertex = x > 2 && x < numVertsPerLine - 3 && y > 2 && y < numVertsPerLine - 3 && ((x - 2) % skipIncrement != 0 || (y - 2) % skipIncrement != 0);
+
+            if (isOutOfMeshVertex)
+                vertexIndicesMap[x][y] = outOfMeshVertexIndex--;
+            else if (!isSkippedVertex)
+                vertexIndicesMap[x][y] = meshVertexIndex++;
+        }
+    }
+
+    for (int y = 0; y < numVertsPerLine; ++y) {
+        for (int x = 0; x < numVertsPerLine; ++x) {
+            bool isSkippedVertex = x > 2 && x < numVertsPerLine - 3 && y > 2 && y < numVertsPerLine - 3 && ((x - 2) % skipIncrement != 0 || (y - 2) % skipIncrement != 0);
+
+            if (!isSkippedVertex) {
+                bool isOutOfMeshVertex = y == 0 || y == numVertsPerLine - 1 || x == 0 || x == numVertsPerLine - 1;
+                bool isMeshEdgeVertex = !isOutOfMeshVertex && (y == 1 || y == numVertsPerLine - 2 || x == 1 || x == numVertsPerLine - 2);
+                bool isMainVertex = !isOutOfMeshVertex && !isMeshEdgeVertex && (x - 2) % skipIncrement == 0 && (y - 2) % skipIncrement == 0;
+                bool isEdgeConnectionVertex = !isOutOfMeshVertex && !isMeshEdgeVertex && !isMainVertex && (y == 2 || y == numVertsPerLine - 3 || x == 2 || x == numVertsPerLine - 3);
+
+                int vertexIndex = vertexIndicesMap[x][y];
+
+                if (isEdgeConnectionVertex) { // These vertices have to be at a height that lies on a line between the two neighbouring mainVertices
+                    bool isVertical = x == 2 || x == numVertsPerLine - 3;
+                    int dstToMainVertexA = ((isVertical) ? y - 2 : x - 2) % skipIncrement;
+                    int dstToMainVertexB = skipIncrement - dstToMainVertexA;
+                    glm::vec3 posA = meshData.vertices[vertexIndicesMap[isVertical ? x - dstToMainVertexA : x][isVertical ? y : y - dstToMainVertexA]];
+                    glm::vec3 posB = calculatePosition(x,y,axis,direction);
+                }
+
+                //Generate position
+                //glm::vec3 tmpPos = getSpherePos(axis, direction * sphereRadius_, x + offset.x - half, y + offset.y - half);
+                //tmpPos = sphereOrigin_ + (float)sphereRadius_ * glm::normalize(tmpPos - sphereOrigin_);
+                glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 3);
+                meshData.addVertex(glm::vec3(x - half, pNoise_.getNoise2d(x - half, y - half), y - half), uv, vertexIndex);
+
+                bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1 && (!isEdgeConnectionVertex || (x != 2 && y != 2));
+
+                if (createTriangle) {
+                    int currentIncrement = (isMainVertex && x != numVertsPerLine - 3 && y != numVertsPerLine - 3) ? skipIncrement : 1;
+
+                    int a = vertexIndicesMap[x][y];
+                    int b = vertexIndicesMap[x + currentIncrement][y];
+                    int c = vertexIndicesMap[x][y + currentIncrement];
+                    int d = vertexIndicesMap[x + currentIncrement][y + currentIncrement];
+                    // TODO: Handle the inverse case (FOR THE PLANETS OTHER SIDE)
+                    meshData.addTriangle(a, c, d);
+                    meshData.addTriangle(a, d, b);
+                }
+            }
+        }
+    }
+    meshData.calculateNormals();
+
+    return new Mesh(meshData.vertices, meshData.indices);
 }
+
+/*
+Explanation (for dimension 12):
+M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (just for normals)
+  0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
+0 x x x x x x x x x x x  x  x  x  x  x  x
+1 x e e e e e e e e e e  e  e  e  e  e  x 
+2 x e M c c c M c c c M  c  c  c  M  e  x
+3 x e c                           c  e  x
+4 x e c                           c  e  x
+5 x e c                           c  e  x
+6 x e M       M       M           M  e  x
+7 x e c                           c  e  x
+8 x e c                           c  e  x
+9 x e c                           c  e  x
+10x e M       M       M           M  e  x
+11x e c                           c  e  x
+12x e c                           c  e  x
+13x e c                           c  e  x
+14x e M c c c M c c c M  c  c  c  M  e  x
+15x e e e e e e e e e e  e  e  e  e  e  x
+16x x x x x x x x x x x  x  x  x  x  x  x
 */
