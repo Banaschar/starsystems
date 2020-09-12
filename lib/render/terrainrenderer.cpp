@@ -35,6 +35,7 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
     if (terrains.empty())
         return;
 
+    glDepthFunc(GL_LEQUAL);
     shader_->use();
     shader_->uniform("clipPlane", clipPlane);
     shader_->uniform("waterLevel", game->getWaterLevel());
@@ -44,7 +45,7 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
         if (drawable) {
             TerrainTile *terrain = static_cast<TerrainTile *>(drawable);
             shader_->uniform("amplitude", terrain->getAmplitude());
-            shader_->uniform("tiling", (float)terrain->getDimension() / 4.0f);
+            shader_->uniform("tiling", (float)terrain->getDimension() / 2.0f);
             shader_->uniform("sphereRadius", terrain->getSphereRadius());
             shader_->uniform("sphereOrigin", terrain->getSphereOrigin());
             drawable->update(game);
@@ -58,4 +59,5 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
         }
     }
     shader_->end();
+    glDepthFunc(GL_LESS);
 }

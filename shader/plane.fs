@@ -103,13 +103,21 @@ vec4 blendTextures() {
     return result;
 }
 
+/*
+float calculateFog(float distCameraToPoint, vec3 dirCamToPoint) {
+    float fogFalloff = 2.0; // uniform value
+    float fogStrength = 18.0 * exp(-cameraHeightAboveSurfave * fogFalloff) *
+                            (1.0 - exp(-distCameraToPoint * dirCamToPoint.y * fogFalloff)) / dirCamToPoint.y;
+    vec3 fogColor = vec3(0.5, 0.6, 0.7);
+    return clamp(fogStrength, 0.0, 1.0);
+}
+*/
+
 void main()
 {
     vec4 mix = calculateLighting() * blendTextures();
     //vec4 mix = vec4(0.8,0.8,0.8, 1.0) * blendTextures();
 
-    //float distance = distance(cameraPos, fragPos_worldspace);
-    //float opacity = clamp(distance / 1000, 0, 1);
-    //mix.a = 1.0 - opacity;
+    //float fog = calculateFog(distance(cameraPos, fragPos_worldspace), normalize(fragPos_worldspace - cameraPos));
     FragColor = mix;
 }

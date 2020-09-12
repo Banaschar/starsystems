@@ -6,10 +6,10 @@
 #include "view.hpp"
 #include "windowheader.hpp"
 
-#define DEFAULT_NEAR_PLANE 0.1f
+#define DEFAULT_NEAR_PLANE 1.1f
 #define DEFAULT_FAR_PLANE 10000.0f
 const float YAW = 90.0f;
-const float PITCH = -30.0f;
+const float PITCH = -30.0f; //-30.0f;
 const float SPEED = 20.0f;
 const float SENSITIVITY = 0.1f;
 const float FOV = 45.0f;
@@ -198,12 +198,17 @@ void View::mouseCallback(GLFWwindow *window, double xpos, double ypos) {
     yaw_ += xoffset;
     pitch_ += yoffset;
 
+    /*
+    * TODO: Instead of constraining, once I looked more than 90° up, switch direction again,
+    * so moving down is down again
+    
     if (constrainPitch_) {
         if (pitch_ > 89.0f)
             pitch_ = 89.0f;
         if (pitch_ < -89.0f)
             pitch_ = -89.0f;
     }
+    */
 
     flagUpdate_ = true;
 }

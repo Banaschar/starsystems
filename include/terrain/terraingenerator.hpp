@@ -67,8 +67,10 @@ class TerrainGenerator {
     std::vector<unsigned int> generateIndexVector(std::vector<unsigned int> &indices, int dimensionLod, bool inverted = false);
 
     Mesh *generateMesh(glm::vec3 &pos, int dimension, int lod, bool flat);
-    Mesh *generateMeshNew(glm::vec3 &pos, int dimension, int lod, bool flat);
+    Mesh *generateMeshNew(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat);
     Mesh *generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat);
+
+    glm::vec3 getVertexPosition(glm::vec3 &axis, int x, int y, bool isFlat, float height = 0.0f);
 };
 
 #endif

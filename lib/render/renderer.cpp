@@ -106,10 +106,10 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
     if (postProcessorAtmosphere_ && !terrain.empty())
         postProcessorAtmosphere_->start(); // render to postProcess texture
 
-    renderScene(lights, terrain, sky, game, glm::vec4(0, -1, 0, 10000));
-
     if (waterRenderer_ && !water.empty())
         waterRenderer_->render(water, game);
+
+    renderScene(lights, terrain, sky, game, glm::vec4(0, -1, 0, 10000));
 
     if (postProcessorAtmosphere_ && !terrain.empty()) {
         postProcessorAtmosphere_->end();

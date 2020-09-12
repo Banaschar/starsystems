@@ -152,20 +152,14 @@ void TerrainCubeTree::computeInitialCubePositionAndAxis(glm::vec3 &camPos, glm::
     float intersectionDistance;
     float distanceCenterCorner = glm::distance(glm::vec3(sphereOrigin_.x + halfdim, sphereOrigin_.y + halfdim, sphereOrigin_.z + halfdim), sphereOrigin_);
     
-    for (int i = 0; i < 3; i++) {
-        glm::vec3 axis(0,0,0);
-        axis[i] = -1;
+    for (auto &kv : axisIntegerMap_) {
+        glm::vec3 axis = kv.first;
         // intersectRayPlane(rayOrigin, rayDirection, planeOrigin, planeNormal, intersectionDistance)
-        if (glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(sphereOrigin_.x - halfdim, sphereOrigin_.y - halfdim, sphereOrigin_.z - halfdim), axis, intersectionDistance)) {
-            if (intersectionDistance < distanceCenterCorner) {
-                *axisOut = axis;
-                *positionOut = sphereOrigin_ + intersectionDistance * glm::normalize(camPos - sphereOrigin_);
-                if (verifyPosIsOnAxis(*axisOut, *positionOut))
-                    break;
-            }
-        }
-        axis[i] = 1;
-        if (glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), glm::vec3(sphereOrigin_.x + halfdim, sphereOrigin_.y + halfdim, sphereOrigin_.z + halfdim), axis, intersectionDistance)) {
+        if (glm::intersectRayPlane(sphereOrigin_, glm::normalize(camPos - sphereOrigin_), 
+                                                    glm::vec3(abs(axis.x) * (sphereOrigin_.x + axis.x * halfdim), 
+                                                              abs(axis.y) * (sphereOrigin_.y + axis.y * halfdim), 
+                                                              abs(axis.z) * (sphereOrigin_.z + axis.z * halfdim)), 
+                                                    axis, intersectionDistance)) {
             if (intersectionDistance < distanceCenterCorner) {
                 *axisOut = axis;
                 *positionOut = sphereOrigin_ + intersectionDistance * glm::normalize(camPos - sphereOrigin_);

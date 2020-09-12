@@ -21,10 +21,12 @@ uniform float nearPlane;
 uniform vec3 worldSpaceCamPos;
 uniform vec3 scatterCoeffs;
 
-float atmosphereHeight_ = 100.0;
+float atmosphereHeight_ = planetRadius / 4.0;
+//float atmosphereHeight_ = 250.0;
 float numScatteringPoints_ = 10.0;
 float numOpticalDepthPoints_ = 10.0;
-float densityFalloff_ = 6.18;
+float densityFalloff_ = 24.18;
+//float densityFalloff_ = 15.1;
 
 int testBool = 0;
 
@@ -78,13 +80,13 @@ vec2 intersectRaySphere(vec3 sphereCenter, float sphereRadius, vec3 rayOrigin, v
 float linearDepth(float depth) {
     // (2.0 * depth - 1.0) -> Normalized device coordinates (mapped between [-1,1])
     //return 2.0 * 0.1 * 2000.0 / (2000 + 0.1 - (2.0 * depth - 1.0) * (2000 - 0.1));
-    return 2.0 * nearPlane * farPlane / (nearPlane + farPlane - (2.0 * depth - 1.0) * (farPlane - nearPlane));
+    return 2.0 * nearPlane * farPlane / (farPlane + nearPlane - (2.0 * depth - 1.0) * (farPlane - nearPlane));
 }
 
 float densityAtPoint(vec3 densitySamplePoint) {
-    float heightAboveSurface = length(densitySamplePoint - planetOrigin) - planetRadius;
+    float heightAboveSurface = distance(densitySamplePoint, planetOrigin) - planetRadius;
     float height = heightAboveSurface / atmosphereHeight_;
-    float localDensity = exp(-height * densityFalloff_) * (1 - height);
+    float localDensity = exp(-height * densityFalloff_);// * (1 - height);
 
     return localDensity;
 }
@@ -126,9 +128,9 @@ vec3 calculateLight(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalC
     }
 
     float originalColorTransmittance = exp(-viewRayOpticalDepth);
-    //return originalColors * (1 - scatteredLight) + scatteredLight; // Surface visible...but too much?
+    return originalColors * (1 - scatteredLight) + scatteredLight; // Surface visible...but too much?
 
-    return originalColors * originalColorTransmittance + scatteredLight; // Original - but everything is dark
+    //return originalColors * originalColorTransmittance + scatteredLight; // Original - but everything is dark
 }
 
 void main() {
@@ -137,7 +139,6 @@ void main() {
     //float linearEyeDepth = linearDepth(depth);// * length(camDirection);
     vec3 worldDepthPos = worldPosFromDepth(depth);
 
-    /* AND ANOTHER ! BEST SO FAR !*/
     vec3 origin = near_4.xyz / near_4.w;
     vec3 direction = (far_4.xyz / far_4.w) - origin;
     //float linearEyeDepth = linearDepth(depth) * length(direction);
@@ -147,20 +148,7 @@ void main() {
     
     vec2 intersect = intersectRaySphere(planetOrigin, planetRadius + atmosphereHeight_, origin, direction);
     float dstToAtmosphere = intersect.x;
-    //float dstThroughAtmosphere = intersect.y;
     float dstThroughAtmosphere = min(intersect.y, eyeDepth - dstToAtmosphere);
-
-    if (dstThroughAtmosphere < intersect.y && dstThroughAtmosphere > 0 && dstThroughAtmosphere < 99.9){
-        //dstThroughAtmosphere = atmosphereHeight_;
-        //testBool = 1;
-    }
-
-    if (intersect.y > 0 && intersect.y > eyeDepth - dstToAtmosphere) {
-        //dstThroughAtmosphere *= 2;
-        //testBool = 1;
-        //if (dstThroughAtmosphere > 101)
-        //    testBool = 1;
-    }
 
     if (dstThroughAtmosphere > 0) {
         const float epsilon = 0.0001; // floating point precision offset
@@ -169,12 +157,5 @@ void main() {
         color = vec4(light, 0.0);
     } else {
         color = screen;
-        //color = vec4(1.0,0.0,0.0,1.0);
     }
-
-    if (testBool == 1)
-        color = vec4(1.0,0.0,0.0,1.0);
-
-    //float atmo = dstThroughAtmosphere / (planetRadius * 2);
-    //color = vec4(atmo,atmo,atmo,1.0);
 }

@@ -32,7 +32,7 @@ void Engine::initWindow(int width, int height, const std::string name) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open windows and create its opengl context
-    window_ = glfwCreateWindow(1280, 720, "star systems", NULL, NULL);
+    window_ = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
     if (window_ == NULL) {
         fprintf(stderr, "Failed to open GLFW window\n");
         glfwTerminate();
@@ -50,6 +50,8 @@ void Engine::initWindow(int width, int height, const std::string name) {
 
     // Init key capture
     glfwSetInputMode(window_, GLFW_STICKY_KEYS, GL_TRUE);
+    // Limit mouse movement
+    glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Background color
     glClearColor(0.0f, 0.0f, 0.4f, 0.0f);

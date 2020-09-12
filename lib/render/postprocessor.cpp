@@ -77,7 +77,7 @@ void PostProcessor::init() {
     screen_ = DrawableFactory::createPrimitive(PrimitiveType::QUAD2D, ShaderType::SHADER_TYPE_POST_PROCESSOR);
 
     // Move to shader class
-    float scatterStrength = 10.0;
+    float scatterStrength = 20.0;
     float scatterR = glm::pow(400 / waveLengths_.x, 4) * scatterStrength;
     float scatterG = glm::pow(400 / waveLengths_.y, 4) * scatterStrength;
     float scatterB = glm::pow(400 / waveLengths_.z, 4) * scatterStrength;

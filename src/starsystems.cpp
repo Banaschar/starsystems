@@ -141,6 +141,8 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.color", game->getSun()->getPosition());
     shader->uniform("tilingSize", drawable->getScale().x / 4.0f);
+    shader->uniform("nearPlane", game->getView().getNearPlane());
+    shader->uniform("farPlane", game->getView().getFarPlane());
 }
 
 void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -187,8 +189,8 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
-        //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
-        new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
+        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
 
@@ -278,7 +280,7 @@ Scene *test(Engine *engine) {
 }
 
 int main() {
-    Engine engine = Engine(1280, 720, "starsystem");
+    Engine engine = Engine(1920, 1080, "starsystem");
     if (!engine.getWindow())
         return 0;
 

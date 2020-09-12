@@ -36,6 +36,8 @@ uniform sampler2D texture_normal;
 uniform sampler2D texture_depth;
 
 uniform float moveFactor;
+uniform float farPlane;
+uniform float nearPlane;
 
 const float waveStrength = 0.05;
 const float shineDamper = 64.0;
@@ -78,13 +80,11 @@ vec4 reflectRefract() {
     vec2 reflectTexCoords = vec2(ndc.x, -ndc.y);
 
     // Refraction depth map
-    float near = 0.1;        // TODO: SHOULD BE A UNIFORM
-    float far = 1000.0f;    // TODO: SHOULD BE A UNIFORM
     float depth = texture(texture_depth, refractTexCoords).r;
-    float floorDistance = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
+    float floorDistance = 2.0 * nearPlane * farPlane / (farPlane + nearPlane - (2.0 * depth - 1.0) * (farPlane - nearPlane));
     
     depth = gl_FragCoord.z;
-    float waterDistance = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
+    float waterDistance = 2.0 * nearPlane * farPlane / (farPlane + nearPlane - (2.0 * depth - 1.0) * (farPlane - nearPlane));
     float waterDepth = floorDistance - waterDistance;
 
     // Distortion

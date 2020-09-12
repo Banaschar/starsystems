@@ -32,7 +32,7 @@ Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
         case GenerationType::PLANE_FLAT:
             isFlat = true;
         case GenerationType::PLANE:
-            return generateMeshNew(attr->position, attr->dimension, attr->lod, isFlat);
+            return generateMeshNew(attr->position, attr->dimension, attr->lod, attr->axis, isFlat);
             break;
         case GenerationType::SPHERE_FLAT:
             isFlat = true;
@@ -195,9 +195,9 @@ void TerrainGenerator::calculateVertexNormalSphere(std::vector<Vertex> &vertices
 
         glm::vec3 normal = calculateNormal(v0, v1, v2);
 
-        vertices.at(indices[index]).normal = normal;
-        vertices.at(indices[index + 1]).normal = normal;
-        vertices.at(indices[index + 2]).normal = normal;
+        vertices.at(indices[index]).normal += normal;
+        vertices.at(indices[index + 1]).normal += normal;
+        vertices.at(indices[index + 2]).normal += normal;
     }
 
     addBorderNormals(vertices, borderMap, dimensionLod);
@@ -521,13 +521,58 @@ struct MeshData {
     }
 };
 
-Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, bool flat) {
-    dimension = 120;
-    int half = 60;
+/*
+ * Computes the vertex position in the terrain
+ * height is optional, in case it's precomputed
+ */
+glm::vec3 TerrainGenerator::getVertexPosition(glm::vec3 &axis, int x, int y, bool isFlat, float height) {
+    glm::vec3 vertPos;
+    if (axis.x) {
+        vertPos = glm::vec3(axis.x * sphereRadius_, y, x);
+    } else if (axis.y) {
+        vertPos = glm::vec3(x, axis.y * sphereRadius_, y);
+    } else {
+        vertPos = glm::vec3(x, y, axis.z * sphereRadius_);
+    }
+
+    if (sphereRadius_) {
+        // SHOULD USE THE CUBESIDE POSITION AS NOISE INPUTS -> Easier for biome calculation? AND faster calc
+        vertPos = sphereOrigin_ + (float)sphereRadius_ * glm::normalize(vertPos - sphereOrigin_);
+        if (!height && !isFlat)
+            height = pNoise_.getNoise3d(vertPos.x, vertPos.y, vertPos.z); 
+        vertPos = sphereOrigin_ + ((float)sphereRadius_ + height) * glm::normalize(vertPos - sphereOrigin_);
+    } else {
+        if (!height && !isFlat)
+            height = pNoise_.getNoise2d(x, y);
+        vertPos.y = height;
+    }
+
+    return vertPos;
+}
+
+/*
+ * Remaining problems: Normal vectors at the border of cubesides do not match up -> creates visible seams
+ *
+ */
+Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool isFlat) {
+    int half = dimension / 2;
     int numVertsPerLine = dimension + 5; // dimension + 5 if dimension is even. But should be uneven, e.g. originalDimension + 1
-    int skipIncrement = 4;
+    int skipIncrement = lod;
 
     //glm::vec2 topLeft = glm::vec2(-1, 1) * ((numVertsPerLine - 3) * scale) / 2.0f; // with scale = 2.5f???????
+    int offsetX, offsetY;
+    if (axis.x) {
+        offsetX = pos.z;
+        offsetY = pos.y;
+    }
+    else if (axis.y) {
+        offsetX = pos.x;
+        offsetY = pos.z;
+    }
+    else {
+        offsetX = pos.x;
+        offsetY = pos.y;
+    }
 
     MeshData meshData(numVertsPerLine, skipIncrement);
 
@@ -558,20 +603,26 @@ Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, 
                 bool isEdgeConnectionVertex = !isOutOfMeshVertex && !isMeshEdgeVertex && !isMainVertex && (y == 2 || y == numVertsPerLine - 3 || x == 2 || x == numVertsPerLine - 3);
 
                 int vertexIndex = vertexIndicesMap[x][y];
+                float height = 0.0;
 
                 if (isEdgeConnectionVertex) { // These vertices have to be at a height that lies on a line between the two neighbouring mainVertices
                     bool isVertical = x == 2 || x == numVertsPerLine - 3;
                     int dstToMainVertexA = ((isVertical) ? y - 2 : x - 2) % skipIncrement;
                     int dstToMainVertexB = skipIncrement - dstToMainVertexA;
-                    glm::vec3 posA = meshData.vertices[vertexIndicesMap[isVertical ? x - dstToMainVertexA : x][isVertical ? y : y - dstToMainVertexA]];
-                    glm::vec3 posB = calculatePosition(x,y,axis,direction);
-                }
+                    float dstPercent = dstToMainVertexA / (float) skipIncrement;
+                    glm::vec3 posA = meshData.vertices[vertexIndicesMap[isVertical ? x : x - dstToMainVertexA][isVertical ? y - dstToMainVertexA : y]].position;
+                    glm::vec3 posB = getVertexPosition(axis, (isVertical ? x : x + dstToMainVertexB) + offsetX - half, (isVertical ? y + dstToMainVertexB : y) + offsetY - half, isFlat, height);
 
+                    if (sphereRadius_)
+                        height = (1 - dstPercent) * glm::distance(posA, sphereOrigin_) + dstPercent * glm::distance(posB, sphereOrigin_);
+                    else
+                        height = (1 - dstPercent) * posA.y + dstPercent * posB.y;
+                }
+                
                 //Generate position
-                //glm::vec3 tmpPos = getSpherePos(axis, direction * sphereRadius_, x + offset.x - half, y + offset.y - half);
-                //tmpPos = sphereOrigin_ + (float)sphereRadius_ * glm::normalize(tmpPos - sphereOrigin_);
+                glm::vec3 sPos = getVertexPosition(axis, x + offsetX - half, y + offsetY - half, isFlat, height);
                 glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 3);
-                meshData.addVertex(glm::vec3(x - half, pNoise_.getNoise2d(x - half, y - half), y - half), uv, vertexIndex);
+                meshData.addVertex(sPos, uv, vertexIndex);
 
                 bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1 && (!isEdgeConnectionVertex || (x != 2 && y != 2));
 
@@ -595,7 +646,7 @@ Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, 
 }
 
 /*
-Explanation (for dimension 12):
+Explanation (for dimension 13 with lod 4):
 M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (just for normals)
   0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16
 0 x x x x x x x x x x x  x  x  x  x  x  x
@@ -615,4 +666,17 @@ M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (
 14x e M c c c M c c c M  c  c  c  M  e  x
 15x e e e e e e e e e e  e  e  e  e  e  x
 16x x x x x x x x x x x  x  x  x  x  x  x
+*/
+
+/*
+ * Creates a biome map for each cube side
+ * Creating specific values for each possible coordinate would be far too large for big planets
+ * -> Create a hash map which matches a range of coordinates to biome functions
+ * For example: Everything from (15, -radius, 12) to (63, -radius, 23) -> ocean function.
+ * -> Complexity: Soft transitions between biomes
+ */
+/*
+void TerrainGenerator::buildPlanetBiomeMap() {
+
+}
 */
