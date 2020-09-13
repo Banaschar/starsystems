@@ -37,7 +37,7 @@ Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
         case GenerationType::SPHERE_FLAT:
             isFlat = true;
         case GenerationType::SPHERE:
-            return generateMeshSphere(attr->position, attr->dimension, attr->lod, attr->axis, isFlat);
+            return generateMeshNew(attr->position, attr->dimension, attr->lod, attr->axis, isFlat);
             break;
         default:
             fprintf(stderr, "[TERRAINGENERATOR::generateTerrain] CRITICAL ERROR: Generation Type unknown\n");
@@ -314,9 +314,10 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
  * CAVEAT: Slower performance, as I have to access very different memory locations (cache)
  */
 Mesh *TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat) {
-    int dimensionLod = ((dimension - 1) / lod) + 1;
+    int dimensionLod = (dimension / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
-    int half = (dimension - 1) / 2;
+    int half = dimension / 2;
+    dimension += 1;
     int index = 0;
     int borderIndex = 0;
     std::vector<glm::vec3> borderMap(2 * (dimensionLod + 2) + 2 * dimensionLod);
@@ -384,9 +385,11 @@ Mesh *TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lo
  * Plane: Only take pos.x and pos.z
  */
 Mesh *TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod, bool flat) {
-    int dimensionLod = ((dimension - 1) / lod) + 1;
+    int dimensionLod = (dimension / lod) + 1;
     std::vector<Vertex> vertices(dimensionLod * dimensionLod);
-    int half = (dimension - 1) / 2;
+    int half = dimension / 2;
+    dimension += 1;
+
     int index = 0, row = 0, col = 0;
     for (int z = pos.z; z < dimension + pos.z; z+=lod) {
         for (int x = pos.x; x < dimension + pos.x; x+=lod) {
@@ -417,11 +420,19 @@ Mesh *TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod, boo
 }
 
 
-/*
- * IMPLEMENTATION LIKE SEB LAGUE
- *
- * UFF
- */
+struct EdgeConnectionData {
+    int vertexIndex;
+    int mainVertexAindex;
+    int mainVertexBindex;
+    float dstPercentAtoB;
+
+    void addData(int vI, int aI, int bI, float dst) {
+        vertexIndex = vI;
+        mainVertexAindex = aI;
+        mainVertexBindex = bI;
+        dstPercentAtoB = dst;
+    }
+};
 
 struct MeshData {
     std::vector<Vertex> vertices;
@@ -432,6 +443,9 @@ struct MeshData {
     int outOfMeshTriangleIndex = 0;
     int triangleIndex = 0;
 
+    std::vector<EdgeConnectionData> edgeConnectionVertices;
+    int edgeConnectionIndex = 0;
+
     MeshData(int numVertsPerLine, int skipIncrement) {
         int numMeshEdgeVertices = (numVertsPerLine - 2) * 4 - 4;
         int numEdgeConnectionVertices = (skipIncrement - 1) * (numVertsPerLine - 5) / skipIncrement * 4;
@@ -439,6 +453,7 @@ struct MeshData {
         int numMainVertices = numMainVerticesPerLine * numMainVerticesPerLine;
 
         vertices.resize(numMainVertices + numMeshEdgeVertices + numEdgeConnectionVertices);
+        edgeConnectionVertices.resize(numEdgeConnectionVertices);
 
         int numMeshEdgeTriangles = 8 * (numVertsPerLine - 4);
         int numMainTriangles = (numMainVerticesPerLine - 1) * (numMainVerticesPerLine - 1) * 2;
@@ -469,6 +484,10 @@ struct MeshData {
             indices[triangleIndex + 2] = c;
             triangleIndex += 3;
         }
+    }
+
+    void addEdgeConnectionVertex(int vertexIndex, int indexA, int indexB, float dst) {
+        edgeConnectionVertices[edgeConnectionIndex++].addData(vertexIndex, indexA, indexB, dst);
     }
 
     glm::vec3 calculateNormalFromIndices(int index0, int index1, int index2) {
@@ -517,6 +536,15 @@ struct MeshData {
 
         for (int i = 0; i < vertices.size(); ++i) {
             vertices[i].normal = glm::normalize(vertices[i].normal);
+        }
+
+        calculateEdgeConnectionNormals();
+    }
+
+    void calculateEdgeConnectionNormals() {
+        for (EdgeConnectionData &data : edgeConnectionVertices) {
+            vertices[data.vertexIndex].normal = glm::normalize(vertices[data.mainVertexAindex].normal * (1 - data.dstPercentAtoB) +
+                                                    vertices[data.mainVertexBindex].normal * data.dstPercentAtoB);
         }
     }
 };
@@ -574,6 +602,11 @@ Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, 
         offsetY = pos.y;
     }
 
+    /* Triangles on the opposite side of the sphere need to have a clock-wise winding order */
+    bool inverted = false;
+    if (axis.x == -1 || axis.z == 1 || axis.y == -1)
+        inverted = true;
+
     MeshData meshData(numVertsPerLine, skipIncrement);
 
     int vertexIndicesMap[numVertsPerLine][numVertsPerLine];
@@ -610,13 +643,17 @@ Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, 
                     int dstToMainVertexA = ((isVertical) ? y - 2 : x - 2) % skipIncrement;
                     int dstToMainVertexB = skipIncrement - dstToMainVertexA;
                     float dstPercent = dstToMainVertexA / (float) skipIncrement;
-                    glm::vec3 posA = meshData.vertices[vertexIndicesMap[isVertical ? x : x - dstToMainVertexA][isVertical ? y - dstToMainVertexA : y]].position;
+                    int indexA = vertexIndicesMap[isVertical ? x : x - dstToMainVertexA][isVertical ? y - dstToMainVertexA : y];
+                    int indexB = vertexIndicesMap[isVertical ? x : x + dstToMainVertexB][isVertical ? y + dstToMainVertexB : y];
+                    glm::vec3 posA = meshData.vertices[indexA].position;
                     glm::vec3 posB = getVertexPosition(axis, (isVertical ? x : x + dstToMainVertexB) + offsetX - half, (isVertical ? y + dstToMainVertexB : y) + offsetY - half, isFlat, height);
 
                     if (sphereRadius_)
-                        height = (1 - dstPercent) * glm::distance(posA, sphereOrigin_) + dstPercent * glm::distance(posB, sphereOrigin_);
+                        height = (1 - dstPercent) * (glm::distance(posA, sphereOrigin_) - sphereRadius_) + dstPercent * (glm::distance(posB, sphereOrigin_) - sphereRadius_);
                     else
                         height = (1 - dstPercent) * posA.y + dstPercent * posB.y;
+
+                    meshData.addEdgeConnectionVertex(vertexIndex, indexA, indexB, dstPercent);
                 }
                 
                 //Generate position
@@ -634,8 +671,8 @@ Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, 
                     int c = vertexIndicesMap[x][y + currentIncrement];
                     int d = vertexIndicesMap[x + currentIncrement][y + currentIncrement];
                     // TODO: Handle the inverse case (FOR THE PLANETS OTHER SIDE)
-                    meshData.addTriangle(a, c, d);
-                    meshData.addTriangle(a, d, b);
+                    meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                    meshData.addTriangle(a, inverted ? b : d, inverted ? d : b);
                 }
             }
         }

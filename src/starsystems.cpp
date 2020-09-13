@@ -189,7 +189,7 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
-        new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
+        //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
         //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
@@ -204,8 +204,8 @@ Scene *createPlane(Engine *engine) {
     sun->addTexture(sunT);
     
 
-    glm::vec3 camPos = glm::vec3(0, 20, -20);
-    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
+    //glm::vec3 camPos = glm::vec3(0, 20, -20);
+    glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
@@ -213,11 +213,11 @@ Scene *createPlane(Engine *engine) {
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
     PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
-    //game->addTerrainManager(terr);
+    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::PLANE, glm::vec3(0,0,0));
+    game->addTerrainManager(terr);
     
-    TerrainTile *t = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    game->addTerrain(t);
+    //TerrainTile *t = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    //game->addTerrain(t);
 
     // Random Entity Test
     //Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
