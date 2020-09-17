@@ -298,20 +298,7 @@ glm::vec3 TerrainGenerator::getSpherePos(glm::vec3 &axis, int radius, int x, int
 }
 
 /*
- * Every chunk (except for the lowest lod level) should have a border of high resolution vertexes.
- * https://www.youtube.com/watch?v=c2BUgXdjZkg&list=PLFt_AvWsXl0eBW2EiBtl_sxmDtSgZBxB3&index=21
- * Better solution:
- * Get the border vertex positions of surrounding chunks.
- * Align the vertex positions.
- * Lod = 2 | Lod = 1
- *  x1          y1
- *              y2
- *  x2          y3
- *
- * So y1 = x1; y3 = x2;
- * y2 = y1 + 1 * normalize(x2-x1) // distance(y1,y2) is always 1? otherwise distance(y1,y2)
- * --> so the border vertices in the higher res chunk line up with the vertices in the lower res chunk
- * CAVEAT: Slower performance, as I have to access very different memory locations (cache)
+ * Slight problems with seams between terrain chunks.
  */
 Mesh *TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool flat) {
     int dimensionLod = (dimension / lod) + 1;
@@ -340,7 +327,7 @@ Mesh *TerrainGenerator::generateMeshSphere(glm::vec3 &pos, int dimension, int lo
         offset.y = pos.y;
     }
 
-    // TODO: FIX THIS VERY UGLY HACK TO CHANGE WINDING ORDER FOR THESE AXIS
+    // Inverted vertex triangle winding order for terrain meshes on the other side of the cube.
     bool inverted = false;
     if (axis.x == -1 || axis.z == 1 || axis.y == -1)
         inverted = true;
@@ -706,12 +693,35 @@ M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (
 */
 
 /*
+ * BIOMES
+ * 
+ */
+
+/*
  * Creates a biome map for each cube side
  * Creating specific values for each possible coordinate would be far too large for big planets
  * -> Create a hash map which matches a range of coordinates to biome functions
  * For example: Everything from (15, -radius, 12) to (63, -radius, 23) -> ocean function.
  * -> Complexity: Soft transitions between biomes
  */
+
+/*
+ * Represents a side of the cube
+ */
+/*
+class PlanetCubeSide {
+public:
+    PlanetCubeSide();
+private:
+    bool side;
+    bool pole; 
+    glm::vec3 axis;
+    PlanetCubeSide *up;
+    PlanetCubeSide *right;
+    PlanetCubeSide *left;
+    PlanetCubeSide *down;
+}
+*/
 /*
 void TerrainGenerator::buildPlanetBiomeMap() {
 
