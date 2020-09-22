@@ -41,7 +41,7 @@ uniform float nearPlane;
 
 const float waveStrength = 0.05;
 const float shineDamper = 64.0;
-const float reflectivity = 0.2;
+const float reflectivity = 0.6;
 
 vec4 calculateLighting() {
     // ambient
@@ -71,7 +71,7 @@ vec4 calculateLighting() {
  *
  * ---> REDUCE specular highlight when moving the camera farther away, like really far torwards orbit
  *
- * --> My water consits of 6 vertices -> vertex shader is only run twice. Move more code to the vertex shader!!!!!!!
+ * --> My water consits of 6 vertices -> vertex shader is only run 6 times. Move more code to the vertex shader!!!!!!!
  */
 vec4 reflectRefract() {
     vec2 ndc = (clipSpace.xy / clipSpace.w); // normalized device coordinates

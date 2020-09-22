@@ -21,11 +21,11 @@ uniform float nearPlane;
 uniform vec3 worldSpaceCamPos;
 uniform vec3 scatterCoeffs;
 
-float atmosphereHeight_ = planetRadius / 4.0;
+float atmosphereHeight_ = planetRadius / 3.0;
 //float atmosphereHeight_ = 250.0;
 float numScatteringPoints_ = 10.0;
 float numOpticalDepthPoints_ = 10.0;
-float densityFalloff_ = 24.18;
+float densityFalloff_ = 15.3;
 //float densityFalloff_ = 15.1;
 
 int testBool = 0;
@@ -86,7 +86,7 @@ float linearDepth(float depth) {
 float densityAtPoint(vec3 densitySamplePoint) {
     float heightAboveSurface = distance(densitySamplePoint, planetOrigin) - planetRadius;
     float height = heightAboveSurface / atmosphereHeight_;
-    float localDensity = exp(-height * densityFalloff_);// * (1 - height);
+    float localDensity = exp(-height * densityFalloff_) * (1 - height);
 
     return localDensity;
 }
@@ -123,19 +123,35 @@ vec3 calculateLight(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalC
         vec3 transmittance = exp(-(sunRayOpticalDepth + viewRayOpticalDepth) * scatterCoeffs);
         float localDensity = densityAtPoint(scatterPoint);
 
-        scatteredLight += localDensity * transmittance * scatterCoeffs * stepSize;
+        scatteredLight += localDensity * transmittance * stepSize; //* scatterCoeffs;
         scatterPoint += rayDir * stepSize;
     }
 
-    float originalColorTransmittance = exp(-viewRayOpticalDepth);
-    return originalColors * (1 - scatteredLight) + scatteredLight; // Surface visible...but too much?
+    
+    scatteredLight *= 1.2 * scatterCoeffs;
+    
+    float brithnessAdaptionStrength = 0.15;
+    float reflectedOutScatterStrength = 0.5;
+    float brightnessAdaption = dot(scatteredLight, vec3(1.0)) * brithnessAdaptionStrength;
+    float brightnessSum = viewRayOpticalDepth * 1.2 * reflectedOutScatterStrength + brightnessAdaption;
+    float reflectedLightStrength = exp(-brightnessSum);
+    float hdrStrength = max(0.0, min(1.0, dot(originalColors, vec3(1.0)) / 3.0 - 1.0));
+    reflectedLightStrength = mix(reflectedLightStrength, 1.0, hdrStrength);
+    vec3 reflectedLight = originalColors * reflectedLightStrength;
+
+    return reflectedLight + scatteredLight;
+    
+
+
+    //float originalColorTransmittance = exp(-viewRayOpticalDepth);
+    //return originalColors * (1 - scatteredLight) + scatteredLight; // Surface visible...but too much?
 
     //return originalColors * originalColorTransmittance + scatteredLight; // Original - but everything is dark
 }
 
 void main() {
     vec4 screen = texture(mainScreenTex, texCoords);
-    float depth = texture(mainDepthTexture, texCoords).r; // scale texCoords?????
+    float depth = texture(mainDepthTexture, texCoords).r;
     //float linearEyeDepth = linearDepth(depth);// * length(camDirection);
     vec3 worldDepthPos = worldPosFromDepth(depth);
 
@@ -154,7 +170,7 @@ void main() {
         const float epsilon = 0.0001; // floating point precision offset
         vec3 pointInAtmosphere = origin + (dstToAtmosphere + epsilon) * direction;
         vec3 light = calculateLight(pointInAtmosphere, direction, dstThroughAtmosphere - epsilon * 2, screen.xyz);
-        color = vec4(light, 0.0);
+        color = vec4(light, 1.0);
     } else {
         color = screen;
     }

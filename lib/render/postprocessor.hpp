@@ -28,7 +28,7 @@ private:
     VaoRenderer *vaoRenderer_;
 
     // move this to a shader object inheriting from shader
-    glm::vec3 waveLengths_ = glm::vec3(700, 530, 440);
+    glm::vec3 waveLengths_ = glm::vec3(700, 530, 460);
     glm::vec3 scatterCoeffs_;
 
     void init();

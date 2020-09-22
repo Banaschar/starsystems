@@ -4,6 +4,7 @@
 
 float g_deltaTime = 0.0f;
 unsigned int g_triangleCount = 0;
+bool g_debugPolygonMode = false;
 ThreadPool *threadPool = NULL;
 
 Engine::Engine(int width, int height, const std::string name) {

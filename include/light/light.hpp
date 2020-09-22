@@ -10,7 +10,7 @@
 const glm::vec3 DEFAULT_AMBIENT = glm::vec3(0.2f, 0.2f, 0.2f);
 const glm::vec3 DEFAULT_DIFFUSE = glm::vec3(1.0f, 1.0f, 1.0f);
 const glm::vec3 DEFAULT_SPECULAR = glm::vec3(0.5f, 0.5f, 0.5f);
-const glm::vec3 DEFAULT_COLOR = glm::vec3(1.0f, 1.0f, 1.0f);
+const glm::vec3 DEFAULT_COLOR = glm::vec3(0.98f, 0.83f, 0.25f);
 
 class Light : public Drawable {
   public:

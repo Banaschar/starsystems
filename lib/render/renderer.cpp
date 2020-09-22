@@ -14,30 +14,17 @@ Renderer::Renderer(std::vector<Shader *> shaders, int winWidth, int winHeight) :
 }
 
 Renderer::~Renderer() {
-    if (lightShader_)
-        delete lightShader_;
-
-    if (skyRenderer_)
-        delete skyRenderer_;
-
-    if (waterRenderer_)
-        delete waterRenderer_;
+    delete lightShader_;
+    delete skyRenderer_;
+    delete waterRenderer_;
+    delete guiRenderer_;
+    delete terrainRenderer_;
+    delete vaoRenderer_;
+    delete postProcessorAtmosphere_;
 
     for (const auto &kv : shaderMap_) {
         delete shaderMap_[kv.first];
     }
-
-    if (guiRenderer_)
-        delete guiRenderer_;
-
-    if (terrainRenderer_)
-        delete terrainRenderer_;
-
-    if (vaoRenderer_)
-        delete vaoRenderer_;
-
-    if (postProcessorAtmosphere_)
-        delete postProcessorAtmosphere_;
 }
 
 unsigned int Renderer::DEBUG_getPostProcessingTexture() {
@@ -46,6 +33,16 @@ unsigned int Renderer::DEBUG_getPostProcessingTexture() {
     else
         fprintf(stdout, "DEBUG: No post processor\n");
     return 0;
+}
+
+void Renderer::setPolygonRenderModeWireFrame(bool set) {
+        if (set) {
+            g_debugPolygonMode = true;
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        } else {
+            g_debugPolygonMode = false;
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
 }
 
 void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,

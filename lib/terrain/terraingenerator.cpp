@@ -703,6 +703,12 @@ M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (
  * -> Create a hash map which matches a range of coordinates to biome functions
  * For example: Everything from (15, -radius, 12) to (63, -radius, 23) -> ocean function.
  * -> Complexity: Soft transitions between biomes
+ *
+ * For biome assignment -> Divide cubeSide into squares -> (0,0), (1,0) etc. Like QuadTree. 
+ * To get square from cubeside coordinates, divide by dimension or something.
+ *
+ *
+ * Randomized input variables: WaterPercentage, HeatLevel (Desertworld, ArcticWorld), etc.
  */
 
 /*

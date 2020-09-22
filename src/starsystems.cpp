@@ -116,7 +116,7 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("cameraPos", game->getView().getCameraPosition());
     shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader->uniform("light.ambient", glm::vec3(1.0, 1.0, 1.0));
+    shader->uniform("light.ambient", glm::vec3(0.2, 0.2, 0.2));
     shader->uniform("light.diffuse", glm::vec3(0.8, 0.8, 0.8));
     shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
 }
@@ -132,14 +132,17 @@ void instanceShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
+    Light *light = dynamic_cast<Light *>(game->getSun());
     shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
                                drawable->getModelMatrix());
     shader->uniform("worldNormal", game->getView().getWorldNormal());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
     shader->uniform("cameraPos", game->getView().getCameraPosition());
-    shader->uniform("light.position", game->getSun()->getPosition());
-    shader->uniform("light.color", game->getSun()->getPosition());
+    shader->uniform("light.position", light->getPosition());
+    shader->uniform("light.color", light->getColor());
+    shader->uniform("light.ambient", light->getAmbient());
+    shader->uniform("light.diffuse", light->getDiffuse());
     shader->uniform("tilingSize", drawable->getScale().x / 4.0f);
     shader->uniform("nearPlane", game->getView().getNearPlane());
     shader->uniform("farPlane", game->getView().getFarPlane());
@@ -204,20 +207,20 @@ Scene *createPlane(Engine *engine) {
     sun->addTexture(sunT);
     
 
-    //glm::vec3 camPos = glm::vec3(0, 20, -20);
-    glm::vec3 camPos = glm::vec3(0, 700, -1300);
+    glm::vec3 camPos = glm::vec3(0, 20, -20);
+    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
 
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
-    PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 3);
+    PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 0);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::PLANE, glm::vec3(0,0,0));
-    game->addTerrainManager(terr);
+    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
+    //game->addTerrainManager(terr);
     
-    //TerrainTile *t = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    //game->addTerrain(t);
+    TerrainTile *t = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    game->addTerrain(t);
 
     // Random Entity Test
     //Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
@@ -236,13 +239,14 @@ Scene *createPlane(Engine *engine) {
 
     // WATER TEST
     //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
-    //TerrainTile *waterTile = new TerrainTile(terrainGen, 241, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
-    //game->addWater(waterTile);
+    TerrainTile *waterTile = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
+    game->addWater(waterTile);
 
     int width,height;
     view.getWindowSize(&width, &height);
     Renderer *renderer = new Renderer(shaders, width, height);
     //DEBUG
+    renderer->setPolygonRenderModeWireFrame(true);
     Texture tex2;
     tex2.id = renderer->DEBUG_getPostProcessingTexture();
     tex2.type = "texture_gui";

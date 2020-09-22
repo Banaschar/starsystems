@@ -55,6 +55,7 @@ vec4 calculateLighting() {
  * Blend grass and rock based on normal vector for example, e.g.
  * the more the normal is in y direction, the more grass, the more horizonal, e.g. x/z
  * direction, the more rock.
+ * Same with beach. Only sand if it's flat, otherwise rock (or maybe brown rock)
  *
  */
 vec4 blendTextures() {
@@ -110,6 +111,16 @@ float calculateFog(float distCameraToPoint, vec3 dirCamToPoint) {
                             (1.0 - exp(-distCameraToPoint * dirCamToPoint.y * fogFalloff)) / dirCamToPoint.y;
     vec3 fogColor = vec3(0.5, 0.6, 0.7);
     return clamp(fogStrength, 0.0, 1.0);
+}
+*/
+/*
+float fog2(vec3 inCol) {
+    vec3 fogColor = vec3(0.6, 0.7, 0.8);
+    float fogStart = 120;
+    float fogEnd = 200;
+    float dist = length(cameraPos - fragPos_worldspace);
+    float fogFac = clamp(((fogEnd - dist) / (fogEnd - fogStart)), 0.125, 1.0);
+    return mix(fogColor, inCol, fogFac);
 }
 */
 

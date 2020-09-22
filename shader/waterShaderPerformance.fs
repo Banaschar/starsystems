@@ -39,23 +39,24 @@ const float waveStrength = 0.05;
 const float shineDamper = 64.0;
 const float reflectivity = 0.2;
 
-vec4 calculateLighting() {
+vec3 calculateLighting() {
     // ambient
-    vec3 ambient = light.ambient * 0.1;
+    vec3 ambient = light.ambient;
 
     // diffuse
-    vec3 lightDir = normalize(-light.direction);
-    vec3 norm = normalize(normal);
-    float diff = max(dot(norm, lightDir), 0.0);
+    vec3 lightDir = normalize(light.position - fragPos_worldspace);
+    float diff = max(dot(normal, lightDir), 0.0);
     vec3 diffuse = light.diffuse * diff;
 
     //specular
+    /*
     vec3 viewDirection = normalize(cameraPos - fragPos_worldspace);
     vec3 reflectDirection = reflect(-light.direction, norm);
     float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 32.0);
     vec3 specular = 0.5 * spec * light.specular;
+    */
 
-    return vec4(ambient + diffuse + specular, 1.0);
+    return vec3(ambient + diffuse);
 }
 
 vec4 fakeWater() {
@@ -80,11 +81,14 @@ vec4 fakeWater() {
     // Normal mapping: calc specular light
     vec3 toCameraVectorNorm = normalize(cameraPos - fragPos_worldspace);
     vec3 fromLightVector = fragPos_worldspace - light.position;
-    vec3 reflectedLight = reflect(normalize(vec3(-0.2, -1.9f, -0.3f)), normal); // fixed value for directional light, much better
+    vec3 reflectedLight = reflect(normalize(fromLightVector), normal);//(vec3(-0.2, -1.9f, -0.3f)), normal); // fixed value for directional light, much better
     float spec = pow(max(dot(reflectedLight, toCameraVectorNorm), 0.0), shineDamper);
     vec3 specular = light.color * spec * reflectivity;
 
-    return mix(waterColor, vec4(0.0, 0.3, 0.5, 1.0), 0.8) + vec4(specular, 0.0);
+    vec3 lightAll = calculateLighting() + specular;
+
+    //return mix(waterColor, vec4(0.05, 0.36, 0.61, 1.0), 0.8) + vec4(specular, 0.0);
+    return mix(waterColor, vec4(0.05, 0.36, 0.61, 1.0), 0.8) * vec4(lightAll, 1.0);
 }
 
 void main() {

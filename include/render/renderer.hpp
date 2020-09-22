@@ -39,6 +39,8 @@ class Renderer {
 
     unsigned int DEBUG_getPostProcessingTexture();
 
+    void setPolygonRenderModeWireFrame(bool set);
+
   private:
     ShaderMap shaderMap_;
     EntityMap entityMap_;

@@ -51,11 +51,9 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
             drawable->update(game);
             shader_->prepare(drawable, game);
 
-            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            
             for (Mesh *mesh : drawable->getMeshes())
                 vaoRenderer_->draw(mesh);
-            //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-            g_triangleCount += drawable->getTriangleCount();
         }
     }
     shader_->end();
