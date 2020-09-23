@@ -3,6 +3,7 @@
 #include "windowheader.hpp"
 
 float g_deltaTime = 0.0f;
+float g_currentFrameTime;
 unsigned int g_triangleCount = 0;
 bool g_debugPolygonMode = false;
 ThreadPool *threadPool = NULL;
@@ -28,7 +29,7 @@ void Engine::initWindow(int width, int height, const std::string name) {
     }
 
     glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -49,13 +50,18 @@ void Engine::initWindow(int width, int height, const std::string name) {
         return;
     }
 
+    GLint maxPatchVert = 0;
+    glGetIntegerv(GL_MAX_PATCH_VERTICES, &maxPatchVert);
+    fprintf(stdout, "[ENGINE::initWindow] MaxPatchVertices: %i\n", maxPatchVert);
+    glPatchParameteri(GL_PATCH_VERTICES, 3);
+
     // Init key capture
     glfwSetInputMode(window_, GLFW_STICKY_KEYS, GL_TRUE);
     // Limit mouse movement
     glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // Background color
-    glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
     // Only draw if new fragment is closer to camera then one behind
     glEnable(GL_DEPTH_TEST);
@@ -66,8 +72,8 @@ void Engine::initWindow(int width, int height, const std::string name) {
 
 void Engine::initThreadPool() {
     int numThreads = std::thread::hardware_concurrency();
-    fprintf(stdout, "ENGINE: ThreadPool created with %i threads.\n", numThreads);
     threadPool = new ThreadPool(numThreads == 0 ? 4 : numThreads);
+    fprintf(stdout, "[ENGINE::initThreadPool]: ThreadPool created with %i threads.\n", numThreads);
 }
 
 GLFWwindow *Engine::getWindow() {
@@ -90,11 +96,11 @@ void Engine::render_() {
     float lastFrame = glfwGetTime();
     float lastTime = lastFrame;
     do {
-        float currentFrame = glfwGetTime();
-        g_deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
+        g_currentFrameTime = glfwGetTime();
+        g_deltaTime = g_currentFrameTime - lastFrame;
+        lastFrame = g_currentFrameTime;
         nbFrames++;
-        if (currentFrame - lastTime >= 1.0) {
+        if (g_currentFrameTime - lastTime >= 1.0) {
             fprintf(stdout, "%f ms/frame -> %i FPS. Triangles: %u\n", 1000.0 / float(nbFrames), nbFrames, g_triangleCount);
             nbFrames = 0;
             lastTime += 1.0;

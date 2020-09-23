@@ -34,7 +34,9 @@ class Drawable {
     void addMesh(Mesh *mesh);
 
     std::vector<Texture> &getTextures(int index = 0);
-
+    /*
+     * Returns the position of the Drawable in WorldSpace
+     */
     glm::vec3 getPosition(int index = 0);
 
     glm::vec3 getScale(int index = 0);
@@ -52,6 +54,8 @@ class Drawable {
     std::vector<Mesh*> &getMeshes();
 
     int getTriangleCount(int index = 0);
+
+    void setMeshDrawMode(MeshDrawMode mode, int index = 0);
 
   protected:
     ShaderType type_;

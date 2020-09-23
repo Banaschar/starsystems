@@ -15,6 +15,7 @@ class Mesh {
     bool isInstanced_ = false;
     bool incomplete_ = true;
     unsigned int drawInstances_ = 0;
+    int drawMode_;
     unsigned int vao_, vbo_, ebo_, ibo_;
     void initMesh();
 
@@ -38,5 +39,7 @@ class Mesh {
     bool &isInstanced();
     bool incomplete();
     int getTriangleCount();
+    int getDrawMode();
+    void setDrawMode(MeshDrawMode mode);
 };
 #endif

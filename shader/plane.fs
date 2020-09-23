@@ -30,7 +30,7 @@ uniform sampler2D texture_diffuse6;
 
 vec4 calculateLighting() {
     // ambient
-    vec3 ambient = light.ambient * 0.1; // TODO: Make ambientStrength a variable
+    vec3 ambient = light.ambient; // TODO: Make ambientStrength a variable
 
     // diffuse
     vec3 lightDir = normalize(light.position - fragPos_worldspace);

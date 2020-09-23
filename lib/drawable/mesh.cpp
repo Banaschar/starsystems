@@ -8,10 +8,12 @@ Mesh::Mesh() {}
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) 
                         : vertices_(vertices), indices_(indices) {
+    drawMode_ = GL_TRIANGLES;
 }
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices)
     : vertices_(vertices), textures_(textures), indices_(indices) {
+    drawMode_ = GL_TRIANGLES;
 }
 /*
 Mesh::Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices) :
@@ -175,4 +177,19 @@ std::vector<Texture> &Mesh::getTextures() {
 
 int Mesh::getTriangleCount() {
     return indices_.size() / 3;
+}
+
+int Mesh::getDrawMode() {
+    return drawMode_;
+}
+
+void Mesh::setDrawMode(MeshDrawMode mode) {
+    switch (mode) {
+        case MeshDrawMode::DRAW_MODE_TESSELLATION:
+            drawMode_ = GL_PATCHES;
+            break;
+        default:
+            drawMode_ = GL_TRIANGLES;
+            break;
+    }
 }

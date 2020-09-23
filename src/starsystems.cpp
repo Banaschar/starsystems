@@ -116,7 +116,7 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("cameraPos", game->getView().getCameraPosition());
     shader->uniform("light.position", game->getSun()->getPosition());
     shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader->uniform("light.ambient", glm::vec3(0.2, 0.2, 0.2));
+    shader->uniform("light.ambient", glm::vec3(0.1, 0.1, 0.1));
     shader->uniform("light.diffuse", glm::vec3(0.8, 0.8, 0.8));
     shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
 }
@@ -135,6 +135,8 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     Light *light = dynamic_cast<Light *>(game->getSun());
     shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
                                drawable->getModelMatrix());
+    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
+    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
     shader->uniform("worldNormal", game->getView().getWorldNormal());
     shader->uniform("normalMatrix", drawable->getNormalMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
@@ -143,6 +145,7 @@ void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("light.color", light->getColor());
     shader->uniform("light.ambient", light->getAmbient());
     shader->uniform("light.diffuse", light->getDiffuse());
+    shader->uniform("light.specular", light->getSpecular());
     shader->uniform("tilingSize", drawable->getScale().x / 4.0f);
     shader->uniform("nearPlane", game->getView().getNearPlane());
     shader->uniform("farPlane", game->getView().getFarPlane());
@@ -169,6 +172,20 @@ void debugShaderCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
 }
 
+void tessShaderCb(Shader *shader, Drawable *drawable, Game *game) {
+    Light *light = dynamic_cast<Light *>(game->getSun());
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
+    shader->uniform("cameraPos", game->getView().getCameraPosition());
+    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
+    shader->uniform("light.position", light->getPosition());
+    shader->uniform("light.color", light->getColor());
+    shader->uniform("light.ambient", light->getAmbient());
+    shader->uniform("light.diffuse", light->getDiffuse());
+    shader->uniform("light.specular", light->getSpecular());
+    shader->uniform("frameTime", g_currentFrameTime);
+}
+
 Scene *createPlane(Engine *engine) {
     std::cout << "Create Plane." << std::endl;
     
@@ -193,7 +210,8 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
         //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
         //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
-        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb, "shader/debugNormalVector.gs"),
+        //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", nullptr, nullptr, "shader/debugNormalVector.gs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb),
+        new Shader("shader/tessVertexShader.vs", "shader/tessFragmentShader.fs", "shader/tessControlShader.tcs", "shader/tessEvalShader.tes", nullptr, ShaderType::SHADER_TYPE_DEFAULT, tessShaderCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
 
@@ -202,6 +220,7 @@ Scene *createPlane(Engine *engine) {
     glm::vec3 pos = glm::vec3(5000, 5000, 5000);
     glm::vec3 scale = glm::vec3(100,100,100);
     sun->transform(&scale, &pos, NULL);
+    sun->setSpecular(glm::vec3(1.0,1.0,1.0));
 
     Texture sunT = TextureLoader::loadTextureFromFile("assets/sunTexture.jpg", "texture_diffuse");
     sun->addTexture(sunT);
@@ -223,10 +242,12 @@ Scene *createPlane(Engine *engine) {
     game->addTerrain(t);
 
     // Random Entity Test
-    //Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
-    //glm::vec3 scale = glm::vec3(2,2,2);
-    //cube->transform(&scale, NULL, NULL);
-    //game->addEntity(cube);
+    //Drawable *plane = DrawableFactory::createPrimitive(PrimitiveType::QUAD, ShaderType::SHADER_TYPE_DEFAULT);
+    Drawable *plane = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_DEFAULT);
+    plane->setMeshDrawMode(MeshDrawMode::DRAW_MODE_TESSELLATION);
+    //glm::vec3 scaleP = glm::vec3(30,1,30);
+    //plane->transform(&scaleP, NULL, NULL);
+    game->addEntity(plane);
     
     // SKYBOX
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
@@ -239,14 +260,14 @@ Scene *createPlane(Engine *engine) {
 
     // WATER TEST
     //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
-    TerrainTile *waterTile = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
-    game->addWater(waterTile);
+    //TerrainTile *waterTile = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
+    //game->addWater(waterTile);
 
     int width,height;
     view.getWindowSize(&width, &height);
     Renderer *renderer = new Renderer(shaders, width, height);
     //DEBUG
-    renderer->setPolygonRenderModeWireFrame(true);
+    //renderer->setPolygonRenderModeWireFrame(true);
     Texture tex2;
     tex2.id = renderer->DEBUG_getPostProcessingTexture();
     tex2.type = "texture_gui";

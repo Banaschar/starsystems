@@ -1,0 +1,22 @@
+#version 410 core
+
+layout (vertices = 3) out;
+
+in vec3 wPos_tControl_in[];
+in vec3 normal_tControl_in[];
+
+out vec3 wPos_tEval_in[];
+out vec3 normal_tEval_in[];
+
+const float tessLevelInner = 16.0;
+const float tessLevelOuter = 16.0;
+
+void main() {
+    wPos_tEval_in[gl_InvocationID] = wPos_tControl_in[gl_InvocationID];
+    normal_tEval_in[gl_InvocationID] = normal_tControl_in[gl_InvocationID];
+
+    gl_TessLevelInner[0] = tessLevelInner;
+    gl_TessLevelOuter[0] = tessLevelOuter;
+    gl_TessLevelOuter[1] = tessLevelOuter;
+    gl_TessLevelOuter[2] = tessLevelOuter;
+}

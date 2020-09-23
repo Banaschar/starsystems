@@ -8,6 +8,7 @@ enum class ShaderType {SHADER_TYPE_DEFAULT, SHADER_TYPE_LIGHT, SHADER_TYPE_TERRA
 
 
 extern float g_deltaTime;
+extern float g_currentFrameTime;
 extern unsigned int g_triangleCount;
 extern bool g_debugPolygonMode;
 

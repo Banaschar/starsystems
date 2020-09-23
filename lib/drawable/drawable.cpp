@@ -66,6 +66,10 @@ void Drawable::addMesh(Mesh *mesh) {
         fprintf(stdout, "[DRAWABLE::addMesh] WARNING: Empty Mesh added\n");
 }
 
+void Drawable::setMeshDrawMode(MeshDrawMode mode, int index) {
+    meshes_.at(index)->setDrawMode(mode);
+}
+
 std::vector<Texture> &Drawable::getTextures(int index) {
     return meshes_.at(index)->getTextures();
 }
@@ -101,9 +105,6 @@ void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec
     }
 
     if (scaleVec) {
-        //scale_[index].x *= scaleVec->x;
-        //scale_[index].y *= scaleVec->y;
-        //scale_[index].z *= scaleVec->z;
         scale_[index] = *scaleVec;
     }
 

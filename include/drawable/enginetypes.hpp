@@ -4,6 +4,8 @@
 #include <glm/glm.hpp>
 #include <string>
 
+enum class MeshDrawMode {DRAW_MODE_DEFAULT, DRAW_MODE_TESSELLATION};
+
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;

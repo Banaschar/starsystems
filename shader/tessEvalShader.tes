@@ -1,0 +1,40 @@
+#version 410 core
+
+layout (triangles, equal_spacing, ccw) in;
+in vec3 wPos_tEval_in[];
+in vec3 normal_tEval_in[];
+
+out vec3 wPos_frag_in;
+out vec3 normal_frag_in;
+
+uniform mat4 cameraMatrix;
+uniform mat4 projectionMatrix;
+uniform float frameTime;
+
+// gl_TessCoord is location within the patch
+// barycentric for triangles, UV for quads
+#define M_PI 3.141592653589793238
+const float amplitude_ = 0.7;
+const float wavelength_ = 5.0;
+const float waveSpeed_ = 1.4;
+
+vec3 interpolate3(vec3 p0, vec3 p1, vec3 p2) {
+    return vec3(gl_TessCoord.x) * p0 + vec3(gl_TessCoord.y) * p1 + vec3(gl_TessCoord.z) * p2;
+}
+
+void main() {
+    vec3 pos = interpolate3(wPos_tEval_in[0], wPos_tEval_in[1], wPos_tEval_in[2]);
+    vec3 normal = interpolate3(normal_tEval_in[0], normal_tEval_in[1], normal_tEval_in[2]);
+    normal = normalize(normal);
+
+    float wl = 2 * M_PI / wavelength_;
+    float f = sin(wl * (pos.x - waveSpeed_ * frameTime));
+    pos.y = amplitude_ * f;
+
+    vec3 tangent = normalize(vec3(1, wl * amplitude_ * cos(f), 0));
+    normal = vec3(-tangent.y, tangent.x, 0);
+
+    wPos_frag_in = pos;
+    normal_frag_in = normal;
+    gl_Position = projectionMatrix * cameraMatrix * vec4(pos, 1.0);
+}
