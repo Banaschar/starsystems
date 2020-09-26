@@ -226,6 +226,10 @@ void Renderer::renderScene(DrawableList &lights, DrawableList &terrain, Drawable
         skyRenderer_->render(sky, game, clipPlane); // render skybox
 }
 
+/*
+ * TODO: Should call shader->resetTextureCount() after each mesh is drawn if every mesh has it's own textures.
+ * How likely is that? 
+ */
 void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, glm::vec4 clipPlane) {
     if (!drawables.empty() && shader) {
         shader->use();

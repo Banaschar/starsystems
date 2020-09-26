@@ -1,4 +1,5 @@
 #include <iostream>
+#include <glm/gtx/string_cast.hpp>
 
 #include "engine.hpp"
 #include "utils/textureloader.hpp"
@@ -208,10 +209,10 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
-        //new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
+        new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
         //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
         //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", nullptr, nullptr, "shader/debugNormalVector.gs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb),
-        new Shader("shader/tessVertexShader.vs", "shader/tessFragmentShader.fs", "shader/tessControlShader.tcs", "shader/tessEvalShader.tes", nullptr, ShaderType::SHADER_TYPE_DEFAULT, tessShaderCb),
+        //new Shader("shader/tessVertexShader.vs", "shader/tessFragmentShader.fs", "shader/tessControlShader.tcs", "shader/tessEvalShader.tes", nullptr, ShaderType::SHADER_TYPE_DEFAULT, tessShaderCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
 
@@ -226,28 +227,65 @@ Scene *createPlane(Engine *engine) {
     sun->addTexture(sunT);
     
 
-    glm::vec3 camPos = glm::vec3(0, 20, -20);
-    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
+    //glm::vec3 camPos = glm::vec3(0, 20, -20);
+    glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
 
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
-    PerlinNoise pNoise = PerlinNoise(6, 20.0f, 0.45f, 0);
+    PerlinNoise pNoise = PerlinNoise(6, 15.0f, 0.3f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
-    //game->addTerrainManager(terr);
+    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
+    game->addTerrainManager(terr);
     
-    TerrainTile *t = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    game->addTerrain(t);
 
     // Random Entity Test
-    //Drawable *plane = DrawableFactory::createPrimitive(PrimitiveType::QUAD, ShaderType::SHADER_TYPE_DEFAULT);
-    Drawable *plane = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_DEFAULT);
-    plane->setMeshDrawMode(MeshDrawMode::DRAW_MODE_TESSELLATION);
-    //glm::vec3 scaleP = glm::vec3(30,1,30);
-    //plane->transform(&scaleP, NULL, NULL);
-    game->addEntity(plane);
+    /*
+    Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
+    glm::vec3 posC = glm::vec3(-3, 0, -3);
+    glm::vec3 scaleC = glm::vec3(0.5,0.5,0.5);
+    cube->transform(&scaleC, &posC, NULL);
+    game->addEntity(cube);
+    */
+    //cube->addTexture(TextureLoader::loadTextureFromFile("assets/waternormals.jpg", "texture_normal"));
+
+    // Sphere Segment
+    /*
+    terrainGen->setSphereRadius(60);
+    terrainGen->setSphereOrigin(glm::vec3(0,0,0));
+    TerrainTile *t = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, glm::vec3(0,1,0), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t2 = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, glm::vec3(0,-1,0), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t3 = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, glm::vec3(1,0,0), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t4 = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, glm::vec3(-1,0,0), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t5 = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, glm::vec3(0,0,1), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t6 = new TerrainTile(terrainGen, 120, glm::vec3(0,0,0), 1, glm::vec3(0,0,-1), GenerationType::SPHERE, ShaderType::SHADER_TYPE_TERRAIN);
+    game->addTerrain(t);
+    game->addTerrain(t2);
+    game->addTerrain(t3);
+    game->addTerrain(t4);
+    game->addTerrain(t5);
+    game->addTerrain(t6);
+    */
+    
+    
+    
+    
+    // Plane
+    /*
+    TerrainTile *t = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t2 = new TerrainTile(terrainGen, 60, glm::vec3(0,0,60), 2, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t3 = new TerrainTile(terrainGen, 60, glm::vec3(0,0,120), 4, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    TerrainTile *t4 = new TerrainTile(terrainGen, 60, glm::vec3(0,0,180), 6, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    game->addTerrain(t);
+    game->addTerrain(t2);
+    game->addTerrain(t3);
+    game->addTerrain(t4);
+    */
+    //game->addTerrain(t4);
+    //Drawable *planeWater = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_DEFAULT);
+    //planeWater->setMeshDrawMode(MeshDrawMode::DRAW_MODE_TESSELLATION);
+    //game->addEntity(planeWater);
     
     // SKYBOX
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);

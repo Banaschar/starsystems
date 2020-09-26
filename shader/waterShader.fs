@@ -104,8 +104,9 @@ vec4 reflectRefract() {
 
     // Normal mapping: get normals from normalMap and put between -1,1
     vec4 normalColor = texture(texture_normal, distortionTexCoords);
-    vec3 normal = vec3(normalColor.r * 2.0 - 1.0, normalColor.b, normalColor.g * 2.0 - 1.0); // remove normalColor.b*3.0 for original effect
-    normal = normalize(normal);
+    vec3 normalFromMap = vec3(normalColor.r * 2.0 - 1.0, normalColor.b, normalColor.g * 2.0 - 1.0); // remove normalColor.b*3.0 for original effect
+    normalFromMap = normalize(normalFromMap);
+    //vec3 combinedNormal = normalize(normal + normalFromMap); //--> !!! Required for water on a sphere. And on waves
 
     // Fresnel effect
     vec3 toCameraVectorNorm = normalize(cameraPos - fragPos_worldspace);

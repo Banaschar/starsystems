@@ -406,21 +406,6 @@ Mesh *TerrainGenerator::generateMesh(glm::vec3 &pos, int dimension, int lod, boo
     return new Mesh(vertices, indices);
 }
 
-
-struct EdgeConnectionData {
-    int vertexIndex;
-    int mainVertexAindex;
-    int mainVertexBindex;
-    float dstPercentAtoB;
-
-    void addData(int vI, int aI, int bI, float dst) {
-        vertexIndex = vI;
-        mainVertexAindex = aI;
-        mainVertexBindex = bI;
-        dstPercentAtoB = dst;
-    }
-};
-
 struct MeshData {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
@@ -430,24 +415,24 @@ struct MeshData {
     int outOfMeshTriangleIndex = 0;
     int triangleIndex = 0;
 
-    std::vector<EdgeConnectionData> edgeConnectionVertices;
-    int edgeConnectionIndex = 0;
-
     MeshData(int numVertsPerLine, int skipIncrement) {
         int numMeshEdgeVertices = (numVertsPerLine - 2) * 4 - 4;
-        int numEdgeConnectionVertices = (skipIncrement - 1) * (numVertsPerLine - 5) / skipIncrement * 4;
-        int numMainVerticesPerLine = (numVertsPerLine - 5) / skipIncrement + 1;
+        int numMainVerticesPerLine = ((numVertsPerLine - 3) / skipIncrement + 1) - 2;
         int numMainVertices = numMainVerticesPerLine * numMainVerticesPerLine;
 
-        vertices.resize(numMainVertices + numMeshEdgeVertices + numEdgeConnectionVertices);
-        edgeConnectionVertices.resize(numEdgeConnectionVertices);
+        vertices.resize(numMainVertices + numMeshEdgeVertices);
 
-        int numMeshEdgeTriangles = 8 * (numVertsPerLine - 4);
+        int numMeshEdgeTriangles;
+        if (skipIncrement != 1) {
+            int numQuadsPerLine = (numVertsPerLine - 3) / skipIncrement;
+            numMeshEdgeTriangles = (numQuadsPerLine * 4 - 4 - 4) * (skipIncrement + 1) + 4 * 2 * skipIncrement;
+        } else
+            numMeshEdgeTriangles = 8 * (numVertsPerLine - 4);
         int numMainTriangles = (numMainVerticesPerLine - 1) * (numMainVerticesPerLine - 1) * 2;
         indices.resize((numMeshEdgeTriangles + numMainTriangles) * 3);
 
         outOfMeshVertices.resize(numVertsPerLine * 4 - 4);
-        outOfMeshTriangles.resize(24 * (numVertsPerLine - 2));
+        outOfMeshTriangles.resize(3 * (4 * (2 * (numVertsPerLine - 1)) - 8));
     }
 
     void addVertex(glm::vec3 pos, glm::vec2 uv, int vertexIndex) {
@@ -471,10 +456,6 @@ struct MeshData {
             indices[triangleIndex + 2] = c;
             triangleIndex += 3;
         }
-    }
-
-    void addEdgeConnectionVertex(int vertexIndex, int indexA, int indexB, float dst) {
-        edgeConnectionVertices[edgeConnectionIndex++].addData(vertexIndex, indexA, indexB, dst);
     }
 
     glm::vec3 calculateNormalFromIndices(int index0, int index1, int index2) {
@@ -524,15 +505,6 @@ struct MeshData {
         for (int i = 0; i < vertices.size(); ++i) {
             vertices[i].normal = glm::normalize(vertices[i].normal);
         }
-
-        calculateEdgeConnectionNormals();
-    }
-
-    void calculateEdgeConnectionNormals() {
-        for (EdgeConnectionData &data : edgeConnectionVertices) {
-            vertices[data.vertexIndex].normal = glm::normalize(vertices[data.mainVertexAindex].normal * (1 - data.dstPercentAtoB) +
-                                                    vertices[data.mainVertexBindex].normal * data.dstPercentAtoB);
-        }
     }
 };
 
@@ -543,15 +515,15 @@ struct MeshData {
 glm::vec3 TerrainGenerator::getVertexPosition(glm::vec3 &axis, int x, int y, bool isFlat, float height) {
     glm::vec3 vertPos;
     if (axis.x) {
-        vertPos = glm::vec3(axis.x * sphereRadius_, y, x);
+        vertPos = glm::vec3(sphereOrigin_.x + axis.x * sphereRadius_, y, x);
     } else if (axis.y) {
-        vertPos = glm::vec3(x, axis.y * sphereRadius_, y);
+        vertPos = glm::vec3(x, sphereOrigin_.y + axis.y * sphereRadius_, y);
     } else {
-        vertPos = glm::vec3(x, y, axis.z * sphereRadius_);
+        vertPos = glm::vec3(x, y, sphereOrigin_.z + axis.z * sphereRadius_);
     }
 
     if (sphereRadius_) {
-        // SHOULD USE THE CUBESIDE POSITION AS NOISE INPUTS -> Easier for biome calculation? AND faster calc
+        // SHOULD USE THE CUBESIDE POSITION AS NOISE INPUTS -> Easier for biome calculation? AND faster calc. BUT HORRIBLE SEAMS AT CUBE SIDE BORDERS
         vertPos = sphereOrigin_ + (float)sphereRadius_ * glm::normalize(vertPos - sphereOrigin_);
         if (!height && !isFlat)
             height = pNoise_.getNoise3d(vertPos.x, vertPos.y, vertPos.z); 
@@ -570,11 +542,15 @@ glm::vec3 TerrainGenerator::getVertexPosition(glm::vec3 &axis, int x, int y, boo
  *
  */
 Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, glm::vec3 &axis, bool isFlat) {
-    int half = dimension / 2;
-    int numVertsPerLine = dimension + 5; // dimension + 5 if dimension is even. But should be uneven, e.g. originalDimension + 1
+    if (dimension % 60 != 0) {
+        fprintf(stdout, "[TERRAINGENERATOR::generateMesh] Error: Terrain Dimension has to be divisible by 60\n");
+        return nullptr;
+    }
+
+    int half = (dimension / 2) + 1;
+    int numVertsPerLine = dimension + 3;
     int skipIncrement = lod;
 
-    //glm::vec2 topLeft = glm::vec2(-1, 1) * ((numVertsPerLine - 3) * scale) / 2.0f; // with scale = 2.5f???????
     int offsetX, offsetY;
     if (axis.x) {
         offsetX = pos.z;
@@ -603,69 +579,103 @@ Mesh *TerrainGenerator::generateMeshNew(glm::vec3 &pos, int dimension, int lod, 
     for (int y = 0; y < numVertsPerLine; ++y) {
         for (int x = 0; x < numVertsPerLine; ++x) {
             bool isOutOfMeshVertex = y == 0 || y == numVertsPerLine - 1 || x == 0 || x == numVertsPerLine - 1;
-            bool isSkippedVertex = x > 2 && x < numVertsPerLine - 3 && y > 2 && y < numVertsPerLine - 3 && ((x - 2) % skipIncrement != 0 || (y - 2) % skipIncrement != 0);
+            bool isSkippedVertex = x > 1 && x < numVertsPerLine - 2 && y > 1 && y < numVertsPerLine - 2 && ((x - 1) % skipIncrement != 0 || (y - 1) % skipIncrement != 0);
 
             if (isOutOfMeshVertex)
                 vertexIndicesMap[x][y] = outOfMeshVertexIndex--;
             else if (!isSkippedVertex)
                 vertexIndicesMap[x][y] = meshVertexIndex++;
+            else
+                vertexIndicesMap[x][y] = 200000000;
         }
     }
 
     for (int y = 0; y < numVertsPerLine; ++y) {
         for (int x = 0; x < numVertsPerLine; ++x) {
-            bool isSkippedVertex = x > 2 && x < numVertsPerLine - 3 && y > 2 && y < numVertsPerLine - 3 && ((x - 2) % skipIncrement != 0 || (y - 2) % skipIncrement != 0);
+            bool isSkippedVertex = x > 1 && x < numVertsPerLine - 2 && y > 1 && y < numVertsPerLine - 2 && ((x - 1) % skipIncrement != 0 || (y - 1) % skipIncrement != 0);
 
             if (!isSkippedVertex) {
                 bool isOutOfMeshVertex = y == 0 || y == numVertsPerLine - 1 || x == 0 || x == numVertsPerLine - 1;
                 bool isMeshEdgeVertex = !isOutOfMeshVertex && (y == 1 || y == numVertsPerLine - 2 || x == 1 || x == numVertsPerLine - 2);
-                bool isMainVertex = !isOutOfMeshVertex && !isMeshEdgeVertex && (x - 2) % skipIncrement == 0 && (y - 2) % skipIncrement == 0;
-                bool isEdgeConnectionVertex = !isOutOfMeshVertex && !isMeshEdgeVertex && !isMainVertex && (y == 2 || y == numVertsPerLine - 3 || x == 2 || x == numVertsPerLine - 3);
+                bool isMainVertex = !isOutOfMeshVertex && !isMeshEdgeVertex && (x - 1) % skipIncrement == 0 && (y - 1) % skipIncrement == 0;
 
                 int vertexIndex = vertexIndicesMap[x][y];
                 float height = 0.0;
-
-                if (isEdgeConnectionVertex) { // These vertices have to be at a height that lies on a line between the two neighbouring mainVertices
-                    bool isVertical = x == 2 || x == numVertsPerLine - 3;
-                    int dstToMainVertexA = ((isVertical) ? y - 2 : x - 2) % skipIncrement;
-                    int dstToMainVertexB = skipIncrement - dstToMainVertexA;
-                    float dstPercent = dstToMainVertexA / (float) skipIncrement;
-                    int indexA = vertexIndicesMap[isVertical ? x : x - dstToMainVertexA][isVertical ? y - dstToMainVertexA : y];
-                    int indexB = vertexIndicesMap[isVertical ? x : x + dstToMainVertexB][isVertical ? y + dstToMainVertexB : y];
-                    glm::vec3 posA = meshData.vertices[indexA].position;
-                    glm::vec3 posB = getVertexPosition(axis, (isVertical ? x : x + dstToMainVertexB) + offsetX - half, (isVertical ? y + dstToMainVertexB : y) + offsetY - half, isFlat, height);
-
-                    if (sphereRadius_)
-                        height = (1 - dstPercent) * (glm::distance(posA, sphereOrigin_) - sphereRadius_) + dstPercent * (glm::distance(posB, sphereOrigin_) - sphereRadius_);
-                    else
-                        height = (1 - dstPercent) * posA.y + dstPercent * posB.y;
-
-                    meshData.addEdgeConnectionVertex(vertexIndex, indexA, indexB, dstPercent);
-                }
                 
-                //Generate position
                 glm::vec3 sPos = getVertexPosition(axis, x + offsetX - half, y + offsetY - half, isFlat, height);
-                glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 3);
+                glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 1);
                 meshData.addVertex(sPos, uv, vertexIndex);
+                //if ((y > numVertsPerLine - 3 && x > numVertsPerLine - 3) || (y < 2 && x < 2))
+                    //fprintf(stdout, "Chunk: %s, Index(y,x): (%i,%i), VertIndex: %i, VertPos: %s\n", glm::to_string(pos).c_str(), y,x, vertexIndex, glm::to_string(sPos).c_str());
 
-                bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1 && (!isEdgeConnectionVertex || (x != 2 && y != 2));
+                bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1;
 
                 if (createTriangle) {
-                    int currentIncrement = (isMainVertex && x != numVertsPerLine - 3 && y != numVertsPerLine - 3) ? skipIncrement : 1;
 
-                    int a = vertexIndicesMap[x][y];
-                    int b = vertexIndicesMap[x + currentIncrement][y];
-                    int c = vertexIndicesMap[x][y + currentIncrement];
-                    int d = vertexIndicesMap[x + currentIncrement][y + currentIncrement];
-                    // TODO: Handle the inverse case (FOR THE PLANETS OTHER SIDE)
-                    meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
-                    meshData.addTriangle(a, inverted ? b : d, inverted ? d : b);
+                    if (skipIncrement != 1 && isMeshEdgeVertex && !(x == numVertsPerLine - 2 && y == numVertsPerLine - 2)) { // bottom right corner only draws the normal helper triangles
+                        bool isCorner = x == 1 && y == 1 || x == numVertsPerLine - 2 && y == 1 || x == 1 && y == numVertsPerLine - 2 || x == numVertsPerLine - 2 && y == numVertsPerLine - 2;
+                        bool isVertical = x == 1 || x == numVertsPerLine - 2;
+                        bool isEdgeMainVertex = (isVertical ? y - 1 : x - 1) % skipIncrement == 0;
+                        int lastMainVert = (isVertical ? y : x) - ((isVertical ? y - 1 : x - 1) % skipIncrement);
+                        int nextMainVert = lastMainVert + skipIncrement;
+                        bool nextMainIsCorner = nextMainVert == numVertsPerLine - 2;
+
+                        int a = vertexIndicesMap[x][y];
+                        int b, c, d;
+
+                        if (x != numVertsPerLine - 2 && y != numVertsPerLine - 2) {
+                            if (!nextMainIsCorner) {
+                                c = isVertical ? vertexIndicesMap[x][y + 1] : vertexIndicesMap[nextMainVert][y + skipIncrement];
+                                d = isVertical ? vertexIndicesMap[x + skipIncrement][nextMainVert] : vertexIndicesMap[x + 1][y];
+
+                                meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                                if (isEdgeMainVertex) {
+                                    b = isVertical ? vertexIndicesMap[x + (isCorner ? 1 : skipIncrement)][y] : vertexIndicesMap[x][y + skipIncrement];
+                                    isVertical ? meshData.addTriangle(a, inverted ? b : d, inverted ? d : b) : meshData.addTriangle(a, inverted ? c : b, inverted ? b : c);
+                                }
+                            } else {
+                                c = isVertical ? vertexIndicesMap[x][y + 1] : vertexIndicesMap[lastMainVert][y + skipIncrement];
+                                d = isVertical ? vertexIndicesMap[x + skipIncrement][lastMainVert] : vertexIndicesMap[x + 1][y];
+                                meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                            }
+                        } else {
+                            if (x == 1) { // Edge case: bottom left corner is treated as horizontal
+                                isVertical = false;
+                                nextMainVert = x + skipIncrement;
+                            }
+                            if (!nextMainIsCorner) {
+                                c = isVertical ? vertexIndicesMap[x - skipIncrement][nextMainVert] : vertexIndicesMap[x + 1][y];
+                                d = isVertical ? vertexIndicesMap[x][y + 1] : vertexIndicesMap[nextMainVert][y - skipIncrement];
+                                meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                                if (isEdgeMainVertex && !isCorner) {
+                                    b = isVertical ? vertexIndicesMap[x - skipIncrement][y] : vertexIndicesMap[x][y - skipIncrement];
+                                    isVertical ? meshData.addTriangle(a, inverted ? c : b, inverted ? b : c) : meshData.addTriangle(a, inverted ? b : d, inverted ? d : b);
+                                }
+                            } else {
+                                c = isVertical ? vertexIndicesMap[x - skipIncrement][lastMainVert] : vertexIndicesMap[x + 1][y];
+                                d = isVertical ? vertexIndicesMap[x][y + 1] : vertexIndicesMap[lastMainVert][y - skipIncrement];
+                                meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                            }
+                        }
+                    }
+                    bool isEdgeAndCreatesOutOfMeshTriangle = x == numVertsPerLine - 2 || y == numVertsPerLine - 2;
+                    bool isMainAndCreatesEdge = x == numVertsPerLine - 2 - skipIncrement || y == numVertsPerLine - 2 - skipIncrement;
+
+                    if (skipIncrement == 1 || isOutOfMeshVertex || (isMainVertex && !isMainAndCreatesEdge) || isEdgeAndCreatesOutOfMeshTriangle) {
+                        int currentIncrement = (isMainVertex && x != numVertsPerLine - 2 && y != numVertsPerLine - 2) ? skipIncrement : 1;
+                        int a = vertexIndicesMap[x][y];
+                        int b = vertexIndicesMap[x + currentIncrement][y];
+                        int c = vertexIndicesMap[x][y + currentIncrement];
+                        int d = vertexIndicesMap[x + currentIncrement][y + currentIncrement];
+                        
+                        meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                        meshData.addTriangle(a, inverted ? b : d, inverted ? d : b);
+                    }
                 }
             }
         }
     }
     meshData.calculateNormals();
-
     return new Mesh(meshData.vertices, meshData.indices);
 }
 
@@ -690,6 +700,18 @@ M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (
 14x e M c c c M c c c M  c  c  c  M  e  x
 15x e e e e e e e e e e  e  e  e  e  e  x
 16x x x x x x x x x x x  x  x  x  x  x  x
+
+  0 1 2 3 4 5 6 7 8 9
+0 e e e e e e e e e e
+1
+2
+3
+4
+5
+6
+7
+8
+9
 */
 
 /*

@@ -28,7 +28,7 @@ vec4 calculateLighting() {
     vec3 viewDirection = normalize(cameraPos - wPos_frag_in);
     vec3 reflectDirection = reflect(-lightDir, normal_frag_in);
     float spec = pow(max(dot(viewDirection, reflectDirection), 0.0), 32.0);
-    vec3 specular = 0.9 * spec * light.specular;
+    vec3 specular = 0.5 * spec * light.specular;
 
     return vec4(light.ambient + diffuse + specular, 1.0);
 }
