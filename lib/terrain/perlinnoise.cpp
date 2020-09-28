@@ -12,6 +12,8 @@ PerlinNoise::PerlinNoise(int octaves, float amplitude, float roughness, int heig
         p = perm_;
 
     heightOffset_ = heightOffsetFactor == 0 ? 0 : (amplitude_ / heightOffsetFactor);
+    lowerBound_ = 0 - amplitude_ + heightOffset_;
+    upperBound_ = amplitude_ + heightOffset_;
 }
 
 /*
@@ -45,6 +47,14 @@ float PerlinNoise::getNoise3d(int x, int y, int z) {
 
 float PerlinNoise::getAmplitude() {
     return amplitude_;
+}
+
+float PerlinNoise::getLowerBound() {
+    return lowerBound_;
+}
+
+float PerlinNoise::getUpperBound() {
+    return upperBound_;
 }
 
 std::vector<int> PerlinNoise::generateRandomPerm() {

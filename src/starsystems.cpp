@@ -123,8 +123,17 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void flatColorCb(Shader *shader, Drawable *drawable, Game *game) {
+    Light *light = dynamic_cast<Light *>(game->getSun());
+    shader->uniform("sunPos", light->getPosition());
+
     shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
                                drawable->getModelMatrix());
+    shader->uniform("VP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix());
+    shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("lowerBound", -10.0f);
+    shader->uniform("upperBound", 20.0f);
+    shader->uniform("gridDimension", 64.0f);
+    shader->uniform("gridOrigin", glm::vec3(0,0,0));
 }
 
 void instanceShaderCb(Shader *shader, Drawable *drawable, Game *game) {
@@ -209,7 +218,7 @@ Scene *createPlane(Engine *engine) {
         new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShader.fs", ShaderType::SHADER_TYPE_WATER, waterShaderCb),
         new Shader("shader/waterShader.vs", "shader/waterShaderPerformance.fs", ShaderType::SHADER_TYPE_WATER_PERFORMANCE, waterShaderCb),
-        new Shader("shader/flatColor.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
+        new Shader("shader/testVertexTexture.vs", "shader/flatColor.fs", ShaderType::SHADER_TYPE_DEFAULT, flatColorCb),
         //new Shader("shader/screenSpace.vs", "shader/postProcessAtmo.fs", ShaderType::SHADER_TYPE_POST_PROCESSOR, postProcessorAtmoCb),
         //new Shader("shader/debugNormalVector.vs", "shader/debugNormalVector.fs", nullptr, nullptr, "shader/debugNormalVector.gs", ShaderType::SHADER_TYPE_DEBUG, debugShaderCb),
         //new Shader("shader/tessVertexShader.vs", "shader/tessFragmentShader.fs", "shader/tessControlShader.tcs", "shader/tessEvalShader.tes", nullptr, ShaderType::SHADER_TYPE_DEFAULT, tessShaderCb),
@@ -227,8 +236,8 @@ Scene *createPlane(Engine *engine) {
     sun->addTexture(sunT);
     
 
-    //glm::vec3 camPos = glm::vec3(0, 20, -20);
-    glm::vec3 camPos = glm::vec3(0, 700, -1300);
+    glm::vec3 camPos = glm::vec3(0, 20, -20);
+    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
     View view = View(engine->getWindow(), camPos);
     Game *game = new Game(view);
     game->addSun(sun);
@@ -236,8 +245,8 @@ Scene *createPlane(Engine *engine) {
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
     PerlinNoise pNoise = PerlinNoise(6, 15.0f, 0.3f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
-    game->addTerrainManager(terr);
+    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
+    //game->addTerrainManager(terr);
     
 
     // Random Entity Test
@@ -267,9 +276,28 @@ Scene *createPlane(Engine *engine) {
     game->addTerrain(t5);
     game->addTerrain(t6);
     */
+    Drawable *t = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
+    TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+    Drawable *t1 = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
+    glm::vec3 transP = glm::vec3(31, 0, 0);
+    t1->transform(NULL, &transP, NULL);
+    transP = glm::vec3(0,0,32);
+    terr1->transform(NULL, &transP, NULL);
     
-    
-    
+    HeightMap *m = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), 64, 1);
+    Texture hmap;
+    Texture nMap;
+    hmap.id = m->getHeightTexture();
+    hmap.type = "texture_heightMap";
+    nMap.id = m->getNormalTexture();
+    nMap.type = "texture_normalMap";
+    t->addTexture(hmap);
+    //t->addTexture(nMap);
+    t1->addTexture(hmap);
+    //t1->addTexture(nMap);
+    game->addTerrain(terr1);
+    game->addEntity(t);
+    game->addEntity(t1);
     
     // Plane
     /*
@@ -305,7 +333,7 @@ Scene *createPlane(Engine *engine) {
     view.getWindowSize(&width, &height);
     Renderer *renderer = new Renderer(shaders, width, height);
     //DEBUG
-    //renderer->setPolygonRenderModeWireFrame(true);
+    renderer->setPolygonRenderModeWireFrame(true);
     Texture tex2;
     tex2.id = renderer->DEBUG_getPostProcessingTexture();
     tex2.type = "texture_gui";

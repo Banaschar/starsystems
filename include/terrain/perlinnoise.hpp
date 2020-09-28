@@ -21,11 +21,15 @@ class PerlinNoise {
     float getNoise2d(int x, int y);
     float getNoise3d(int x, int y, int z);
     float getAmplitude();
+    float getLowerBound();
+    float getUpperBound();
 
   private:
     int octaves_;
     int heightOffset_;
     float amplitude_;
+    float lowerBound_;
+    float upperBound_;
     float roughness_;
     unsigned int seed_;
 

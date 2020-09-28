@@ -6,6 +6,11 @@
 
 struct GLFWwindow;
 
+struct Plane {
+    glm::vec3 point;
+    glm::vec3 normal;
+};
+
 class View {
   public:
     View(GLFWwindow *window, glm::vec3 camPos);
@@ -36,6 +41,7 @@ class View {
     // std::function<void(GLFWwindow*, double, double)> sCb;
     void (*mCb)(GLFWwindow *, double, double);
     void (*sCb)(GLFWwindow *, double, double);
+    bool isInsideFrustum(glm::vec3 &max, glm::vec3 &min);
 
   private:
     void rotateCamera();
@@ -53,7 +59,7 @@ class View {
     glm::vec3 camRight_;
     bool autoRotate_;
     bool firstMouseMove_ = true;
-    bool flagUpdate_ = true;
+    bool flagUpdate_ = false;
     bool constrainPitch_;
     double lastX_;
     double lastY_;
@@ -65,7 +71,16 @@ class View {
     float mouseSensitivity_;
     float yaw_;
     float pitch_;
-    float nearPlane_;
-    float farPlane_;
+    float nearPlaneDistance_;
+    float farPlaneDistance_;
+    Plane nearPlane_;
+    Plane farPlane_;
+    Plane leftPlane_;
+    Plane rightPlane_;
+    Plane topPlane_;
+    Plane bottomPlane_;
+    std::vector<Plane *> frustumPlanes_;
+
+    bool isInsidePlane(Plane *plane, glm::vec3 &max, glm::vec3 &min);
 };
 #endif

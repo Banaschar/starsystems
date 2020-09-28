@@ -31,7 +31,7 @@ Mesh *DrawableFactory::createPrimitiveMesh(PrimitiveType prim, int size) {
 
 Drawable *DrawableFactory::createPrimitive(PrimitiveType prim, ShaderType type, int size) {
     Mesh *mesh;
-    if (!(mesh = createPrimitiveMesh(prim)))
+    if (!(mesh = createPrimitiveMesh(prim, size)))
         return NULL;
     else
         return new Drawable(mesh, type);

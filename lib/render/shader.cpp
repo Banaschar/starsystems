@@ -173,11 +173,8 @@ void Shader::handleMeshTextures(std::vector<Texture> &textures) {
         else if (type == "texture_cubemap")
             number = std::to_string(cubeNr++);
         else {
-            std::cout << "Texture with unknown type: " << type << std::endl;
             number = std::to_string(def++);
-            break;
         }
-
         bindTexture((type + number).c_str(), tex.id);
     }
 }

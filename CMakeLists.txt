@@ -36,6 +36,8 @@ set(ENGINE_LIBRARY_SOURCE_FILES
     lib/terrain/colorgenerator.cpp
     lib/terrain/perlinnoise.cpp
     lib/terrain/terrainmanager.cpp
+    lib/terrain/heightmap.cpp
+    lib/terrain/terrainmeshdata.cpp
     lib/utils/textureloader.cpp
     lib/utils/assetloader.cpp
     )
@@ -79,6 +81,7 @@ target_include_directories(engine
         deps/stb_image/
         lib/drawable/
         lib/render/
+        lib/terrain/
         lib/
         )
 

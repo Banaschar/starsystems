@@ -10,9 +10,11 @@ Mesh *Primitives::createPlane(int dimension) {
     for (int i = 0; i < dimension; i++) {
         for (int j = 0; j < dimension; j++) {
             Vertex &tmp = vertices[i * dimension + j];
-            tmp.position.x = j - half;
+            tmp.position.x = j;
             tmp.position.y = 0;
-            tmp.position.z = i - half;
+            tmp.position.z = i;
+            tmp.textureCoords.x = (float)j / ((float)dimension - 1);
+            tmp.textureCoords.y = (float)i / ((float)dimension - 1);
         }
     }
 

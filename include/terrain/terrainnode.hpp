@@ -2,6 +2,7 @@
 #define TERRAINNODE_H
 
 #include "terraintile.hpp"
+#include "heightmap.hpp"
 #include <array>
 
 /*
@@ -42,9 +43,31 @@ class TerrainNode {
   private:
     int index_ = 0;
     bool childrenScheduled_ = false;
-    TerrainNode *parent_ = NULL;
-    std::array<TerrainNode *, 4> children_{NULL};
+    TerrainNode *parent_ = nullptr;
+    std::array<TerrainNode *, 4> children_{nullptr};
     TerrainTile *terrain_;
     TerrainTile *water_;
+};
+
+class View;
+
+class TerrainNode_ {
+public:
+    TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec3 pos);
+    ~TerrainNode_();
+    bool lodSelect(std::vector<int> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist);
+    float getNodeMaxHeight();
+    float getNodeMinHeight();
+    float currentLodRange_;
+private:
+    glm::vec3 nodePos_;
+    int nodeDimension_;
+    float nodeMaxHeight_ = 0;
+    float nodeMinHeight_ = 0;
+    int heightMapIndex_;
+    std::array<TerrainNode_ *, 4> children_{nullptr};
+    void createChildren(HeightMap *heightMap, int dim, int lod);
+    bool boundingBoxIntersectsSphere(float radius, glm::vec3 position);
+    bool inFrustum(View *view);
 };
 #endif

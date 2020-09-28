@@ -21,7 +21,7 @@ void main()
     //normal = normalMatrix * vertexNormal;
     normal = vertexNormal;
     vec4 modelPos = modelMatrix * vec4(vertexPosition, 1.0);
-    fragPos_worldspace = vertexPosition;//modelPos.xyz;
+    fragPos_worldspace = modelPos.xyz; // wtf, was vertexPosition
     texCoords = textureCoords * tiling; // Tile texture over terrain
     gl_ClipDistance[0] = dot(modelPos, clipPlane); // water render clipping
     gl_Position = MVP * vec4(vertexPosition, 1.0);

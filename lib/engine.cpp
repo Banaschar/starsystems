@@ -101,9 +101,10 @@ void Engine::render_() {
         lastFrame = g_currentFrameTime;
         nbFrames++;
         if (g_currentFrameTime - lastTime >= 1.0) {
-            fprintf(stdout, "%f ms/frame -> %i FPS. Triangles: %u\n", 1000.0 / float(nbFrames), nbFrames, g_triangleCount);
+            fprintf(stdout, "%f ms/frame -> %i FPS. Triangles per Frame: %u\n", 1000.0 / float(nbFrames), nbFrames, g_triangleCount/nbFrames);
             nbFrames = 0;
             lastTime += 1.0;
+            g_triangleCount = 0;
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

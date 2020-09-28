@@ -8,6 +8,7 @@
 
 #define DEFAULT_NEAR_PLANE 1.1f
 #define DEFAULT_FAR_PLANE 10000.0f
+const float PI = 3.14159265359;
 const float YAW = 90.0f;
 const float PITCH = -30.0f; //-30.0f;
 const float SPEED = 20.0f;
@@ -35,10 +36,21 @@ View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float yaw, fl
     camRotateVal_ = 0.0;
     autoRotate_ = AUTO_ROTATE;
     constrainPitch_ = CONSTRAIN_PITCH;
-    nearPlane_ = DEFAULT_NEAR_PLANE;
-    farPlane_ = DEFAULT_FAR_PLANE;
+    nearPlaneDistance_ = DEFAULT_NEAR_PLANE;
+    farPlaneDistance_ = DEFAULT_FAR_PLANE;
 
-    update();
+    updateForce();
+
+    /* Setup frustum planes */
+    float angle = PI / 2.0f + fov_ / 2.0f + 0.1f;
+    farPlane_.normal = -camDirection_;
+    nearPlane_.normal = camDirection_;
+    leftPlane_.normal = glm::vec3(glm::rotate(glm::mat4(), angle, camUp_) * glm::vec4(camDirection_, 1.0f));
+    rightPlane_.normal = glm::vec3(glm::rotate(glm::mat4(), -angle, camUp_) * glm::vec4(camDirection_, 1.0f));
+    topPlane_.normal = glm::vec3(glm::rotate(glm::mat4(), angle, camRight_) * glm::vec4(camDirection_, 1.0f));
+    bottomPlane_.normal = glm::vec3(glm::rotate(glm::mat4(), -angle, camRight_) * glm::vec4(camDirection_, 1.0f));
+
+    frustumPlanes_.insert(frustumPlanes_.begin(), {&farPlane_, &nearPlane_, &leftPlane_, &rightPlane_, &topPlane_, &bottomPlane_});
 }
 
 void View::setupInput() {
@@ -83,10 +95,10 @@ glm::vec3 &View::getWorldNormal() {
 }
 
 float View::getNearPlane() {
-    return nearPlane_;
+    return nearPlaneDistance_;
 }
 float View::getFarPlane() {
-    return farPlane_;
+    return farPlaneDistance_;
 }
 
 void View::getWindowSize(int *width, int *height) {
@@ -132,8 +144,21 @@ void View::update_() {
         camUp_ = glm::normalize(glm::cross(camRight_, camDirection_));
 
         projectionMatrix_ =
-            glm::perspective(glm::radians(zoom_), (float)windowWidth_ / (float)windowHeight_, nearPlane_, farPlane_);
+            glm::perspective(glm::radians(zoom_), (float)windowWidth_ / (float)windowHeight_, nearPlaneDistance_, farPlaneDistance_);
         cameraMatrix_ = glm::lookAt(camPosition_, camPosition_ + camDirection_, camUp_);
+
+        /* Update frustum planes */
+        nearPlane_.point = camPosition_ - dir * nearPlaneDistance_;
+        farPlane_.point = camPosition_ - dir * farPlaneDistance_;
+        leftPlane_.point = rightPlane_.point = topPlane_.point = bottomPlane_.point = camPosition_;
+
+        glm::mat3 modMat = glm::mat3(camRight_, camUp_, -camDirection_);
+        farPlane_.normal = -camDirection_;
+        nearPlane_.normal = camDirection_;
+        leftPlane_.normal = modMat * leftPlane_.normal;
+        rightPlane_.normal = modMat * rightPlane_.normal;
+        topPlane_.normal = modMat * topPlane_.normal;
+        bottomPlane_.normal = modMat * bottomPlane_.normal;
 
         flagUpdate_ = false;
     }
@@ -221,4 +246,29 @@ void View::scrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
         zoom_ = fov_;
 
     flagUpdate_ = true;
+}
+
+bool View::isInsidePlane(Plane *plane, glm::vec3 &max, glm::vec3 &min) {
+    glm::vec3 v = min;
+
+    if (plane->normal.x >= 0)
+        v.x = max.x;
+    if (plane->normal.y >= 0)
+        v.y = max.y;
+    if (plane->normal.z >= 0)
+        v.z = max.z;
+
+    float dotP = glm::dot(v - plane->point, plane->normal);
+
+    return dotP >= 0;
+}
+
+/* http://www.lighthouse3d.com/tutorials/view-frustum-culling/ */
+bool View::isInsideFrustum(glm::vec3 &max, glm::vec3 &min) {
+    for (Plane *p : frustumPlanes_) {
+        if (!isInsidePlane(p, max, min))
+            return false;
+    }
+
+    return true;
 }
