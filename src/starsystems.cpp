@@ -123,13 +123,13 @@ void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
 }
 
 void flatColorCb(Shader *shader, Drawable *drawable, Game *game) {
-    Light *light = dynamic_cast<Light *>(game->getSun());
-    shader->uniform("sunPos", light->getPosition());
-
+    shader->uniform("sunPos", game->getSun()->getPosition());
     shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
                                drawable->getModelMatrix());
     shader->uniform("VP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix());
     shader->uniform("modelMatrix", drawable->getModelMatrix());
+    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
+    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
     shader->uniform("lowerBound", -10.0f);
     shader->uniform("upperBound", 20.0f);
     shader->uniform("gridDimension", 64.0f);
@@ -276,28 +276,35 @@ Scene *createPlane(Engine *engine) {
     game->addTerrain(t5);
     game->addTerrain(t6);
     */
-    Drawable *t = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
-    TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    Drawable *t1 = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
+    
+    TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,32), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
+
+    //Drawable *t = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
+    Drawable *t = new TerrainTile(terrainGen, 32, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_DEFAULT);
+    //Drawable *t1 = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
+    Drawable *t1 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_DEFAULT);
     glm::vec3 transP = glm::vec3(31, 0, 0);
     t1->transform(NULL, &transP, NULL);
-    transP = glm::vec3(0,0,32);
-    terr1->transform(NULL, &transP, NULL);
+    //transP = glm::vec3(0,0,32);
+    //terr1->transform(NULL, &transP, NULL);
     
     HeightMap *m = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), 64, 1);
+    
     Texture hmap;
     Texture nMap;
     hmap.id = m->getHeightTexture();
-    hmap.type = "texture_heightMap";
+    hmap.type = "texture_height";
     nMap.id = m->getNormalTexture();
-    nMap.type = "texture_normalMap";
+    nMap.type = "texture_normal";
     t->addTexture(hmap);
-    //t->addTexture(nMap);
+    t->addTexture(nMap);
     t1->addTexture(hmap);
-    //t1->addTexture(nMap);
-    game->addTerrain(terr1);
+    t1->addTexture(nMap);
+    
     game->addEntity(t);
     game->addEntity(t1);
+    
+    game->addTerrain(terr1);
     
     // Plane
     /*

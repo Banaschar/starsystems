@@ -6,21 +6,10 @@
 
 Mesh::Mesh() {}
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices) 
-                        : vertices_(vertices), indices_(indices) {
+Mesh::Mesh(VertexData *vertexData, std::vector<Texture> textures) : vertexData_(vertexData), textures_(textures) {
     drawMode_ = GL_TRIANGLES;
+    vertexData_->optimize();
 }
-
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<Texture> textures, std::vector<unsigned int> indices)
-    : vertices_(vertices), textures_(textures), indices_(indices) {
-    drawMode_ = GL_TRIANGLES;
-}
-/*
-Mesh::Mesh(std::vector<glm::vec2> positions, std::vector<unsigned int> indices) :
-            indices_(indices) {
-    initMesh2d(positions);
-}
-*/
 
 void Mesh::initMesh() {
     if (incomplete_)
@@ -33,61 +22,32 @@ void Mesh::initMesh() {
 
     updateMesh();
 }
-/*
-void Mesh::updateMesh2D(std::vector<glm::vec2d> positions) {
-    glGenVertexArrays(1, &vao_);
-    glGenBuffers(1, &vbo_);
 
-    if (!indices_.empty())
-        glGenBuffers(1, &vbo_);
-
-    glBindVertexArray(vao_);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(Vertex), &vertices_[0], GL_STATIC_DRAW);
-
-    if (!indices_.empty()) {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), &indices_[0], GL_STATIC_DRAW);
-    }
-
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, (void*) 0);
-
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, textureCoords));
-
-}
-*/
-
-/*
- * TODO: Either implement the optimize solution,
- * or simply use a different buffer object for each attribute
- *
- */
 void Mesh::updateMesh() {
     if (incomplete_)
         initMesh();
-    
-    glBindVertexArray(vao_);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(Vertex), &vertices_[0], GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(unsigned int), &indices_[0], GL_STATIC_DRAW);
+    else {
+        glBindVertexArray(vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, vertexData_->sizeOfData() * vertexData_->sizeOfVertexType(), vertexData_->getVertices(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexData_->indices.size() * sizeof(unsigned int), vertexData_->indices.data(), GL_STATIC_DRAW);
 
-    // set vertex attrib pointer
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)0);
 
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
+        if (vertexData_->getNumAttributes() > 1) {
+            glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)vertexData_->getOffset1());
+        }
 
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, textureCoords));
+        if (vertexData_->getNumAttributes() > 2) {
+            glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)vertexData_->getOffset2());
+        }
 
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
-
-    glBindVertexArray(0);
+        glBindVertexArray(0);
+    }
 }
 
 void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
@@ -142,15 +102,6 @@ void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);
 }
 
-void Mesh::addColor(glm::vec4 color) {
-    for (Vertex &vert : vertices_) {
-        vert.color = color;
-    }
-
-    if (!incomplete_)
-        updateMesh();
-}
-
 bool Mesh::incomplete() {
     return incomplete_;
 }
@@ -160,7 +111,7 @@ unsigned int Mesh::getVao() {
 }
 
 unsigned int Mesh::getIndicesSize() {
-    return indices_.size();
+    return vertexData_->indices.size();
 }
 
 unsigned int Mesh::getInstanceSize() {
@@ -175,8 +126,8 @@ std::vector<Texture> &Mesh::getTextures() {
     return textures_;
 }
 
-int Mesh::getTriangleCount() {
-    return indices_.size() / 3;
+unsigned int Mesh::getTriangleCount() {
+    return vertexData_->indices.size() / 3;
 }
 
 int Mesh::getDrawMode() {

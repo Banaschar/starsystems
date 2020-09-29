@@ -1,15 +1,11 @@
 #include "primitives.hpp"
 
 Mesh *Primitives::createPlane(int dimension) {
-    int numVertices = dimension * dimension;
-    int half = dimension / 2;
-    std::vector<Vertex> vertices(numVertices);
-    int numIndices = (dimension - 1) * (dimension - 1) * 2 * 3;
-    std::vector<unsigned int> indices(numIndices);
+    VertexData *vertexData = new VertexData(dimension * dimension, (dimension - 1) * (dimension - 1) * 6);
 
     for (int i = 0; i < dimension; i++) {
         for (int j = 0; j < dimension; j++) {
-            Vertex &tmp = vertices[i * dimension + j];
+            Vertex &tmp = vertexData->vertices[i * dimension + j];
             tmp.position.x = j;
             tmp.position.y = 0;
             tmp.position.z = i;
@@ -21,17 +17,17 @@ Mesh *Primitives::createPlane(int dimension) {
     int cnt = 0;
     for (int row = 0; row < dimension - 1; row++) {
         for (int col = 0; col < dimension - 1; col++) {
-            indices[cnt++] = dimension * row + col;
-            indices[cnt++] = dimension * row + col + dimension;
-            indices[cnt++] = dimension * row + col + dimension + 1;
+            vertexData->indices[cnt++] = dimension * row + col;
+            vertexData->indices[cnt++] = dimension * row + col + dimension;
+            vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
 
-            indices[cnt++] = dimension * row + col;
-            indices[cnt++] = dimension * row + col + dimension + 1;
-            indices[cnt++] = dimension * row + col + 1;
+            vertexData->indices[cnt++] = dimension * row + col;
+            vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
+            vertexData->indices[cnt++] = dimension * row + col + 1;
         }
     }
 
-    return new Mesh(vertices, indices);
+    return new Mesh(vertexData);
 }
 
 Mesh *Primitives::createQuad() {
@@ -40,59 +36,68 @@ Mesh *Primitives::createQuad() {
     std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(0, 1), glm::vec2(1, 0), glm::vec2(1, 1)};
     std::vector<unsigned int> indices = {0, 1, 2, 2, 1, 3};
 
+    VertexData *vertexData = new VertexData(4, 6);
+
     std::vector<glm::vec3> normals = calculateVertexNormalAverages(pos, indices);
 
     for (int i = 0; i < 4; i++) {
-        vertices[i].position = pos[i];
-        vertices[i].normal = normals[i];
-        vertices[i].textureCoords = texCoords[i];
+        vertexData->vertices[i].position = pos[i];
+        vertexData->vertices[i].normal = normals[i];
+        vertexData->vertices[i].textureCoords = texCoords[i];
     }
 
-    return new Mesh(vertices, indices);
+    for (int i = 0; i < 6; ++i) {
+        vertexData->indices[i] = indices[i];
+    }
+
+    return new Mesh(vertexData);
 }
 
 Mesh *Primitives::createQuad2d() {
     std::vector<Vertex> vertices(4);
     std::vector<glm::vec3> pos = {glm::vec3(-1, -1, 0), glm::vec3(1, 1, 0), glm::vec3(-1, 1, 0), glm::vec3(1, -1, 0)};
-    //std::vector<glm::vec3> pos = {glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0.5f, -0.5f, 0.0f)};
     std::vector<glm::vec2> texCoords = {glm::vec2(0, 0), glm::vec2(1, 1), glm::vec2(0, 1), glm::vec2(1, 0)};
-    //std::vector<glm::vec4> colorAsCorners = {glm::vec4(0,0,0,0), glm::vec4(0,0,1280,720), glm::vec4(0,0,1280,0), glm::vec4(0,0,0,720)};
     std::vector<unsigned int> indices = {0, 1, 2, 0, 3, 1};
-    //std::vector<unsigned int> indices = {0, 2, 1, 0, 1, 3};
+
+    VertexData *vertexData = new VertexData(4, 6);
 
     for (int i = 0; i < 4; i++) {
-        vertices[i].position = pos[i];
-        vertices[i].textureCoords = texCoords[i];
-        vertices[i].normal = glm::vec3(0, 0, -1);
-        //vertices[i].color = colorAsCorners[i];
+        vertexData->vertices[i].position = pos[i];
+        vertexData->vertices[i].textureCoords = texCoords[i];
+        vertexData->vertices[i].normal = glm::vec3(0, 0, -1);
     }
 
-    return new Mesh(vertices, indices);
+    for (int i = 0; i < 6; ++i) {
+        vertexData->indices[i] = indices[i];
+    }
+
+    return new Mesh(vertexData);
 }
 
 Mesh *Primitives::createCube(int side) {
 
     glm::vec3 vertList[] = {glm::vec3(-1, -1, -1), glm::vec3(1, -1, -1), glm::vec3(1, 1, -1), glm::vec3(-1, 1, -1),
                             glm::vec3(-1, -1, 1),  glm::vec3(1, -1, 1),  glm::vec3(1, 1, 1),  glm::vec3(-1, 1, 1)};
-
     glm::vec2 texCoords[] = {glm::vec2(0, 0), glm::vec2(1, 0), glm::vec2(1, 1), glm::vec2(0, 1)};
-
-    glm::vec3 normals[] = {glm::vec3(0, 0, 1),  glm::vec3(1, 0, 0), glm::vec3(0, 0, -1),
-                           glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(0, -1, 0)};
 
     std::vector<unsigned int> indices = {0, 1, 3, 3, 1, 2, 1, 5, 2, 2, 5, 6, 5, 4, 6, 6, 4, 7,
                                          4, 0, 7, 7, 0, 3, 3, 2, 7, 7, 2, 6, 4, 5, 0, 0, 5, 1};
+
+    VertexData *vertexData = new VertexData(8, indices.size());
 
     int texInds[6] = {0, 1, 3, 3, 1, 2};
 
     std::vector<Vertex> vertices(8);
     for (int i = 0; i < 8; i++) {
-        vertices[i].position = vertList[i];
-        // vertices[i].normal = normals[indices[i / 6]];
-        // vertices[i].textureCoords = texCoords[texInds[i % 4]];
+        vertexData->vertices[i].position = vertList[i];
+        vertexData->vertices[i].textureCoords = texCoords[texInds[i % 4]];
     }
 
-    return new Mesh(vertices, indices);
+    for (int i = 0; i < indices.size(); ++i) {
+        vertexData->indices[i] = indices[i];
+    }
+
+    return new Mesh(vertexData);
 }
 
 std::vector<glm::vec3> Primitives::calculateVertexNormalAverages(std::vector<glm::vec3> &pos,

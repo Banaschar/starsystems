@@ -55,10 +55,6 @@ void Drawable::addTexture(Texture tex, int index) {
     meshes_.at(index)->addTexture(tex);
 }
 
-void Drawable::addColor(glm::vec4 color, int index) {
-    meshes_.at(index)->addColor(color);
-}
-
 void Drawable::addMesh(Mesh *mesh) {
     if (mesh)
         meshes_.push_back(mesh);

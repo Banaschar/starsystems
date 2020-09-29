@@ -43,14 +43,14 @@ Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
     bool isFlat = false;
     switch (attr->genType) {
         case GenerationType::PLANE_FLAT:
-            isFlat = true;
+            attr->isFlat = true;
         case GenerationType::PLANE:
-            return generateTerrainMesh(attr, isFlat);
+            return generateTerrainMesh(attr);
             break;
         case GenerationType::SPHERE_FLAT:
-            isFlat = true;
+            attr->isFlat = true;
         case GenerationType::SPHERE:
-            return generateTerrainMesh(attr, isFlat);
+            return generateTerrainMesh(attr);
             break;
         default:
             fprintf(stderr, "[TERRAINGENERATOR::generateTerrain] CRITICAL ERROR: Generation Type unknown\n");
@@ -58,19 +58,20 @@ Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
     }
 }
 
-Mesh *TerrainGenerator::generateTerrainMesh(GenerationAttributes *attr, bool isFlat) {
+Mesh *TerrainGenerator::generateTerrainMesh(GenerationAttributes *attr) {
     int dimension = attr->dimension + 3;
-    TerrainMeshData meshData(dimension, attr->lod);
-    generateTerrainData(meshData, attr->position, dimension, attr->lod, attr->axis, isFlat);
+    TerrainMeshData meshData(dimension, attr->lod, attr->vertexType);
+    generateTerrainData(meshData, attr->position, dimension, attr->lod, attr->axis, attr->isFlat);
     meshData.calculateNormals(false);
-    return new Mesh(meshData.vertices, meshData.indices);
+    return new Mesh(meshData.vertexData);
 }
 
-void TerrainGenerator::generateTerrainHeightMap(glm::vec3 &origin, glm::vec3 &axis, int dimension, std::vector<unsigned char> *heightValues, std::vector<unsigned char> *normalValues) {
-    dimension = dimension + 2;
-    TerrainMeshData meshData(dimension, 1, pNoise_, heightValues, normalValues);
-    generateTerrainData(meshData, origin, dimension, 1, axis, false);
+void TerrainGenerator::generateTerrainHeightMap(GenerationAttributes *attr) {
+    int dimension = attr->dimension + 2;
+    TerrainMeshData meshData(dimension, 1, pNoise_, attr->heightData, attr->normalData, attr->vertexType);
+    generateTerrainData(meshData, attr->position, dimension, 1, attr->axis, false);
     meshData.calculateNormals(true);
+    meshData.destroy();
 }
 
 glm::vec3 TerrainGenerator::getAxisPos(glm::vec3 &axis, int x, int y) {
@@ -167,6 +168,8 @@ void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec3 
                 glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 1);
                 meshData.addVertex(sPos, uv, vertexIndex);
                 meshData.addHeight(height, vertexIndex);
+                if (vertexIndex == 0 || vertexIndex > 4092)
+                    fprintf(stdout, "Pos(y,x): (%i,%i). VertexPos(x,y,z): %s, VertexIndex: %i\n", y,x,glm::to_string(sPos).c_str(),vertexIndex);
 
                 bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1;
 

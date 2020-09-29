@@ -58,9 +58,8 @@ void createMeshes(aiNode *node, const aiScene *scene, std::vector<Mesh*> *meshes
 }
 
 Mesh *processMesh(aiMesh *mesh, const aiScene *scene) {
-    std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
     std::vector<Texture> textures;
+    VertexData *vertexData = new VertexData();
 
     for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
         Vertex vertex;
@@ -86,14 +85,13 @@ Mesh *processMesh(aiMesh *mesh, const aiScene *scene) {
         }
 
         // TODO: read tangent and bitangent
-        vertices.push_back(vertex);
+        vertexData->vertices.push_back(vertex);
     }
 
-    // indices
     for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
         aiFace face = mesh->mFaces[i];
         for (unsigned int j = 0; j < face.mNumIndices; j++) {
-            indices.push_back(face.mIndices[j]);
+            vertexData->indices.push_back(face.mIndices[j]);
         }
     }
 
@@ -112,7 +110,7 @@ Mesh *processMesh(aiMesh *mesh, const aiScene *scene) {
     std::vector<Texture> heightMaps = loadMatTexture(material, aiTextureType_AMBIENT, "tex_height");
     textures.insert(textures.end(), normalMaps.begin(), normalMaps.end());
 
-    return new Mesh(vertices, textures, indices);
+    return new Mesh(vertexData, textures);
 }
 
 /*

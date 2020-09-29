@@ -5,7 +5,14 @@
 HeightMap::HeightMap(TerrainGenerator *terrainGen, glm::vec3 cornerPos, glm::vec3 axis, int dimension, int index) : cornerPos_(cornerPos), axis_(axis), index_(index), dimension_(dimension) {
     heightData_ = new std::vector<unsigned char>(dimension_ * dimension_);
     normalData_ = new std::vector<unsigned char>(dimension_ * dimension_ * 3);
-    terrainGen->generateTerrainHeightMap(cornerPos_, axis_, dimension_, heightData_, normalData_);
+
+    GenerationAttributes attribs;
+    attribs.position = cornerPos_;
+    attribs.axis = axis_;
+    attribs.dimension = dimension_;
+    attribs.heightData = heightData_;
+    attribs.normalData = normalData_;
+    terrainGen->generateTerrainHeightMap(&attribs);
     heightTextureId_ = TextureLoader::createTextureFromArray(heightData_->data(), dimension_, dimension_, 1);
     normalTextureId_ = TextureLoader::createTextureFromArray(normalData_->data(), dimension_, dimension_, 3);
     delete normalData_;

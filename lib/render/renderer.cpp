@@ -241,6 +241,7 @@ void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, g
             for (Mesh *mesh : drawable->getMeshes()) {
                 shader->handleMeshTextures(mesh->getTextures());
                 vaoRenderer_->draw(mesh);
+                shader->resetTextureCount();
             }
         }
         shader->end();

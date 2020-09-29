@@ -15,6 +15,10 @@ struct GenerationAttributes {
     int dimension;
     int lod;
     GenerationType genType;
+    bool isFlat = false;
+    VertexType vertexType = VertexType::VERTEX_DEFAULT;
+    std::vector<unsigned char> *heightData = nullptr;
+    std::vector<unsigned char> *normalData = nullptr;
 };
 
 class TerrainGenerator {
@@ -25,8 +29,8 @@ class TerrainGenerator {
     /*
      */
     Mesh *generateTerrain(GenerationAttributes *attr);
-    Mesh *generateTerrainMesh(GenerationAttributes *attr, bool isFlat);
-    void generateTerrainHeightMap(glm::vec3 &origin, glm::vec3 &axis, int dimension, std::vector<unsigned char> *heightValues, std::vector<unsigned char> *normalValues);
+    Mesh *generateTerrainMesh(GenerationAttributes *attr);
+    void generateTerrainHeightMap(GenerationAttributes *attr);
     ColorGenerator &getColorGenerator();
     PerlinNoise &getPerlinNoise();
     int getSphereRadius();

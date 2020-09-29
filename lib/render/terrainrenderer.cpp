@@ -40,7 +40,6 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
     shader_->uniform("clipPlane", clipPlane);
     shader_->uniform("waterLevel", game->getWaterLevel());
     bindTextures();
-    g_triangleCount = 0;
     for (Drawable *drawable : terrains) {
         if (drawable) {
             TerrainTile *terrain = static_cast<TerrainTile *>(drawable);

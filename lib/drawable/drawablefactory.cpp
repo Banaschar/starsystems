@@ -67,7 +67,6 @@ TerrainTile *DrawableFactory::createWaterTile(glm::vec3 position, int scale, glm
     if (!(mesh = createPrimitiveMesh(PrimitiveType::QUAD)))
         return NULL;
     TerrainTile *tmp = new TerrainTile(mesh);
-    tmp->addColor(glm::vec4(color, 0.6));
     glm::vec3 scaleVec = glm::vec3(scale, 1, scale);
     tmp->transform(&scaleVec, &position, NULL);
 

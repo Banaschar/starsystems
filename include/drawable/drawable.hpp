@@ -29,8 +29,6 @@ class Drawable {
 
     void addTexture(Texture tex, int index = 0);
 
-    void addColor(glm::vec4 color, int index = 0);
-
     void addMesh(Mesh *mesh);
 
     std::vector<Texture> &getTextures(int index = 0);
