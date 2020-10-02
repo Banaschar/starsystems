@@ -8,7 +8,7 @@
 
 class PostProcessor {
 public:
-    PostProcessor(Shader *shader, VaoRenderer *vaoRenderer_, int winHeight, int winWidth);
+    PostProcessor(Shader *shader, VaoRenderer *vaoRenderer_, int winWidth, int winHeight);
     ~PostProcessor();
     void start();
     void end();

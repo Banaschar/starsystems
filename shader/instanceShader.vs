@@ -1,6 +1,6 @@
 #version 330 core
 layout (location = 0) in vec3 vertexPosition;
-layout (location = 4) in mat4 aInstanceMvps;
+layout (location = 3) in mat4 aInstanceMvps;
 
 void main()
 {

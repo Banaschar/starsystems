@@ -1,6 +1,5 @@
 #version 410 core
 layout (location = 0) in vec3 vertexPosition;
-layout (location = 2) in vec2 textureCoords;
 
 out vec4 fColor;
 out vec3 normal_frag_in;

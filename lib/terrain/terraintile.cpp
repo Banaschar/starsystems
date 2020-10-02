@@ -27,6 +27,12 @@ TerrainTile::TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec3 
     initTerrain(terrainGen);
 }
 
+TerrainTile::TerrainTile(TerrainGenerator *terrainGen, GenerationAttributes attributes, ShaderType shaderType) : genAttr_(attributes) {
+    Drawable::setType(shaderType);
+    setCorners(genAttr_.axis);
+    initTerrain(terrainGen);
+}
+
 void TerrainTile::update(Game *game) {
     ;
 }

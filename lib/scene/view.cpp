@@ -1,6 +1,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <stdio.h>
+#include <glm/gtx/string_cast.hpp>
 
 #include "global.hpp"
 #include "view.hpp"
@@ -264,9 +265,10 @@ bool View::isInsidePlane(Plane *plane, glm::vec3 &max, glm::vec3 &min) {
 }
 
 /* http://www.lighthouse3d.com/tutorials/view-frustum-culling/ */
-bool View::isInsideFrustum(glm::vec3 &max, glm::vec3 &min) {
+bool View::isInsideFrustum(BoundingBox &bBox) {
+    fprintf(stdout, "bBoxMax: %s, bBoxMin: %s\n", glm::to_string(bBox.max).c_str(), glm::to_string(bBox.min).c_str());
     for (Plane *p : frustumPlanes_) {
-        if (!isInsidePlane(p, max, min))
+        if (!isInsidePlane(p, bBox.max, bBox.min))
             return false;
     }
 

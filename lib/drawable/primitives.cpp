@@ -1,6 +1,7 @@
 #include "primitives.hpp"
 
 Mesh *Primitives::createPlane(int dimension) {
+    dimension = dimension + 1;
     VertexData *vertexData = new VertexData(dimension * dimension, (dimension - 1) * (dimension - 1) * 6);
 
     for (int i = 0; i < dimension; i++) {

@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <glm/glm.hpp>
+#include "mathutils.hpp"
 
 struct GLFWwindow;
 
@@ -41,7 +42,7 @@ class View {
     // std::function<void(GLFWwindow*, double, double)> sCb;
     void (*mCb)(GLFWwindow *, double, double);
     void (*sCb)(GLFWwindow *, double, double);
-    bool isInsideFrustum(glm::vec3 &max, glm::vec3 &min);
+    bool isInsideFrustum(BoundingBox &bBox);
 
   private:
     void rotateCamera();

@@ -6,6 +6,13 @@
 
 enum class MeshDrawMode {DRAW_MODE_DEFAULT, DRAW_MODE_TESSELLATION};
 
+struct VertexAttributeData {
+    size_t size;
+    size_t sizeOfDataType;
+    int numElements;
+    void *data;
+};
+
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
@@ -176,6 +183,6 @@ public:
 private:
     int numAttributes_;
     VertexType type_;
-    void *data;
+    void *data = nullptr;
 };
 #endif

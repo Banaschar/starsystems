@@ -3,6 +3,7 @@
 
 #include "terraingenerator.hpp"
 #include "terrainnode.hpp"
+#include "view.hpp"
 #include <glm/gtx/hash.hpp>
 #include <unordered_map>
 
@@ -11,7 +12,14 @@ typedef std::unordered_map<glm::vec2, TerrainNode*> RootNodeMap;
 typedef std::unordered_map<glm::vec3, int> AxisIntegerMap;
 typedef std::unordered_map<glm::vec3, CubeSideTree*> CubeSideMap;
 typedef std::unordered_map<glm::vec2, std::tuple<glm::vec3, glm::vec2>> CubeTreeMap;
- 
+
+typedef std::vector<Drawable *> DrawableList;
+
+class TerrainTreeImplementation {
+public:
+  virtual void update (View *view, DrawableList *terrainList, DrawableList *waterList) = 0;
+};
+
  /*
   * Convention: On the x-axis sides of the cube, z is used as first (x-) coordinate
   *
@@ -96,13 +104,13 @@ private:
   glm::vec3 getCubePosFromSphere(glm::vec3 &camPos);
 };
 
-class TerrainQuadTree {
+class TerrainQuadTree : public TerrainTreeImplementation {
   public:
     TerrainQuadTree(int initialDimension, int maxLod, 
                     TerrainGenerator *terrainGen);
     ~TerrainQuadTree();
 
-    void update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+    void update(View *view, DrawableList *terrainList, DrawableList *waterList);
 
   private:
     glm::vec2 currentMiddleChunk_;
@@ -121,11 +129,11 @@ class TerrainQuadTree {
     void update_(TerrainNode *node, glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
 };
 
-class TerrainCubeTree {
+class TerrainCubeTree : public TerrainTreeImplementation {
 public:
   TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, int lod, glm::vec3 sphereOrigin);
   ~TerrainCubeTree();
-  void update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
+  void update(View *view, DrawableList *terrainList, DrawableList *waterList);
 
 private:
   int cubeSideDimension_;
@@ -150,7 +158,25 @@ private:
   void destroyCubeSideTree();
 };
 
-enum class TerrainType {SPHERE, PLANE};
+class TerrainCDLODTree : public TerrainTreeImplementation {
+public:
+  TerrainCDLODTree(TerrainGenerator *terrainGen);
+  ~TerrainCDLODTree();
+  void update(View *view, DrawableList *terrainList, DrawableList *waterList);
+  
+private:
+     std::vector<float> ranges_;
+     VertexAttributeData rangeAttribData_;
+     std::vector<glm::vec3> instanceVecMorphAttribs_;
+     std::vector<std::vector<TerrainNode_ *>> grid_;
+     int heightMapIndex_ = 0;
+     int lodLevelCount_;
+     Drawable *basePatch_;
+
+     float getNextRange(int lodLevel);
+};
+
+enum class TerrainType {DEFAULT, SPHERE, PLANE, CDLOD};
 
 class TerrainManager {
 public:
@@ -162,13 +188,12 @@ public:
     TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
     ~TerrainManager();
 
-    void update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-    bool createQuadTree(int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
+    void update(View *view, DrawableList *terrainList, DrawableList *waterList);
+    TerrainType getType();
 
 private:
-    TerrainCubeTree *terrainCubeTree_ = NULL;
-    TerrainQuadTree *terrainQuadTree_ = NULL;
-    TerrainGenerator *terrainGenerator_;
-    void createDefaultTerrainGenerator();
+    TerrainType type_;
+    TerrainTreeImplementation *terrainTreeImplementation_ = nullptr;
+    bool createTerrainTree(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
 };
 #endif

@@ -41,7 +41,7 @@ void Game::update() {
      * if neccessary
      */ 
     if (terrainManager_)
-        terrainManager_->update(view_.getCameraPosition(), view_.getCameraDirection(), &terrain_, &water_);
+        terrainManager_->update(&view_, &terrain_, &water_);
 }
 
 void Game::addTerrainManager(TerrainManager *terrainManager) {
@@ -129,4 +129,11 @@ std::vector<Drawable *> &Game::getSky() {
 
 float Game::getWaterLevel() {
     return waterLevel_;
+}
+
+TerrainType Game::getTerrainManagerType() {
+    if (terrainManager_)
+        return terrainManager_->getType();
+    else
+        return TerrainType::DEFAULT;
 }

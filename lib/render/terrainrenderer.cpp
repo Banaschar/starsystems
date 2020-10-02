@@ -34,27 +34,36 @@ void TerrainRenderer::bindTextures() {
 void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm::vec4 &clipPlane) {
     if (terrains.empty())
         return;
+    
+    TerrainType type = game->getTerrainManagerType();
+    if (type == TerrainType::SPHERE || type == TerrainType::PLANE) {
+        glDepthFunc(GL_LEQUAL);
+        shader_->use();
+        shader_->uniform("clipPlane", clipPlane);
+        shader_->uniform("waterLevel", game->getWaterLevel());
+        bindTextures();
+        for (Drawable *drawable : terrains) {
+            if (drawable) {
+                TerrainTile *terrain = static_cast<TerrainTile *>(drawable);
+                shader_->uniform("amplitude", terrain->getAmplitude());
+                shader_->uniform("tiling", (float)terrain->getDimension() / 2.0f);
+                shader_->uniform("sphereRadius", terrain->getSphereRadius());
+                shader_->uniform("sphereOrigin", terrain->getSphereOrigin());
+                drawable->update(game);
+                shader_->prepare(drawable, game);
 
-    glDepthFunc(GL_LEQUAL);
-    shader_->use();
-    shader_->uniform("clipPlane", clipPlane);
-    shader_->uniform("waterLevel", game->getWaterLevel());
-    bindTextures();
-    for (Drawable *drawable : terrains) {
-        if (drawable) {
-            TerrainTile *terrain = static_cast<TerrainTile *>(drawable);
-            shader_->uniform("amplitude", terrain->getAmplitude());
-            shader_->uniform("tiling", (float)terrain->getDimension() / 2.0f);
-            shader_->uniform("sphereRadius", terrain->getSphereRadius());
-            shader_->uniform("sphereOrigin", terrain->getSphereOrigin());
-            drawable->update(game);
-            shader_->prepare(drawable, game);
-
-            
-            for (Mesh *mesh : drawable->getMeshes())
-                vaoRenderer_->draw(mesh);
+                
+                for (Mesh *mesh : drawable->getMeshes())
+                    vaoRenderer_->draw(mesh);
+            }
         }
+        shader_->end();
+        glDepthFunc(GL_LESS);
+    } else if (type == TerrainType::CDLOD) {
+        shader_->use();
+        shader_->handleMeshTextures(terrains[0]->getMeshes()[0]->getTextures());
+        shader_->prepare(terrains[0], game);
+        vaoRenderer_->draw(terrains[0]->getMeshes()[0]);
+        shader_->end();
     }
-    shader_->end();
-    glDepthFunc(GL_LESS);
 }

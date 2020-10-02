@@ -16,9 +16,13 @@ private:
     glm::vec3 axis_;
     int index_;
     int dimension_;
+    float lowerNoiseBound_;
+    float upperNoiseBound_;
     unsigned int heightTextureId_;
     unsigned int normalTextureId_;
     std::vector<unsigned char> *heightData_ = nullptr;
     std::vector<unsigned char> *normalData_ = nullptr;
+
+    float getOriginalHeight(float inVal);
 };
 #endif

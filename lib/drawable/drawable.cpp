@@ -6,30 +6,20 @@ Drawable::Drawable() {
     type_ = ShaderType::SHADER_TYPE_DEFAULT;
     initDrawable();
 }
-Drawable::Drawable(Mesh *mesh, ShaderType type, std::vector<glm::vec3> instancePositions)
-    : type_(type), modelPositions_(instancePositions) {
+Drawable::Drawable(Mesh *mesh, ShaderType type) : type_(type) {
     meshes_.push_back(mesh);
-    if (instancePositions.empty())
-        initDrawable();
-    else
-        initInstances();
+    initDrawable();
 }
-Drawable::Drawable(std::vector<Mesh*> meshes, ShaderType type, std::vector<glm::vec3> instancePositions)
-    : type_(type), modelPositions_(instancePositions) {
+
+Drawable::Drawable(std::vector<Mesh*> meshes, ShaderType type) : type_(type) {
     meshes_ = meshes;
-    if (instancePositions.empty())
-        initDrawable();
-    else
-        initInstances();
+    initDrawable();
 }
-Drawable::Drawable(Mesh *mesh, Texture texture, ShaderType type, std::vector<glm::vec3> instancePositions)
-    : type_(type), modelPositions_(instancePositions) {
+
+Drawable::Drawable(Mesh *mesh, Texture texture, ShaderType type) : type_(type) {
     meshes_.push_back(mesh);
     addTexture(texture);
-    if (instancePositions.empty())
-        initDrawable();
-    else
-        initInstances();
+    initDrawable();
 }
 
 Drawable::~Drawable() {
@@ -97,7 +87,7 @@ void Drawable::transform(glm::vec3 *scaleVec, glm::vec3 *translateVec, glm::vec3
 void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec, glm::vec3 *rotationAxis,
                          float degree) {
     if (translateVec) {
-        modelPositions_[index] += *translateVec;
+        modelPositions_[index] = *translateVec;
     }
 
     if (scaleVec) {
@@ -128,10 +118,21 @@ std::vector<Mesh*> &Drawable::getMeshes() {
     return meshes_;
 }
 
-void Drawable::submitInstanceBuffer(std::vector<glm::mat4> *instanceMatrices) {
+void Drawable::updateMeshInstances(VertexAttributeData *attrData) {
     for (Mesh *mesh : meshes_) {
-        mesh->updateInstances(instanceMatrices);
+        mesh->updateInstances(&modelMatrices_, attrData);
     }
+}
+
+void Drawable::updateInstanceSize(int size) {
+    if (size <= 0)
+        size = 1;
+    
+    modelPositions_.resize(size, glm::vec3(0.0f, 0.0f, 0.0f));
+    modelMatrices_.resize(size, glm::mat4(1.0f));
+    scale_.resize(size, glm::vec3(1.0f));
+    rotationAxis_.resize(size, glm::vec3(1.0f));
+    rotationDegree_.resize(size, 0.0f);
 }
 
 void Drawable::initDrawable() {
@@ -140,21 +141,4 @@ void Drawable::initDrawable() {
     scale_.push_back(glm::vec3(1.0f));
     rotationAxis_.push_back(glm::vec3(1.0f));
     rotationDegree_.push_back(0.0f);
-}
-
-void Drawable::initInstances() {
-    int size = modelPositions_.size();
-    modelMatrices_.resize(size);
-    scale_.resize(size);
-    rotationAxis_.resize(size);
-    rotationDegree_.resize(size);
-
-    glm::mat4 base = glm::mat4(1.0f);
-    for (int i = 0; i < modelPositions_.size(); i++) {
-        modelMatrices_[i] = glm::translate(base, modelPositions_[i]);
-    }
-
-    for (Mesh *mesh : meshes_) {
-        mesh->makeInstances(&modelMatrices_);
-    }
 }

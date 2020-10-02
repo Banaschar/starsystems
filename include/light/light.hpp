@@ -19,7 +19,7 @@ class Light : public Drawable {
         Drawable::setType(type);
     }
     Light(Mesh *mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
-    Light(std::vector<Mesh*> meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
+    Light(std::vector<Mesh*> &meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
     Light(const std::string &path, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
         std::vector<Mesh*> meshes;
         AssetLoader::loadModel(path, &meshes);

@@ -112,6 +112,7 @@ std::string *Shader::readShaderFile(const char *path) {
         fileStream.close();
     } else {
         fprintf(stdout, "Impossible to open %s.\n", path);
+        delete outString;
         outString = nullptr;
     }
 

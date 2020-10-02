@@ -168,8 +168,8 @@ void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec3 
                 glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 1);
                 meshData.addVertex(sPos, uv, vertexIndex);
                 meshData.addHeight(height, vertexIndex);
-                if (vertexIndex == 0 || vertexIndex > 4092)
-                    fprintf(stdout, "Pos(y,x): (%i,%i). VertexPos(x,y,z): %s, VertexIndex: %i\n", y,x,glm::to_string(sPos).c_str(),vertexIndex);
+                //if (vertexIndex == 0 || vertexIndex > 4092)
+                    //fprintf(stdout, "Pos(y,x): (%i,%i). VertexPos(x,y,z): %s, VertexIndex: %i\n", y,x,glm::to_string(sPos).c_str(),vertexIndex);
 
                 bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1;
 

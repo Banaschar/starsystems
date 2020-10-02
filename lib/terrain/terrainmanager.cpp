@@ -27,29 +27,25 @@ bool isInCurrentFieldOfView(TerrainTile *t, glm::vec3 &camPos, glm::vec3 &camDir
     return visible;
 }
 
-TerrainManager::TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) : terrainGenerator_(terrainGen) {
-    if (!createQuadTree(initialDimension, lodLevels, type, origin)) {
+TerrainManager::TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) : type_(type) {
+    if (!createTerrainTree(terrainGen, initialDimension, lodLevels, type, origin)) {
         fprintf(stdout, "TERRAINMANAGER: Could not create Quad Tree\n");
     }
 }
 
 TerrainManager::~TerrainManager() {
-    if (terrainQuadTree_)
-        delete terrainQuadTree_;
-
-    delete terrainGenerator_;
+    delete terrainTreeImplementation_;
 }
 
-void TerrainManager::createDefaultTerrainGenerator() {
-    PerlinNoise pNoise = PerlinNoise(5, 10.0f, 0.09f, 0);
-    terrainGenerator_ = new TerrainGenerator(pNoise);
+TerrainType TerrainManager::getType() {
+    return type_;
 }
 
 /*
  * TODO: FIX ISSUE IF DIMENSION IS LARGER THAN 2^6 * 60 = 3840
  * PROVIDE a list of possible lod levels
  */
-bool TerrainManager::createQuadTree(int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) {
+bool TerrainManager::createTerrainTree(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin) {
     for (int i = 2; i <= 12; i += 2) {
         if (initialDimension % i != 0) {
             fprintf(stdout, "[TERRAINMANAGER] Error: Dimension not divisible by %i\n", i);
@@ -65,20 +61,19 @@ bool TerrainManager::createQuadTree(int initialDimension, int lodLevels, Terrain
     }
 
     if (type == TerrainType::SPHERE) {
-        terrainGenerator_->setSphereRadius(initialDimension / 2);
-        terrainGenerator_->setSphereOrigin(origin);
-        terrainCubeTree_ = new TerrainCubeTree(terrainGenerator_, initialDimension, lod, origin);
+        terrainGen->setSphereRadius(initialDimension / 2);
+        terrainGen->setSphereOrigin(origin);
+        terrainTreeImplementation_ = new TerrainCubeTree(terrainGen, initialDimension, lod, origin);
+    } else if (type == TerrainType::CDLOD) {
+        terrainTreeImplementation_ = new TerrainCDLODTree(terrainGen);
     } else
-        terrainQuadTree_ = new TerrainQuadTree(initialDimension, lod, terrainGenerator_);
+        terrainTreeImplementation_ = new TerrainQuadTree(initialDimension, lod, terrainGen);
 
     return true;
 }
 
-void TerrainManager::update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
-    if (terrainQuadTree_)
-        terrainQuadTree_->update(camPosition, camDirection, tlist, wlist);
-    else
-        terrainCubeTree_->update(camPosition, camDirection, tlist, wlist);
+void TerrainManager::update(View *view, DrawableList *terrainList, DrawableList *waterList) {
+    terrainTreeImplementation_->update(view, terrainList, waterList);
 }
 
 /*
@@ -258,14 +253,17 @@ void TerrainCubeTree::updateNode_(TerrainNode *node, glm::vec3 camWorldPos, glm:
     }
 }
 
-void TerrainCubeTree::update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
-    tlist->clear();
-    wlist->clear();
+void TerrainCubeTree::update(View *view, DrawableList *terrainList, DrawableList *waterList) {
+    terrainList->clear();
+    waterList->clear();
+
+    glm::vec3 &camPosition = view->getCameraPosition();
+    glm::vec3 &camDirection = view->getCameraDirection();
 
     if (glm::distance2(camPosition, sphereOrigin_) < glm::pow(sphereRadius_ * 1.5f, 2)) {
         if (currentCubeSide_) {
             currentCubeSide_ = currentCubeSide_->update(camPosition);
-            updateCubeSides(camPosition, camDirection, tlist, wlist);
+            updateCubeSides(camPosition, camDirection, terrainList, waterList);
         } else {
             createCubeSideTree(camPosition);
         }
@@ -275,7 +273,7 @@ void TerrainCubeTree::update(glm::vec3 &camPosition, glm::vec3 &camDirection, st
             currentCubeSide_ = NULL;
         }
         for (TerrainNode *t : cubeSides_)
-            updateNode_(t, camPosition, camDirection, tlist, wlist);
+            updateNode_(t, camPosition, camDirection, terrainList, waterList);
     }
 }
 
@@ -912,12 +910,15 @@ void TerrainQuadTree::update_(TerrainNode *node, glm::vec3 &camPosition, glm::ve
     }
 }
 
-void TerrainQuadTree::update(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist) {
-    tlist->clear();
-    wlist->clear();
+void TerrainQuadTree::update(View *view, DrawableList *terrainList, DrawableList *waterList) {
+    terrainList->clear();
+    waterList->clear();
+    glm::vec3 &camPosition = view->getCameraPosition();
+    glm::vec3 &camDirection = view->getCameraDirection();
+
     updateRoots(camPosition);
     for (auto &kv : rootMap_)
-        update_(kv.second, camPosition, camDirection, tlist, wlist);
+        update_(kv.second, camPosition, camDirection, terrainList, waterList);
 }
 
 /*
@@ -973,4 +974,140 @@ void TerrainQuadTree::createChildren(TerrainNode *node) {
                                             DrawableFactory::createWaterTile(pos, childPosOffset, glm::vec3(0,0,1))));
         }
     }
+}
+
+/*
+ * Based on paper CDLOD by strugar
+ * 
+ * I need a grid of root trees for every side. So from space only the root nodes
+ * of the tree sides visible are rendered. Coming closer, parts of the cube sides need to be culled as well.
+ * Very close up, it should be the 9 root nodes moving over the cube.
+ */
+TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) {
+    fprintf(stdout, "Creating CDLOD Tree\n");
+
+    int leafNodeSize = 16.0f;
+    lodLevelCount_ = 5;
+    int heightMapSize = 256;
+
+    float visibilityDistance = 2000.0f; // from settings in CDLOD -> I think thats the far plane
+    float lodNear = 0.0f;
+    float lodFar = visibilityDistance;
+    float detailBalance = 2.0f; // cdlod settings LODLevelDistanceRatio
+
+    float total = 0.0f;
+    float currentDetailBalance = 1.0f;
+
+    for (int i = 0; i < lodLevelCount_; ++i) {
+        total += currentDetailBalance;
+        currentDetailBalance *= detailBalance;
+    }
+
+    float sect = (lodFar - lodNear) / total;
+
+    float prevPos = lodNear;
+    currentDetailBalance = 1.0f;
+    ranges_.resize(lodLevelCount_);
+    for (int i = 0; i < lodLevelCount_; ++i) {
+        ranges_[i] = prevPos + sect * currentDetailBalance;
+        prevPos = ranges_[i];
+        currentDetailBalance *= detailBalance;
+        fprintf(stdout, "Range %i: %f\n", i, ranges_[i]);
+    }
+
+    /*
+    prevPos = lodNear;
+    for ( int i = 0; i < lodLevelCount_; ++i) {
+        m_morphStart[lodLevelCount_ - i - 1] = ranges_[i];
+        m_morphEnd[i] = 
+    }
+    */
+
+    /*
+    ranges_.push_back(1.0f);
+    for (int i = 1; i < lodLevelCount_; ++i) {
+        ranges_.push_back(pow(2, i));
+        fprintf(stdout, "Range %i: %f\n", i, ranges_[i]);
+    }
+    */
+
+    int rootNodeSize = leafNodeSize * pow(2, lodLevelCount_-1);
+
+    /* TODO: I have to either create one basePatch per root node, with the height and normal map added as textures
+     * Or the renderer has to apply the textures based on heightmapindex...hm, doesn't work...
+     */
+    HeightMap *heightMap = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), heightMapSize, heightMapIndex_++);
+
+    glm::vec3 nodePos = glm::vec3(0,0,0);
+
+    /*
+    int gridSize = heightMapSize / rootNodeSize;
+    grid_.resize(gridSize);
+    for (int i = 0; i < gridSize; ++i) {
+        grid_[i].resize(gridSize);
+        for (int j = 0; j < gridSize; ++j) {
+            nodePos = glm::vec3(i * rootNodeSize, 0, j * rootNodeSize);
+            grid_[i][j] = new TerrainNode_(heightMap, rootNodeSize, lodLevelCount_, nodePos);
+        }
+    }
+    */
+    grid_.resize(1);
+    grid_[0].resize(1);
+    grid_[0][0] = new TerrainNode_(heightMap, rootNodeSize, lodLevelCount_-1, nodePos);
+
+    heightMap->cleanUpMapData();
+
+    basePatch_ = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_TERRAIN, 16);
+    
+    Texture hmap;
+    Texture nMap;
+    hmap.id = heightMap->getHeightTexture();
+    hmap.type = "texture_height";
+    nMap.id = heightMap->getNormalTexture();
+    nMap.type = "texture_normal";
+    basePatch_->addTexture(hmap);
+    basePatch_->addTexture(nMap);
+
+    rangeAttribData_.numElements = 3;
+    rangeAttribData_.sizeOfDataType = sizeof(glm::vec3);
+}
+
+TerrainCDLODTree::~TerrainCDLODTree() {
+    delete basePatch_;
+}
+
+float TerrainCDLODTree::getNextRange(int lodLevel) {
+    return lodLevel == lodLevelCount_ - 1 ? ranges_[lodLevel] : ranges_[lodLevel + 1];
+}
+
+void TerrainCDLODTree::update(View *view, DrawableList *terrainList, DrawableList *waterList) {
+    terrainList->clear();
+    std::vector<TerrainNode_ *> nodes;
+    
+    /* Select nodes */
+    for (std::vector<TerrainNode_ *> &gridRow : grid_) {
+        for (TerrainNode_ *root : gridRow) {
+            root->lodSelect(ranges_, lodLevelCount_-1, view, &nodes);
+        }
+    }
+    
+    if (nodes.empty()) {
+        return;
+    }
+
+    /* Build the instance model matrices (translation and scale) and the list of ranges*/
+    basePatch_->updateInstanceSize(nodes.size());
+    instanceVecMorphAttribs_.resize(nodes.size());
+    rangeAttribData_.size = nodes.size();
+    for (int i = 0; i < nodes.size(); ++i) {
+        glm::vec3 translate = nodes[i]->getPosition();
+        glm::vec3 scale = glm::vec3(nodes[i]->getSize() / 16.0f);
+        basePatch_->transform(i, &scale, &translate, NULL);
+        instanceVecMorphAttribs_[i] = glm::vec3(nodes[i]->getRange(), getNextRange(nodes[i]->getLodLevel()), nodes[i]->getSize() / 16.0f);
+    }
+
+    rangeAttribData_.data = static_cast<void *>(instanceVecMorphAttribs_.data());
+    basePatch_->updateMeshInstances(&rangeAttribData_);
+
+    terrainList->push_back(basePatch_);
 }

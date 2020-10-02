@@ -49,6 +49,8 @@ class Game {
 
     float getWaterLevel();
 
+    TerrainType getTerrainManagerType();
+
   private:
     View view_;
     Drawable *sun_ = NULL;

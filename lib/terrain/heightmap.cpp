@@ -5,7 +5,8 @@
 HeightMap::HeightMap(TerrainGenerator *terrainGen, glm::vec3 cornerPos, glm::vec3 axis, int dimension, int index) : cornerPos_(cornerPos), axis_(axis), index_(index), dimension_(dimension) {
     heightData_ = new std::vector<unsigned char>(dimension_ * dimension_);
     normalData_ = new std::vector<unsigned char>(dimension_ * dimension_ * 3);
-
+    lowerNoiseBound_ = terrainGen->getPerlinNoise().getLowerBound();
+    upperNoiseBound_ = terrainGen->getPerlinNoise().getUpperBound();
     GenerationAttributes attribs;
     attribs.position = cornerPos_;
     attribs.axis = axis_;
@@ -36,13 +37,18 @@ void HeightMap::cleanUpMapData() {
     heightData_ = nullptr;
 }
 
+float HeightMap::getOriginalHeight(float inVal) {
+    float s = 1.0 * (upperNoiseBound_ - lowerNoiseBound_) / (255 - 0);
+    return lowerNoiseBound_ + std::floor((s * (inVal - 0)) + 0.5);
+}
+
 void HeightMap::getMaxMinValuesFromArea(glm::vec3 &pos, int dimension, float *nodeMinHeight_, float *nodeMaxHeight_) {
     float min = 0.0f;
     float max = 0.0f;
     for (int y = pos.z; y < pos.z + dimension; ++y) {
         for (int x = pos.x; x < pos.x + dimension; ++x) {
-            min = std::min(min, (float)(*heightData_)[y * dimension + x]);
-            max = std::max(max, (float)(*heightData_)[y * dimension + x]);
+            min = std::min(min, getOriginalHeight((float)(*heightData_)[y * dimension + x]));
+            max = std::max(max, getOriginalHeight((float)(*heightData_)[y * dimension + x]));
         }
     }
 

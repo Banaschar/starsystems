@@ -33,49 +33,55 @@ void Mesh::updateMesh() {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexData_->indices.size() * sizeof(unsigned int), vertexData_->indices.data(), GL_STATIC_DRAW);
 
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)0);
+        glEnableVertexAttribArray(vertexAttributeIndex_);
+        glVertexAttribPointer(vertexAttributeIndex_++, 3, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)0);
 
         if (vertexData_->getNumAttributes() > 1) {
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)vertexData_->getOffset1());
+            glEnableVertexAttribArray(vertexAttributeIndex_);
+            glVertexAttribPointer(vertexAttributeIndex_++, 3, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)vertexData_->getOffset1());
         }
 
         if (vertexData_->getNumAttributes() > 2) {
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)vertexData_->getOffset2());
+            glEnableVertexAttribArray(vertexAttributeIndex_);
+            glVertexAttribPointer(vertexAttributeIndex_++, 2, GL_FLOAT, GL_FALSE, vertexData_->sizeOfVertexType(), (void *)vertexData_->getOffset2());
         }
 
         glBindVertexArray(0);
     }
 }
 
-void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
+void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttributeData *attribData) {
     if (incomplete_)
         initMesh();
 
     isInstanced_ = true;
     drawInstances_ = instanceMatrices->size();
-
     glGenBuffers(1, &ibo_);
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
     glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
 
     glBindVertexArray(vao_);
+    glEnableVertexAttribArray(vertexAttributeIndex_);
+    glVertexAttribPointer(vertexAttributeIndex_++, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)0);
+    glEnableVertexAttribArray(vertexAttributeIndex_);
+    glVertexAttribPointer(vertexAttributeIndex_++, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)sizeof(glm::vec4));
+    glEnableVertexAttribArray(vertexAttributeIndex_);
+    glVertexAttribPointer(vertexAttributeIndex_++, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(2 * sizeof(glm::vec4)));
+    glEnableVertexAttribArray(vertexAttributeIndex_);
+    glVertexAttribPointer(vertexAttributeIndex_++, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(3 * sizeof(glm::vec4)));
 
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)0);
-    glEnableVertexAttribArray(5);
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)sizeof(glm::vec4));
-    glEnableVertexAttribArray(6);
-    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(2 * sizeof(glm::vec4)));
-    glEnableVertexAttribArray(7);
-    glVertexAttribPointer(7, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void *)(3 * sizeof(glm::vec4)));
+    glVertexAttribDivisor(vertexAttributeIndex_ - 4, 1);
+    glVertexAttribDivisor(vertexAttributeIndex_ - 3, 1);
+    glVertexAttribDivisor(vertexAttributeIndex_ - 2, 1);
+    glVertexAttribDivisor(vertexAttributeIndex_ - 1, 1);
 
-    glVertexAttribDivisor(4, 1);
-    glVertexAttribDivisor(5, 1);
-    glVertexAttribDivisor(6, 1);
-    glVertexAttribDivisor(7, 1);
+    if (attribData) {
+        glGenBuffers(1, &abo_);
+        glBindBuffer(GL_ARRAY_BUFFER, abo_);
+        glBufferData(GL_ARRAY_BUFFER, attribData->size * attribData->sizeOfDataType, NULL, GL_STREAM_DRAW);
+        glEnableVertexAttribArray(vertexAttributeIndex_);
+        glVertexAttribPointer(vertexAttributeIndex_++, attribData->numElements, GL_FLOAT, GL_FALSE, attribData->sizeOfDataType, (void *) 0);
+    }
 
     glBindVertexArray(0);
 }
@@ -84,17 +90,21 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices) {
  * Update the ibo attribute buffer that holds the matrices
  * for instanced draw calls
  */
-void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices) {
-    if (incomplete_)
-        initMesh();
-
+void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttributeData *attribData) {
     if (!isInstanced_)
-        makeInstances(instanceMatrices);
+        makeInstances(instanceMatrices, attribData);
 
     drawInstances_ = instanceMatrices->size();
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
     glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), &instanceMatrices->front());
+
+    if (attribData) {
+        glBindBuffer(GL_ARRAY_BUFFER, abo_);
+        glBufferData(GL_ARRAY_BUFFER, attribData->size * attribData->sizeOfDataType, NULL, GL_STREAM_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, attribData->size * attribData->sizeOfDataType, attribData->data);
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

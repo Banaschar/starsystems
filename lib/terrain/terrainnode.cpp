@@ -1,5 +1,7 @@
 #include "terrainnode.hpp"
 #include "view.hpp"
+#include "mathutils.hpp"
+#include <glm/gtx/string_cast.hpp>
 
 TerrainNode::TerrainNode(TerrainTile *terrain, TerrainTile *water) : terrain_(terrain), water_(water) {}
 
@@ -84,10 +86,10 @@ void TerrainNode::update() {
     ;
 }
 
-TerrainNode_::TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec3 pos) : nodeDimension_(nodeDimension), nodePos_(pos) {
+TerrainNode_::TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec3 pos) : nodeDimension_(nodeDimension), nodePos_(pos), lodLevel_(lod) {
     heightMapIndex_ = heightMap->getIndex();
-
-    if (lod == 1) {
+    
+    if (lod == 0) {
         heightMap->getMaxMinValuesFromArea(nodePos_, nodeDimension_, &nodeMinHeight_, &nodeMaxHeight_);
     } else {
         createChildren(heightMap, nodeDimension, lod);
@@ -113,20 +115,27 @@ void TerrainNode_::createChildren(HeightMap *heightMap, int dim, int lod) {
     children_[3] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x + half, 0, nodePos_.z + half));
 }
 
-bool TerrainNode_::lodSelect(std::vector<int> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist) {
+bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist) {
     currentLodRange_ = ranges[lodLevel];
 
-    if (!boundingBoxIntersectsSphere(ranges[lodLevel], view->getCameraPosition()))
-        return false;
+    BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.z), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.z + nodeDimension_));
 
-    if (!inFrustum(view))
+    if (!bBox.intersectSphereSq(view->getCameraPosition(), currentLodRange_*currentLodRange_)) {//!boundingBoxIntersectsSphere(ranges[lodLevel], view->getCameraPosition())) {
+        //fprintf(stdout, "NotInSphere: LodLevel: %i, range: %f, dimenision: %i, MinHeight: %f, maxHeight: %f\n", lodLevel, ranges[lodLevel], nodeDimension_, nodeMinHeight_, nodeMaxHeight_);
+        return false;
+    }
+    /*
+    if (!view->isInsideFrustum(bBox)) {
+        fprintf(stdout, "NotInFrustum. LodLevel: %i\n", lodLevel);
         return true;
+    }
+    */
 
     if (lodLevel == 0) {
         tlist->push_back(this);
         return true;
     } else {
-        if (!boundingBoxIntersectsSphere(ranges[lodLevel - 1], view->getCameraPosition())) {
+        if (!bBox.intersectSphereSq(view->getCameraPosition(), ranges[lodLevel-1] * ranges[lodLevel-1])) {//boundingBoxIntersectsSphere(ranges[lodLevel - 1], view->getCameraPosition())) {
             tlist->push_back(this);
         } else {
             for (TerrainNode_ *child : children_) {
@@ -162,14 +171,9 @@ bool TerrainNode_::boundingBoxIntersectsSphere(float radius, glm::vec3 position)
     else if (position.z > v2.z)
         dist.z = position.z - v2.z;
 
+    float dist2 = glm::dot(dist, dist);
+    fprintf(stdout, "distVec: %s, dist2: %f\n", glm::to_string(dist).c_str(), dist2);
     return glm::dot(dist, dist) <= r2;
-}
-
-bool TerrainNode_::inFrustum(View *view) {
-    glm::vec3 min = glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.z);
-    glm::vec3 max = glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.z + nodeDimension_);
-
-    return view->isInsideFrustum(max, min);
 }
 
 float TerrainNode_::getNodeMaxHeight() {
@@ -178,4 +182,20 @@ float TerrainNode_::getNodeMaxHeight() {
 
 float TerrainNode_::getNodeMinHeight() {
     return nodeMinHeight_;
+}
+
+float TerrainNode_::getRange() {
+    return currentLodRange_;
+}
+
+glm::vec3 &TerrainNode_::getPosition() {
+    return nodePos_;
+}
+
+int TerrainNode_::getSize() {
+    return nodeDimension_;
+}
+
+int TerrainNode_::getLodLevel() {
+    return lodLevel_;
 }

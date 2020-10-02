@@ -55,19 +55,24 @@ class TerrainNode_ {
 public:
     TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec3 pos);
     ~TerrainNode_();
-    bool lodSelect(std::vector<int> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist);
+    bool lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist);
     float getNodeMaxHeight();
     float getNodeMinHeight();
-    float currentLodRange_;
+    glm::vec3 &getPosition();
+    float getRange();
+    int getSize();
+    int getLodLevel();
+    
 private:
     glm::vec3 nodePos_;
     int nodeDimension_;
+    int lodLevel_;
     float nodeMaxHeight_ = 0;
     float nodeMinHeight_ = 0;
     int heightMapIndex_;
     std::array<TerrainNode_ *, 4> children_{nullptr};
     void createChildren(HeightMap *heightMap, int dim, int lod);
     bool boundingBoxIntersectsSphere(float radius, glm::vec3 position);
-    bool inFrustum(View *view);
+    float currentLodRange_;
 };
 #endif

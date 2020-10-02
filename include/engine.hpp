@@ -15,7 +15,7 @@ struct GLFWwindow;
 
 class Engine {
   public:
-    Engine(int width, int height, const std::string name);
+    Engine(int width, int height, const std::string &name);
     ~Engine();
     GLFWwindow *getWindow();
     void addScene(Scene *scene);
@@ -24,7 +24,7 @@ class Engine {
   private:
     Scene *scene_;
     GLFWwindow *window_ = NULL;
-    void initWindow(int width, int height, const std::string name);
+    void initWindow(int width, int height, const std::string &name);
     void initThreadPool();
     void render_();
 };

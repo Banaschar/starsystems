@@ -8,7 +8,7 @@ unsigned int g_triangleCount = 0;
 bool g_debugPolygonMode = false;
 ThreadPool *threadPool = NULL;
 
-Engine::Engine(int width, int height, const std::string name) {
+Engine::Engine(int width, int height, const std::string &name) {
     initWindow(width, height, name);
     initThreadPool();
 }
@@ -21,7 +21,7 @@ Engine::~Engine() {
         delete threadPool;
 }
 
-void Engine::initWindow(int width, int height, const std::string name) {
+void Engine::initWindow(int width, int height, const std::string &name) {
     glewExperimental = true;
     if (!glfwInit()) {
         fprintf(stderr, "Failed to init GLFW\n");
