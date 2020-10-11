@@ -81,18 +81,6 @@ Scene *createStarSystems(Engine *engine) {
     planet1->transform(&scale, NULL, NULL);
     planet2->transform(&scale, NULL, NULL);
     planet3->transform(&scale, NULL, NULL);
-    // INSTANCES TEST, load asteroids
-    /*
-    std::vector<glm::vec3> pos = {
-        glm::vec3(0,20,0),
-        glm::vec3(10,20,0),
-        glm::vec3(-10,20,0),
-        glm::vec3(-20,20,0),
-        glm::vec3(0,0,20)
-    };
-    Model instanceTest = Model("PlanetFirstTry.obj", instanceShader, instanceShaderCb, pos);
-    game->addModel(instanceTest);
-    */
 
     Game *game = new Game(view);
     game->addLight(sun);
@@ -134,7 +122,7 @@ void flatColorCb(Shader *shader, Drawable *drawable, Game *game) {
     shader->uniform("lowerBound", -10.0f);
     shader->uniform("upperBound", 20.0f);
     shader->uniform("heightMapDimension", 256.0f);
-    shader->uniform("gridDimension", 16.0f);
+    shader->uniform("meshDimension", 16.0f);
     shader->uniform("gridOrigin", glm::vec3(0,0,0));
 }
 
@@ -249,76 +237,6 @@ Scene *createPlane(Engine *engine) {
     //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
     PerlinNoise pNoise = PerlinNoise(6, 15.0f, 0.3f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
-    //TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::SPHERE, glm::vec3(0,0,0));
-    //game->addTerrainManager(terr);
-    
-
-    // Random Entity Test
-    /*
-    Drawable *cube = DrawableFactory::createPrimitive(PrimitiveType::CUBE, ShaderType::SHADER_TYPE_DEFAULT);
-    glm::vec3 posC = glm::vec3(-3, 0, -3);
-    glm::vec3 scaleC = glm::vec3(0.5,0.5,0.5);
-    cube->transform(&scaleC, &posC, NULL);
-    game->addEntity(cube);
-    */
-    //cube->addTexture(TextureLoader::loadTextureFromFile("assets/waternormals.jpg", "texture_normal"));
-
-    /*
-    //TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,32), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    Drawable *t = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
-    Drawable *t1 = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_DEFAULT, 32);
-    glm::vec3 transP = glm::vec3(31, 0, 0);
-    t1->transform(NULL, &transP, NULL);
-    HeightMap *m = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), 256, 1);
-    Texture hmap;
-    Texture nMap;
-    hmap.id = m->getHeightTexture();
-    hmap.type = "texture_height";
-    nMap.id = m->getNormalTexture();
-    nMap.type = "texture_normal";
-    t->addTexture(hmap);
-    t->addTexture(nMap);
-    t1->addTexture(hmap);
-    t1->addTexture(nMap);
-    game->addEntity(t);
-    game->addEntity(t1);
-    //game->addTerrain(terr1);
-    */
-    /*
-    // Terrain stitches test
-    TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,0), 1, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    TerrainTile *terr2 = new TerrainTile(terrainGen, 32, glm::vec3(0,0,32), 2, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(32,0,32), 4, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    TerrainTile *terr1 = new TerrainTile(terrainGen, 32, glm::vec3(32,0,0), 8, GenerationType::PLANE, ShaderType::SHADER_TYPE_TERRAIN);
-    game->addTerrain(terr1);
-    game->addTerrain(terr2);
-    game->addTerrain(terr3);
-    game->addTerrain(terr4);
-    
-    */
-    // Instances base test 
-    /*
-    Drawable *t = DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_TERRAIN, 32);
-    HeightMap *m = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), 256, 1);
-    Texture hmap;
-    Texture nMap;
-    hmap.id = m->getHeightTexture();
-    hmap.type = "texture_height";
-    nMap.id = m->getNormalTexture();
-    nMap.type = "texture_normal";
-    t->addTexture(hmap);
-    t->addTexture(nMap);
-    t->updateInstanceSize(3);
-    glm::vec3 trans = glm::vec3(0,0,0);
-    t->transform(0, NULL, &trans, NULL);
-    trans = glm::vec3(31,0,0);
-    scale = glm::vec3(2,2,2);
-    t->transform(1, &scale, &trans, NULL);
-    trans = glm::vec3(0,0,31);
-    t->transform(2, NULL, &trans, NULL);
-    t->updateMeshInstances();
-    game->addTerrain(t);
-    */
 
     // CDLOD test
     TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::CDLOD, glm::vec3(0,0,0));
@@ -333,23 +251,27 @@ Scene *createPlane(Engine *engine) {
     Texture tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
     //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(500,500));
 
-    // WATER TEST
-    //Drawable *planeWater = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_DEFAULT);
-    //planeWater->setMeshDrawMode(MeshDrawMode::DRAW_MODE_TESSELLATION);
-    //game->addEntity(planeWater);
-    //Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
-    //TerrainTile *waterTile = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
-    //game->addWater(waterTile);
+    // Water Tessellation test
+    /*
+    Drawable *planeWater = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_DEFAULT);
+    planeWater->setMeshDrawMode(MeshDrawMode::DRAW_MODE_TESSELLATION);
+    game->addEntity(planeWater);
+    Drawable *waterTile = DrawableFactory::createWaterTile(glm::vec3(0,0,0), 120, glm::vec3(0,0,1));
+    TerrainTile *waterTile = new TerrainTile(terrainGen, 60, glm::vec3(0,0,0), 12, GenerationType::PLANE_FLAT, ShaderType::SHADER_TYPE_WATER);
+    game->addWater(waterTile);
+    */
 
     int width,height;
     view.getWindowSize(&width, &height);
     Renderer *renderer = new Renderer(shaders, width, height);
     //DEBUG
     renderer->setPolygonRenderModeWireFrame(true);
+    /*
     Texture tex2;
     tex2.id = renderer->DEBUG_getPostProcessingTexture();
     tex2.type = "texture_gui";
-    //gui->addGuiElement(tex2, glm::vec2(0,0), glm::vec2(640,360));
+    gui->addGuiElement(tex2, glm::vec2(0,0), glm::vec2(640,360));
+    */
     // End Debug
     Scene *scene = new Scene(game, renderer);
     scene->addGui(gui);

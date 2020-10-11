@@ -72,7 +72,6 @@ private:
     int heightMapIndex_;
     std::array<TerrainNode_ *, 4> children_{nullptr};
     void createChildren(HeightMap *heightMap, int dim, int lod);
-    bool boundingBoxIntersectsSphere(float radius, glm::vec3 position);
     float currentLodRange_;
 };
 #endif

@@ -59,7 +59,7 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
         }
         shader_->end();
         glDepthFunc(GL_LESS);
-    } else if (type == TerrainType::CDLOD) {
+    } else if (type == TerrainType::CDLOD || type == TerrainType::DEFAULT) {
         shader_->use();
         shader_->handleMeshTextures(terrains[0]->getMeshes()[0]->getTextures());
         shader_->prepare(terrains[0], game);

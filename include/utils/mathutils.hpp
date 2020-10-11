@@ -1,6 +1,11 @@
 #ifndef MATHUTILS_HPP
 #define MATHUTILS_HPP
 
+struct Plane {
+    glm::vec3 point;
+    glm::vec3 normal;
+};
+
 struct BoundingBox {
     glm::vec3 min;
     glm::vec3 max;
@@ -34,7 +39,6 @@ struct BoundingBox {
             float d = point.z - max.z;
             dist += d*d;
         }
-        //fprintf(stdout, "Distance: %f\n", dist);
         return dist;
     }
 

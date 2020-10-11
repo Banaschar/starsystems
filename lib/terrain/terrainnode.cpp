@@ -120,10 +120,9 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
 
     BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.z), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.z + nodeDimension_));
 
-    if (!bBox.intersectSphereSq(view->getCameraPosition(), currentLodRange_*currentLodRange_)) {//!boundingBoxIntersectsSphere(ranges[lodLevel], view->getCameraPosition())) {
-        //fprintf(stdout, "NotInSphere: LodLevel: %i, range: %f, dimenision: %i, MinHeight: %f, maxHeight: %f\n", lodLevel, ranges[lodLevel], nodeDimension_, nodeMinHeight_, nodeMaxHeight_);
+    if (!bBox.intersectSphereSq(view->getCameraPosition(), currentLodRange_*currentLodRange_))
         return false;
-    }
+    
     /*
     if (!view->isInsideFrustum(bBox)) {
         fprintf(stdout, "NotInFrustum. LodLevel: %i\n", lodLevel);
@@ -135,12 +134,12 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
         tlist->push_back(this);
         return true;
     } else {
-        if (!bBox.intersectSphereSq(view->getCameraPosition(), ranges[lodLevel-1] * ranges[lodLevel-1])) {//boundingBoxIntersectsSphere(ranges[lodLevel - 1], view->getCameraPosition())) {
+        if (!bBox.intersectSphereSq(view->getCameraPosition(), ranges[lodLevel-1] * ranges[lodLevel-1])) {
             tlist->push_back(this);
         } else {
             for (TerrainNode_ *child : children_) {
                 if (!child->lodSelect(ranges, lodLevel - 1, view, tlist)) {
-                    child->currentLodRange_ = currentLodRange_;
+                    //child->currentLodRange_ = currentLodRange_;
                     tlist->push_back(child);
                 }
             }
@@ -148,32 +147,6 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
 
         return true;
     }
-}
-
-bool TerrainNode_::boundingBoxIntersectsSphere(float radius, glm::vec3 position) {
-    float r2 = radius * radius;
-    glm::vec3 v1 = glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.z);
-    glm::vec3 v2 = glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.z + nodeDimension_);
-    glm::vec3 dist;
-
-    if (position.x < v1.x)
-        dist.x = position.x - v1.x;
-    else if (position.x > v2.x)
-        dist.x = position.x - v2.x;
-
-    if (position.y < v1.y)
-        dist.y = position.y - v1.y;
-    else if (position.y > v2.y)
-        dist.y = position.y - v2.y;
-
-    if (position.z < v1.z)
-        dist.z = position.z - v1.z;
-    else if (position.z > v2.z)
-        dist.z = position.z - v2.z;
-
-    float dist2 = glm::dot(dist, dist);
-    fprintf(stdout, "distVec: %s, dist2: %f\n", glm::to_string(dist).c_str(), dist2);
-    return glm::dot(dist, dist) <= r2;
 }
 
 float TerrainNode_::getNodeMaxHeight() {

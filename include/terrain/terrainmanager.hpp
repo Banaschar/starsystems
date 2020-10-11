@@ -158,6 +158,10 @@ private:
   void destroyCubeSideTree();
 };
 
+/*
+ * Implementation of CDLOD
+ * https://github.com/fstrugar/CDLOD
+ */
 class TerrainCDLODTree : public TerrainTreeImplementation {
 public:
   TerrainCDLODTree(TerrainGenerator *terrainGen);
@@ -165,15 +169,23 @@ public:
   void update(View *view, DrawableList *terrainList, DrawableList *waterList);
   
 private:
-     std::vector<float> ranges_;
-     VertexAttributeData rangeAttribData_;
-     std::vector<glm::vec3> instanceVecMorphAttribs_;
-     std::vector<std::vector<TerrainNode_ *>> grid_;
-     int heightMapIndex_ = 0;
-     int lodLevelCount_;
-     Drawable *basePatch_;
+    TerrainGenerator *terrainGen_;
+    std::vector<float> ranges_;
+    VertexAttributeData rangeAttribData_;
+    std::vector<glm::vec3> instanceVecMorphAttribs_;
+    std::vector<std::vector<TerrainNode_ *>> grid_;
+    std::vector<TerrainNode_ *> nodesToDraw_;
 
-     float getNextRange(int lodLevel);
+    std::unordered_map<glm::vec2, TerrainNode_ *> rootNodeMap_;
+    std::unordered_map<int, std::vector<TerrainNode_ *>> nodeDrawMap_;
+    std::unordered_map<int, HeightMap *> heightMaps_;
+    int heightMapIndex_ = 0;
+    int lodLevelCount_;
+    int rootNodeDimension_;
+    Drawable *basePatch_;
+
+    float getPrevRange(int lodLevel);
+    void createNode(glm::vec3 rootNodeOrigin, glm::vec3 rootNodeAxis);
 };
 
 enum class TerrainType {DEFAULT, SPHERE, PLANE, CDLOD};

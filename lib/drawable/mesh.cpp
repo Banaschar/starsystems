@@ -5,22 +5,27 @@
 #include "oglheader.hpp"
 
 Mesh::Mesh() {}
-
 Mesh::Mesh(VertexData *vertexData, std::vector<Texture> textures) : vertexData_(vertexData), textures_(textures) {
     drawMode_ = GL_TRIANGLES;
     vertexData_->optimize();
 }
 
+/*
+ * initMesh() is not called on Mesh Object creation.
+ * That's to ensure a mesh can be created by background Threads,
+ * because the OpenGL functions to initialize the vertex array objects can
+ * only be called by the main thread that owns the OpenGL context.
+ */
 void Mesh::initMesh() {
-    if (incomplete_)
+    if (incomplete_) {
         incomplete_ = false;
+        drawInstances_ = 0;
+        glGenVertexArrays(1, &vao_);
+        glGenBuffers(1, &vbo_);
+        glGenBuffers(1, &ebo_);
 
-    drawInstances_ = 0;
-    glGenVertexArrays(1, &vao_);
-    glGenBuffers(1, &vbo_);
-    glGenBuffers(1, &ebo_);
-
-    updateMesh();
+        updateMesh();
+    }
 }
 
 void Mesh::updateMesh() {
@@ -81,6 +86,7 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttribu
         glBufferData(GL_ARRAY_BUFFER, attribData->size * attribData->sizeOfDataType, NULL, GL_STREAM_DRAW);
         glEnableVertexAttribArray(vertexAttributeIndex_);
         glVertexAttribPointer(vertexAttributeIndex_++, attribData->numElements, GL_FLOAT, GL_FALSE, attribData->sizeOfDataType, (void *) 0);
+        glVertexAttribDivisor(vertexAttributeIndex_ - 1, 1);
     }
 
     glBindVertexArray(0);
@@ -89,6 +95,7 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttribu
 /*
  * Update the ibo attribute buffer that holds the matrices
  * for instanced draw calls
+ * TODO: Prevent usage of extra attrib data if buffer is not declared
  */
 void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttributeData *attribData) {
     if (!isInstanced_)
@@ -101,8 +108,8 @@ void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttri
 
     if (attribData) {
         glBindBuffer(GL_ARRAY_BUFFER, abo_);
-        glBufferData(GL_ARRAY_BUFFER, attribData->size * attribData->sizeOfDataType, NULL, GL_STREAM_DRAW);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, attribData->size * attribData->sizeOfDataType, attribData->data);
+        glBufferData(GL_ARRAY_BUFFER, drawInstances_ * attribData->sizeOfDataType, NULL, GL_STREAM_DRAW);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * attribData->sizeOfDataType, attribData->data);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);

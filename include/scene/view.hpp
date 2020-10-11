@@ -7,11 +7,6 @@
 
 struct GLFWwindow;
 
-struct Plane {
-    glm::vec3 point;
-    glm::vec3 normal;
-};
-
 class View {
   public:
     View(GLFWwindow *window, glm::vec3 camPos);

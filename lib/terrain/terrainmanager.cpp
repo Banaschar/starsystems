@@ -976,6 +976,14 @@ void TerrainQuadTree::createChildren(TerrainNode *node) {
     }
 }
 
+CubeTree::CubeTree() {
+
+}
+
+CubeTree::initTree() {
+    
+}
+
 /*
  * Based on paper CDLOD by strugar
  * 
@@ -983,13 +991,16 @@ void TerrainQuadTree::createChildren(TerrainNode *node) {
  * of the tree sides visible are rendered. Coming closer, parts of the cube sides need to be culled as well.
  * Very close up, it should be the 9 root nodes moving over the cube.
  */
-TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) {
+TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) : terrainGen_(terrainGen) {
     fprintf(stdout, "Creating CDLOD Tree\n");
+    nodesToDraw_.reserve(32);
 
     int leafNodeSize = 16.0f;
     lodLevelCount_ = 5;
     int heightMapSize = 256;
 
+    /*
+    // From original cdlod implementation
     float visibilityDistance = 2000.0f; // from settings in CDLOD -> I think thats the far plane
     float lodNear = 0.0f;
     float lodFar = visibilityDistance;
@@ -1014,7 +1025,7 @@ TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) {
         currentDetailBalance *= detailBalance;
         fprintf(stdout, "Range %i: %f\n", i, ranges_[i]);
     }
-
+    */
     /*
     prevPos = lodNear;
     for ( int i = 0; i < lodLevelCount_; ++i) {
@@ -1037,8 +1048,15 @@ TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) {
      * Or the renderer has to apply the textures based on heightmapindex...hm, doesn't work...
      */
     HeightMap *heightMap = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), heightMapSize, heightMapIndex_++);
-
     glm::vec3 nodePos = glm::vec3(0,0,0);
+
+    // From cdlod ogl imple
+    float minLodDist = 16.0f;
+    ranges_.resize(lodLevelCount_);
+    for (int i = 0; i < lodLevelCount_; ++i) {
+        ranges_[i] = minLodDist * pow(2, i);
+        fprintf(stdout, "LodRange %i: %f\n", i, ranges_[i]);
+    }
 
     /*
     int gridSize = heightMapSize / rootNodeSize;
@@ -1072,38 +1090,61 @@ TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) {
     rangeAttribData_.sizeOfDataType = sizeof(glm::vec3);
 }
 
+void TerrainCDLODTree::init(glm::vec3 pos) {
+    int halfDim = rootNodeDimension_ / 2;
+    glm::vec2 centerNodePos = glm::vec2(pos.x - halfDim, pos.z - halfDim); // TODO: Find axis based on pos...
+    /* If distance from planet is high, might create less than 9 root nodes. E.g. just 6, one for each planet side */
+    for (int i = -1; i < 2; ++i) {
+        for (int j = -1; j < 2; ++j) {
+            glm::vec2 gridPos = glm::vec2(j,i);
+            glm::vec2 nodePos = glm::vec2(centerNodePos.x + j * rootNodeDimension_, centerNodePos + i * rootNodeDimension_)
+            rootNodeMap_[gridPos] = createNode(nodePos, axis);
+        }
+    }
+}
+
+TerrainNode_ *TerrainCDLODTree::createNode(glm::vec2 rootNodeOrigin, glm::vec3 rootNodeAxis) {
+    HeightMap *heightMap = new HeightMap(terrainGen_, rootNodeOrigin, rootNodeAxis, rootNodeDimension_, heightMapIndex_);
+    TerrainNode_ *node = new TerrainNode_(heightMap, rootNodeDimension_, lodLevelCount_-1, rootNodeOrigin);
+    heightMap->cleanUpMapData();
+    heightMaps_[heightMapIndex_++] = heightMap;
+
+    return node;
+}
+
 TerrainCDLODTree::~TerrainCDLODTree() {
     delete basePatch_;
 }
 
-float TerrainCDLODTree::getNextRange(int lodLevel) {
-    return lodLevel == lodLevelCount_ - 1 ? ranges_[lodLevel] : ranges_[lodLevel + 1];
+float TerrainCDLODTree::getPrevRange(int lodLevel) {
+    return lodLevel == 0 ? 0.0f : ranges_[lodLevel - 1];
 }
 
 void TerrainCDLODTree::update(View *view, DrawableList *terrainList, DrawableList *waterList) {
     terrainList->clear();
-    std::vector<TerrainNode_ *> nodes;
+    nodesToDraw_.clear();
     
     /* Select nodes */
     for (std::vector<TerrainNode_ *> &gridRow : grid_) {
         for (TerrainNode_ *root : gridRow) {
-            root->lodSelect(ranges_, lodLevelCount_-1, view, &nodes);
+            root->lodSelect(ranges_, lodLevelCount_-1, view, &nodesToDraw_);
         }
     }
     
-    if (nodes.empty()) {
+    if (nodesToDraw_.empty()) {
         return;
     }
 
     /* Build the instance model matrices (translation and scale) and the list of ranges*/
-    basePatch_->updateInstanceSize(nodes.size());
-    instanceVecMorphAttribs_.resize(nodes.size());
-    rangeAttribData_.size = nodes.size();
-    for (int i = 0; i < nodes.size(); ++i) {
-        glm::vec3 translate = nodes[i]->getPosition();
-        glm::vec3 scale = glm::vec3(nodes[i]->getSize() / 16.0f);
+    /* TODO: Use emplace_back for better performance! */
+    basePatch_->updateInstanceSize(nodesToDraw_.size());
+    instanceVecMorphAttribs_.resize(nodesToDraw_.size());
+    rangeAttribData_.size = nodesToDraw_.size();
+    for (int i = 0; i < nodesToDraw_.size(); ++i) {
+        glm::vec3 translate = nodesToDraw_[i]->getPosition();
+        glm::vec3 scale = glm::vec3(nodesToDraw_[i]->getSize() / 16.0f); // Node dimension / mesh dimension
         basePatch_->transform(i, &scale, &translate, NULL);
-        instanceVecMorphAttribs_[i] = glm::vec3(nodes[i]->getRange(), getNextRange(nodes[i]->getLodLevel()), nodes[i]->getSize() / 16.0f);
+        instanceVecMorphAttribs_[i] = glm::vec3(nodesToDraw_[i]->getRange(), getPrevRange(nodesToDraw_[i]->getLodLevel()), nodesToDraw_[i]->getSize() / 16.0f);
     }
 
     rangeAttribData_.data = static_cast<void *>(instanceVecMorphAttribs_.data());
