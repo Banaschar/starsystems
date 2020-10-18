@@ -6,10 +6,6 @@
 #include <string>
 
 #include "drawable.hpp"
-#include "game.hpp"
-
-class Shader;
-typedef std::function<void(Shader *, Drawable *, Game *)> callback_t;
 
 enum TextureType {
     TEXTURE_TYPE_DIFFUSE,
@@ -22,16 +18,17 @@ enum TextureType {
 class Shader {
   public:
     Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const char *tessControlShaderPath, 
-            const char *tessEvalShaderPath, const char *geometryShaderPath, ShaderType type, const callback_t cb = nullptr);
-    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type, const callback_t cb = nullptr);
+            const char *tessEvalShaderPath, const char *geometryShaderPath, ShaderType type);
+    Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type);
     void use();
     void end();
     void resetTextureCount();
-    void prepare(Drawable *drawable, Game *game);
     ShaderType type();
     unsigned int id();
     void bindTexture(const std::string &name, unsigned int texId);
     void handleMeshTextures(std::vector<Texture> &textures);
+    virtual void setGlobalUniforms();
+    virtual void setLocalUniforms();
     void uniform(const std::string &name, glm::mat4 value);
     void uniform(const std::string &name, glm::mat3 value);
     void uniform(const std::string &name, glm::vec3 value);
@@ -50,4 +47,9 @@ class Shader {
     bool attachShader(const char *path, int shaderType, std::vector<unsigned int> &shaderIds);
     bool linkProgram(std::vector<unsigned int> &shaderIds);
 };
+
+class TerrainInstanceShader : public Shader {
+    void setGlobalUniforms() override;
+    void setLocalUniforms() override;
+}
 #endif

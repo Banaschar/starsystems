@@ -31,7 +31,9 @@ struct Vertex2d {
 struct Texture {
     unsigned int id;
     std::string type;
-    std::string path;
+    
+    Texture() {}
+    Texture(unsigned int id_, std::string type_) : id(id_), type(type_) {}
 };
 
 

@@ -87,6 +87,10 @@ glm::vec3 TerrainGenerator::getAxisPos(glm::vec3 &axis, int x, int y) {
     return outPos;
 }
 
+/*
+ * TODO: If a mesh square lies on the boundary of a cube, the out of mesh vertices computed
+ * for normal calculation might be slightly off. For perfect accuracy, I'd need a wrap-around to the next cube side.
+ */
 float TerrainGenerator::getHeightValue(glm::vec3 &pos) {
     float height;
     if (sphereRadius_) {
@@ -109,24 +113,73 @@ glm::vec3 TerrainGenerator::getVertexPosition(glm::vec3 vertPos, float height) {
     return vertPos;
 }
 
-void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec3 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
+/* Generates height map */
+void TerrainGenerator::generateHeightMap(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
+    int offsetX = pos.x;
+    int offsetY = pos.y;
+
+    /* Triangles on the opposite side of the sphere need to have a clock-wise winding order */
+    bool inverted = false;
+    if (axis.x == -1 || axis.z == 1 || axis.y == -1)
+        inverted = true;
+
+    int vertexIndicesMap[numVertsPerLine][numVertsPerLine];
+    int meshVertexIndex = 0;
+    int outOfMeshVertexIndex = -1;
+
+    for (int y = 0; y < numVertsPerLine; ++y) {
+        for (int x = 0; x < numVertsPerLine; ++x) {
+            bool isOutOfMeshVertex = y == 0 || y == numVertsPerLine - 1 || x == 0 || x == numVertsPerLine - 1;
+            bool isSkippedVertex = x > 0 && x < numVertsPerLine - 1 && y > 0 && y < numVertsPerLine - 1 && ((x - 1) % skipIncrement != 0 || (y - 1) % skipIncrement != 0);
+
+            if (isOutOfMeshVertex)
+                vertexIndicesMap[x][y] = outOfMeshVertexIndex--;
+            else if (!isSkippedVertex)
+                vertexIndicesMap[x][y] = meshVertexIndex++;
+        }
+    }
+
+    for (int y = 0; y < numVertsPerLine; ++y) {
+        for (int x = 0; x < numVertsPerLine; ++x) {
+            bool isSkippedVertex = x > 0 && x < numVertsPerLine - 1 && y > 0 && y < numVertsPerLine - 1 && ((x - 1) % skipIncrement != 0 || (y - 1) % skipIncrement != 0);
+            
+            if (!isSkippedVertex) {
+                int vertexIndex = vertexIndicesMap[x][y];
+                
+                glm::vec3 vertPos = getAxisPos(axis, offsetX + x - 1, offsetY + y - 1);
+                float height = isFlat ? 0.0f : getHeightValue(vertPos); // vertPos is modified to sphere Position if sphereRadius > 0
+                glm::vec3 sPos = getVertexPosition(vertPos, height);
+                glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 1);
+                meshData.addVertex(sPos, uv, vertexIndex);
+                meshData.addHeight(height, vertexIndex);
+
+                bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1;
+
+                if (createTriangle) {
+                    currentIncrement = (x == 0 || y == 0) ? 1 : skipIncrement;
+                    int a = vertexIndicesMap[x][y];
+                    int b = vertexIndicesMap[x + currentIncrement][y];
+                    int c = vertexIndicesMap[x][y + currentIncrement];
+                    int d = vertexIndicesMap[x + currentIncrement][y + currentIncrement];
+                    
+                    meshData.addTriangle(a, inverted ? d : c, inverted ? c : d);
+                    meshData.addTriangle(a, inverted ? b : d, inverted ? d : b);
+                }
+            }
+        }
+    }
+}
+
+/*
+ * Generates Mesh with stichting for skipIncrement > 1. 
+ */
+void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
     if (skipIncrement != 1 && (numVertsPerLine - 3) % 60 != 0) {
         fprintf(stdout, "[TERRAINGENERATOR::generateMesh] Error: Terrain Dimension has to be divisible by 60 if lod > 1\n");
     }
 
-    int offsetX, offsetY;
-    if (axis.x) {
-        offsetX = pos.z;
-        offsetY = pos.y;
-    }
-    else if (axis.y) {
-        offsetX = pos.x;
-        offsetY = pos.z;
-    }
-    else {
-        offsetX = pos.x;
-        offsetY = pos.y;
-    }
+    int offsetX = pos.x;
+    int offsetY = pos.y;
 
     /* Triangles on the opposite side of the sphere need to have a clock-wise winding order */
     bool inverted = false;
@@ -168,13 +221,12 @@ void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec3 
                 glm::vec2 uv = glm::vec2(x - 1, y - 1) / (float)(numVertsPerLine - 1);
                 meshData.addVertex(sPos, uv, vertexIndex);
                 meshData.addHeight(height, vertexIndex);
-                //if (vertexIndex == 0 || vertexIndex > 4092)
-                    //fprintf(stdout, "Pos(y,x): (%i,%i). VertexPos(x,y,z): %s, VertexIndex: %i\n", y,x,glm::to_string(sPos).c_str(),vertexIndex);
 
                 bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1;
 
                 if (createTriangle) {
 
+                    /* If we are at the border, we need to create the stitching triangles */
                     if (skipIncrement != 1 && isMeshEdgeVertex && !(x == numVertsPerLine - 2 && y == numVertsPerLine - 2)) { // bottom right corner only draws the normal helper triangles
                         bool isCorner = x == 1 && y == 1 || x == numVertsPerLine - 2 && y == 1 || x == 1 && y == numVertsPerLine - 2 || x == numVertsPerLine - 2 && y == numVertsPerLine - 2;
                         bool isVertical = x == 1 || x == numVertsPerLine - 2;
@@ -239,35 +291,6 @@ void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec3 
         }
     }
 }
-/*
-void TerrainGenerator::generateHeightMap(glm::vec3 startPos, int dimension, unsigned char *data) {
-    float lowerBound = pNoise_.getLowerBound();
-    float upperBound = pNoise_.getUpperBound();
-    //fprintf(stdout, "lowerBound: %f, upperBound: %f\n", lowerBound, upperBound);
-    for (int y = 0; y < dimension; ++y) {
-        for (int x = 0; x < dimension; ++x) {
-            float height = pNoise_.getNoise2d(startPos.x + x, startPos.y + y);
-            data[y * dimension + x] = mapRange(height, lowerBound, upperBound);
-            //fprintf(stdout, "Pos: (%i, %i). Height: %u\n", x,y,data[y * dimension + x]);
-        }
-    }
-}
-
-unsigned char TerrainGenerator::mapRange(float inVal, float lowerBound, float upperBound) {
-    float in = clamp(inVal, lowerBound, upperBound);
-    float s = 1.0 * (255 - 0) / (upperBound - lowerBound);
-    return 0 + std::floor((s * (inVal - lowerBound)) + 0.5);
-}
-
-float TerrainGenerator::clamp(float i, float l, float u) {
-    if (i < l)
-        return l;
-    else if (i > u)
-        return u;
-    else
-        return i;
-}
-*/
 
 /*
 Explanation (for dimension 13 with lod 4):
@@ -290,19 +313,6 @@ M: main vertex, e: edge Vertex, c: edge connection Vertex, x: outOfMesh vertex (
 14x e M c c c M c c c M  c  c  c  M  e  x
 15x e e e e e e e e e e  e  e  e  e  e  x
 16x x x x x x x x x x x  x  x  x  x  x  x
-
-  0 1 2 3 4 5 6 7 8 9
-0 e e e e e e e e e e
-1
-2
-3
-4
-5
-6
-7
-8
-9
-*/
 
 /*
  * BIOMES

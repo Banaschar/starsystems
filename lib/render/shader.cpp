@@ -211,3 +211,8 @@ ShaderType Shader::type() {
 unsigned int Shader::id() {
     return shaderProgramId_;
 }
+
+/* Specific Shader Implementations */
+TerrainInstanceShader::TerrainInstanceShader() {
+
+}

@@ -31,8 +31,9 @@ void TerrainRenderer::bindTextures() {
     }
 }
 
-void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm::vec4 &clipPlane) {
-    if (terrains.empty())
+/*
+void TerrainRenderer::render(TerrainObjectRenderData &renderData, SceneRenderData &sceneRenderData, glm::vec4 &clipPlane) {
+    if (!renderData.land->size)
         return;
     
     TerrainType type = game->getTerrainManagerType();
@@ -66,4 +67,30 @@ void TerrainRenderer::render(std::vector<Drawable *> &terrains, Game *game, glm:
         vaoRenderer_->draw(terrains[0]->getMeshes()[0]);
         shader_->end();
     }
+}
+*/
+
+void TerrainRenderer::bindTextureList(TextureList &textureList) {
+    for (Texture &tex : textureList) {
+        shader_->bindTexture(tex.type, tex.id);
+    }
+}
+
+void TerrainRenderer::render(TerrainObjectRenderData &renderData, SceneRenderData &sceneRenderData, glm::vec4 &clipPlane) {
+    shader_->use();
+
+    bindTextureList(renderData.land->getGlobalTextureList());
+    // handle global Uniforms! -> shader->setGlobalUniforms(sceneRenderData)
+
+    for (int i = 0; i < renderData.land->size; ++i) {
+        bindTextureList(renderData.land->getTextureListAtIndex(i));
+        DrawableList &currentList = renderData.land->getDrawableListAtIndex(i);
+
+        for (Drawable *drawable : currentList) {
+            shader_->setLocalUniforms(drawable);
+            vaoRenderer_->draw(drawable->getMeshes());
+        }
+    }
+
+    shader_->end();
 }

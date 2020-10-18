@@ -7,162 +7,99 @@
 #include <glm/gtx/hash.hpp>
 #include <unordered_map>
 
-class CubeSideTree;
 typedef std::unordered_map<glm::vec2, TerrainNode*> RootNodeMap;
 typedef std::unordered_map<glm::vec3, int> AxisIntegerMap;
-typedef std::unordered_map<glm::vec3, CubeSideTree*> CubeSideMap;
-typedef std::unordered_map<glm::vec2, std::tuple<glm::vec3, glm::vec2>> CubeTreeMap;
-
 typedef std::vector<Drawable *> DrawableList;
+typedef std::vector<Texture> TextureList;
+typedef std::unordered_map<int, std::vector<Drawable *>> IndexedDrawableListMap;
+typedef std::unordered_map<int, std::vector<Texture>> IndexedTextureListMap;
 
-class TerrainTreeImplementation {
+struct TerrainObjectAttributes {
+    glm::vec3 bodyOrigin;
+    float bodyRadius;
+    bool hasAtmosphere;
+    bool hasWater;
+    float atmosphereHeight;
+}
+
+class TerrainDrawData {
 public:
-  virtual void update (View *view, DrawableList *terrainList, DrawableList *waterList) = 0;
+    int size;
+    virtual TextureList &getGlobalTextureList() = 0;
+    virtual TextureList &getTextureListAtIndex(int i) = 0;
+    virtual DrawableList &getDrawableListAtIndex(int i) = 0;
 };
 
- /*
-  * Convention: On the x-axis sides of the cube, z is used as first (x-) coordinate
-  *
-  */
-class CubeSideTree {
+class TerrainObjectRenderData {
+    TerrainDrawData *land = nullptr;
+    TerrainDrawData *water = nullptr;
+    TerrainObjectAttributes *attributes = nullptr;
+};
+
+typedef std::vector<TerrainRenderData> TerrainRenderDataVector;
+
+class BaseDrawData : public TerrainDrawData {
 public:
-  /*
-   * .
-   */
-  CubeSideTree(glm::vec3 axis, TerrainGenerator *terrainGen, CubeSideMap *cubeSideMap, AxisIntegerMap *axisIntegerMap, glm::vec3 &sphereOrigin, int planetDimension, int rootDimension, int rootLod);
-  ~CubeSideTree();
-/*
- * args: 
- *      pos: Current camera position on the plane made up by this cube side. Could be out of the cube side
- *      previous: Contains the previous cubeSideTree instance on axis change
- * Returns the cubeSide that contains the current centerRootNode
- * Call setInitialRun() in the appropriate cubeSide before first run!
- */
-CubeSideTree *update(glm::vec3 &posSphere, CubeSideTree *previous = NULL);
-void updateNodes(glm::vec3 &camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-void setInitialRun();
-bool hasActiveNodes();
-unsigned int getNumRootNodes();
-glm::vec3 &getAxis();
-RootNodeMap &getRootNodeMap();
+    BaseDrawData() {
+        size = 1;
+    }
+
+    TextureList &getGlobalTextureList() {
+        return globalTextureList;
+    }
+
+    TextureList &getTextureListAtIndex(int i) {
+        return textureList;
+    }
+
+    DrawableList &getDrawableListAtIndex(int i) {
+        return drawableList;
+    }
+
+    TextureList globalTextureList;
+    TextureList textureList;
+    DrawableList drawableList;
+};
+
+class BaseTerrainTree {
+public:
+  virtual void update(View *view, TerrainObjectRenderData *terrainObjectRenderData) = 0;
+};
+
+class TerrainManager {
+public:
+    TerrainManager();
+    TerrainManager(BaseTerrainTree *tree);
+    ~TerrainManager();
+
+    void addTerrainTree(BaseTerrainTree *tree);
+    void update(View *view);
+    TerrainDrawDataVector &getTerrainRenderData();
+    TerrainType getType();
 
 private:
-  glm::vec3 axis_;
-  glm::vec3 cubeSideOrigin_; // the lower corner of the cubeSide, the (0,0) quad position in the RootNodeMap
-  int maxGridPosition_; // max value for the RootNodeMap key. planetDimension / rootDimension - 1 (>= 3)
-  int rootDimension_;
-  glm::vec3 sphereOrigin_;
-  int cubeSideDimension_;
-  int sphereRadius_;
-  int rootLod_;
-  bool initialRun_ = false;
-  bool containsActiveRootNode_ = false;
-  bool containsCurrentCenterNode_ = false;
-  glm::vec2 currentCenterNode_ = glm::vec2(-1,-1);
-  TerrainGenerator *terrainGenerator_;
-  RootNodeMap rootNodeMap_; // Map of terrain chunks
-  AxisIntegerMap *axisIntegerMap_; // Maps the axis on integers
-  CubeSideMap *cubeSideMap_; // Holds the references to the other cubeSides
-
-  void printDefaultCubeSideMapError(std::string name, int key);
-  glm::vec3 computeCubeSideOrigin();
-  glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
-  void updateNode_(TerrainNode *node, glm::vec3 &camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-  bool handleRootNodeCreation(glm::vec2 pos);
-  void createRootNode(glm::vec2 cubeSideGridPos);
-  glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int childPosOffset);
-  void createChildren(TerrainNode *node);
-  glm::vec3 getNextAxis(glm::vec2 &change);
-  glm::vec2 getPreviousCenterNode(glm::vec3 &newAxis, glm::vec2 &gridPos);
-    /*
-   * Maps a position from this axis to the neighbor axis specified by change
-   * Offset 0 means a border node.
-   * Offset > 0 only used to delete nodes.
-   */
-  glm::vec2 mapPosOnNewAxis(glm::vec2 &pos, glm::vec2 &change, int offset = 0);
-    /* 
-   * Returns true if handled on different
-   * Modifies pos to be a border node if it lies on another side. 
-   */
-  bool handleOnDifferentCubeSide(glm::vec2 &pos, glm::vec2 &change, bool &edgeCase);
-    /*
-   * Sets axisOut to the new cubeSide axis if overflow
-   */
-  bool overflow(glm::vec3 &pos, glm::vec3 &axisOut);
-
-  bool handleNodeDeletion(glm::vec2 destroyPos);
-  bool handleEdgeCaseNodeDeletion(glm::vec2 &destroyPos);
-  bool destroyRootNode(glm::vec2 pos);
-    /*
-   * Calculate node grid position in the rootNodeMap of this side
-   * Used as key in the rootNodeMap for a new TerrainNode
-   */
-  glm::vec2 worldCubePosToGridPos(glm::vec3 &pos);
-
-  glm::vec3 gridPosToWorldCubePos(glm::vec2 &gridPos);
-
-  glm::vec3 getCubePosFromSphere(glm::vec3 &camPos);
+    TerrainType type_;
+    std::vector<BaseTerrainTree *> baseTerrainTreeList_;
+    std::vector<TerrainObjectRenderData> terrainObjectRenderDataVector_;
 };
 
-class TerrainQuadTree : public TerrainTreeImplementation {
-  public:
-    TerrainQuadTree(int initialDimension, int maxLod, 
-                    TerrainGenerator *terrainGen);
-    ~TerrainQuadTree();
-
-    void update(View *view, DrawableList *terrainList, DrawableList *waterList);
-
-  private:
-    glm::vec2 currentMiddleChunk_;
-    glm::vec3 currentMiddleChunkPosition_;
-    int sphereRadius_;
-    glm::vec3 sphereOrigin_;
-    glm::vec3 currentAxis_;
-    RootNodeMap rootMap_;
-    int rootDimension_;
-    int maxLod_;
-    TerrainGenerator *terrainGenerator_;
-    void initTree();
-    void createRootNode(glm::vec2 position);
-    void createChildren(TerrainNode *node);
-    void updateRoots(glm::vec3 &camPosition);
-    void update_(TerrainNode *node, glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-};
-
-class TerrainCubeTree : public TerrainTreeImplementation {
+class TerrainChunkTree : public BaseTerrainTree {
 public:
-  TerrainCubeTree(TerrainGenerator *terrainGen, int dimension, int lod, glm::vec3 sphereOrigin);
-  ~TerrainCubeTree();
-  void update(View *view, DrawableList *terrainList, DrawableList *waterList);
+    TerrainChunkTree();
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+    TerrainDrawData *getDrawData();
+    void addTerrainChunk(Drawable *drawable);
 
 private:
-  int cubeSideDimension_;
-  TerrainGenerator *terrainGenerator_;
-  std::vector<TerrainNode *> cubeSides_;
-  int planetSizeLod_ = 12;
-  int maxLodQuadTree_;
-  glm::vec3 sphereOrigin_;
-  int sphereRadius_;
-  CubeSideTree *currentCubeSide_ = NULL;
-  AxisIntegerMap axisIntegerMap_;
-  CubeSideMap cubeSideMap_;
-  void initTree(int dimension);
-  void createCubeSideTree(glm::vec3 &camPos);
-  void updateCubeSides(glm::vec3 &camPosition, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-  void computeInitialCubePositionAndAxis(glm::vec3 &camPos, glm::vec3 *axisOut, glm::vec3 *positionOut);
-  bool verifyPosIsOnAxis(glm::vec3 &axis, glm::vec3 &pos);
-  glm::vec3 cubeWorldPosToSpherePos(glm::vec3 &cubePos);
-  void createChildren(TerrainNode *node);
-  glm::vec3 getChildPosition(glm::vec3 &pos, int x, int z, int offset, glm::vec3 &axis);
-  void updateNode_(TerrainNode *node, glm::vec3 camWorldPos, glm::vec3 &camDirection, std::vector<Drawable *> *tlist, std::vector<Drawable *> *wlist);
-  void destroyCubeSideTree();
+    TerrainDrawData terrainDrawData;
+    TerrainObjectAttributes terrainAttributes_;
 };
 
 /*
  * Implementation of CDLOD
  * https://github.com/fstrugar/CDLOD
  */
-class TerrainCDLODTree : public TerrainTreeImplementation {
+class TerrainCDLODTree : public BaseTerrainTree {
 public:
   TerrainCDLODTree(TerrainGenerator *terrainGen);
   ~TerrainCDLODTree();
@@ -190,22 +127,97 @@ private:
 
 enum class TerrainType {DEFAULT, SPHERE, PLANE, CDLOD};
 
-class TerrainManager {
+class PlanetDrawData : public TerrainDrawData {
 public:
-    /*
-     * Initial dimension is the maximum size of a terrain chunk or one side of a planet cubeTree
-     * For performance, initialDimension should be divisible by all
-     * even numbers up to at least 10, better 12 -> More different levels of detail 
-     */
-    TerrainManager(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
-    ~TerrainManager();
+    TextureList &getGlobalTextureList() {
+        return globalTextureList;
+    }
 
-    void update(View *view, DrawableList *terrainList, DrawableList *waterList);
-    TerrainType getType();
+    TextureList &getTextureListAtIndex(int i) {
+        return *(listOfTextureLists[i]);
+    }
+
+    DrawableList &getDrawableListAtIndex(int i) {
+        return *(listOfDrawableLists[i]);
+    }
+
+    TerrainAttributes &getTerrainAttributes() {
+        return planetAttributes;
+    }
+private:
+  std::vector<DrawableList *> listOfDrawableLists(1);
+  std::vector<TextureList *> listOfTextureLists(1);
+  TextureList globalTextureList;
+  TerrainAttributes planetAttributes; // Holds things like origin, radius, hasAtmosphere (for global uniforms and stuff)
+};
+
+struct MeshInstanceData {
+    IndexedDrawableListMap baseMeshListMap;
+    std::unordered_map<int, std::vector<glm::vec3>> instanceAttribListMap;
+    std::unordered_map<int, VertexAttributeData> instanceAttributeDataMap;
+    std::vector<glm::vec3>::iterator attribIt;
+    std::vector<glm::vec3> *currVec;
+
+    void createNewInstance(int index, Drawable *baseMesh) {
+        baseMeshListMap[index] = DrawableList(1, baseMesh);
+        instanceAttribListMap[index];
+        instanceAttributeDataMap[index];
+    }
+
+    void updateInstanceSize(int index, int size) {
+        baseMeshListMap[index][0]->updateInstanceSize(size);
+        instanceAttribListMap[index]->resize(size);
+        instanceAttributeDataMap[index].size = size;
+
+        currVec = &instanceAttribListMap[index];
+        attribIt = currVec->begin();
+    }
+
+    void insertAttribute(float x, float y, float z) {
+        currVec->emplace(attribIt++, x, y, z);
+    }
+
+    void finishInstance(int index) {
+        instanceAttributeDataMap[index].data = static_cast<void *>(instanceAttribListMap[index].data());
+        baseMeshListMap[index][0]->updateMeshInstances(&instanceAttributeDataMap[index]);
+    }
+}
+
+struct HeightMapConstructData {
+    glm::vec3 cornerPos;
+}
+
+typedef std::unordered_map<int, std::vector<TerrainNode_ *>> IndexedNodeListMap;
+
+class PlanetTree : public BaseTerrainTree {
+public:
+    PlanetTree();
+    ~PlanetTree();
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+    TerrainDrawData *getDrawData();
 
 private:
-    TerrainType type_;
-    TerrainTreeImplementation *terrainTreeImplementation_ = nullptr;
-    bool createTerrainTree(TerrainGenerator *terrainGen, int initialDimension, int lodLevels, TerrainType type, glm::vec3 origin);
+    int planetOrigin_;
+    int planetRadius_;
+    int rootNodeDimension_;
+    int lodLevelCount_;
+    int leafNodeSize_;
+    std::vector<float> planetRanges_;
+    std::vector<TerrainNode_ *> rootNodeList_;
+    IndexedNodeListMap selectedNodes_;
+    std::vector<HeightMapConstructData> heightMapCreateList_; // vec4(mapIndex, vec3 pos)
+    MeshInstanceData meshInstanceData_;
+    std::unordered_map<int, HeightMap *> heightMaps_;
+    IndexedTextureListMap heightMapTextures_;
+    PlanetDrawData planetDrawData_;
+    TerrainObjectAttributes planetAttributes_;
+
+    void initPlanet();
+    void initGlobalTextures();
+    TerrainNode_ *createRootNode(glm::vec2 &cornerPos, glm::vec3 &axis);
+    float getPrevRange(int lodLevel);
+    glm::vec2 vec3ToVec2CubeSide(glm::vec3 &pos, glm::vec3 &axis);
+    glm::vec3 vec2ToVec3CubeSide(glm::vec2 &pos, glm::vec3 &axis);
+    glm::vec3 getRotationAxis(glm::vec3 &axis, float *degree);
 };
 #endif

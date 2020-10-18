@@ -2,31 +2,40 @@
 #define SCENE_H
 
 #include <vector>
+#include "scenerenderdata.hpp"
 
-#include "drawable.hpp"
-#include "game.hpp"
-#include "gui.hpp"
-#include "renderer.hpp"
+class Drawable;
+class Gui;
+class Renderer;
+class View;
+class TerrainManager;
 
 class Scene {
   public:
-    Scene(Game *game, Renderer *renderer);
+    Scene(Renderer *renderer, View *view);
+    Scene(Renderer *renderer, View *view, TerrainManager *terrainManager);
     ~Scene();
-    void addGui(Gui *gui);
     void update();
     void render();
-    void setAutoRotate(bool value);
+    
+    void addEntity(Drawable *entity);
+    void addLight(Drawable *light);
+    void addSun(Drawable *sun);
+    void addSky(Drawable *sky);
+
+    Gui *getGui();
+    View *getView();
+    Drawable *getSun();
 
   private:
     void setupScene();
-    Game *game_;
-    Gui *gui_ = NULL;
+    SceneRenderData sceneRenderData_;
     Renderer *renderer_;
-    std::vector<Drawable *> &lights_;
-    std::vector<Drawable *> &terrain_;
-    std::vector<Drawable *> &entities_;
-    std::vector<Drawable *> &water_;
-    std::vector<Drawable *> &sky_;
-    bool autoRotate_;
+    View *view_;
+    TerrainManager *terrainManager_;
+    Gui *gui_;
+    std::vector<Drawable *> lights_;
+    std::vector<Drawable *> entities_;
+    std::vector<Drawable *> sky_;
 };
 #endif

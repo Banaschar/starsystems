@@ -5,14 +5,14 @@
 
 class HeightMap {
 public:
-    HeightMap(TerrainGenerator *terrainGen, glm::vec3 cornerPos, glm::vec3 axis, int dimension, int index);
+    HeightMap(TerrainGenerator *terrainGen, glm::vec2 cornerPos, glm::vec3 axis, int dimension, int index);
     int getIndex();
     unsigned int getHeightTexture();
     unsigned int getNormalTexture();
     void cleanUpMapData();
-    void getMaxMinValuesFromArea(glm::vec3 &pos, int dimension, float *nodeMinHeight_, float *nodeMaxHeight_);
+    void getMaxMinValuesFromArea(glm::vec2 &pos, int dimension, float *nodeMinHeight_, float *nodeMaxHeight_);
 private:
-    glm::vec3 cornerPos_;
+    glm::vec2 cornerPos_;
     glm::vec3 axis_;
     int index_;
     int dimension_;

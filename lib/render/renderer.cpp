@@ -45,17 +45,18 @@ void Renderer::setPolygonRenderModeWireFrame(bool set) {
         }
 }
 
-void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
-                      DrawableList &water, DrawableList *gui, Game *game) {
+void Renderer::render(TerrainDrawDataContainer &terrainDrawDataContainer, DrawableList &lights, DrawableList &entities, DrawableList &sky,
+                      DrawableList *gui, SceneRenderData &sceneRenderData) {
     
     processEntities(entities);
+    
     /* 
      * Render to waterFrameBuffer only if there is water to render
      * and waterTypeQuiality is true 
      * AND don't do this if we are rendering a whole planet and we are far away
      */
-    
-    if (!water.empty() && water[0]->type() == ShaderType::SHADER_TYPE_WATER) {
+    /*
+    if (terrainDrawData.water && terrainDrawData.water->size && terrainDrawData.water->getDrawableListAtIndex(0)[0]->type() == ShaderType::SHADER_TYPE_WATER) {
         glEnable(GL_CLIP_DISTANCE0);
         
         glm::vec3 normal;
@@ -64,6 +65,7 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
         float distancePlane;
         float distanceCam;
         TerrainTile *t;
+        DrawableList &water = terrainDrawData.water->getDrawableListAtIndex(0);
         if ((t = dynamic_cast<TerrainTile *>(water[0])) && t->getSphereRadius()) {
             // clipPlane normal:
             glm::vec3 normal = glm::normalize(game->getView().getCameraPosition() - t->getSphereOrigin());
@@ -99,22 +101,23 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
         waterRenderer_->unbindActiveFrameBuffer();
         glDisable(GL_CLIP_DISTANCE0);
     }
+    */
 
-    if (postProcessorAtmosphere_ && !terrain.empty())
+    if (postProcessorAtmosphere_ && !terrainDrawDataContainer.land.empty())
         postProcessorAtmosphere_->start(); // render to postProcess texture
 
-    if (waterRenderer_ && !water.empty())
-        waterRenderer_->render(water, game);
+    if (waterRenderer_ && !terrainDrawDataContainer.water.empty())
+        waterRenderer_->render(terrainDrawDataContainer.water, game);
 
-    renderScene(lights, terrain, sky, game, glm::vec4(0, -1, 0, 10000));
+    renderScene(lights, terrainDrawData.land, sky, game, glm::vec4(0, -1, 0, 10000));
 
-    if (postProcessorAtmosphere_ && !terrain.empty()) {
+    if (postProcessorAtmosphere_ && !terrainDrawDataContainer.land.empty()) {
         postProcessorAtmosphere_->end();
-        postProcessorAtmosphere_->render(game, terrain);
+        postProcessorAtmosphere_->render(terrainDrawDataContainer.land, game);
     }
 
     if (debugShader_)
-        renderDebug(terrain, water, game);
+        renderDebug(terrainDrawDataContainer, game);
     
     if (gui && guiRenderer_)
         guiRenderer_->render(gui, game);
@@ -122,16 +125,16 @@ void Renderer::render(DrawableList &lights, DrawableList &terrain, DrawableList 
     entityMap_.clear();
 }
 
-void Renderer::renderDebug(DrawableList &terrain, DrawableList &water, Game *game) {
+void Renderer::renderDebug(terrainDrawDataContainer &terrainDrawDataContainer, Game *game) {
     debugShader_->use();
 
-    for (Drawable *drawable : terrain) {
+    for (Drawable *drawable : terrainDrawDataContainer.land[0]->getDrawableListAtIndex(0)) {
         debugShader_->prepare(drawable, game);
         for (Mesh *m : drawable->getMeshes())
             vaoRenderer_->draw(m);
     }
 
-    for (Drawable *drawable : water) {
+    for (Drawable *drawable : terrainDrawDataContainer.water[0]->getDrawableListAtIndex(0)) {
         debugShader_->prepare(drawable, game);
         for (Mesh *m : drawable->getMeshes())
             vaoRenderer_->draw(m);

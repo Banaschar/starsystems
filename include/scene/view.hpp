@@ -31,7 +31,6 @@ class View {
     void setAutoRotate(bool value);
     void mouseCallback(GLFWwindow *window, double xpos, double ypos);
     void scrollCallback(GLFWwindow *window, double xoffset, double yoffset);
-    void setupInput();
     void getWindowSize(int *width, int *height);
     // std::function<void(GLFWwindow*, double, double)> mCb;
     // std::function<void(GLFWwindow*, double, double)> sCb;
@@ -40,6 +39,7 @@ class View {
     bool isInsideFrustum(BoundingBox &bBox);
 
   private:
+    void setupInput();
     void rotateCamera();
     void processInputs();
     void update_();

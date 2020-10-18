@@ -12,7 +12,7 @@ public:
     ~PostProcessor();
     void start();
     void end();
-    void render(Game *game, std::vector<Drawable *> &terrains);
+    void render(std::vector<TerrainDrawData *> land, Game *game);
     void resolutionChange(int width, int height);
 
     unsigned int DEBUG_getTexture();

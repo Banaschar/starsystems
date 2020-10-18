@@ -279,40 +279,12 @@ Scene *createPlane(Engine *engine) {
     return scene;
 }
 
-Scene *test(Engine *engine) {
-    std::vector<std::string> cubetex = {"assets/skyboxSky2/right.png", "assets/skyboxSky2/left.png",
-                                        "assets/skyboxSky2/top.png",   "assets/skyboxSky2/bottom.png",
-                                        "assets/skyboxSky2/front.png", "assets/skyboxSky2/back.png"};
-    std::vector<Shader *> shaders = {
-        new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb),
-        new Shader("shader/sun.vs", "shader/sun.fs", ShaderType::SHADER_TYPE_LIGHT, sunShaderCb),
-    };
-
-    View view = View(engine->getWindow(), glm::vec3(0, 20, -20));
-    Game *game = new Game(view);
-
-    Drawable *light = DrawableFactory::createLight("assets/PlanetFirstTry.obj", ShaderType::SHADER_TYPE_LIGHT);
-    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
-    game->addSky(skybox);
-    game->addSun(light);
-
-    int width,height;
-    view.getWindowSize(&width, &height);
-    Renderer *renderer = new Renderer(shaders, width, height);
-    Scene *scene = new Scene(game, renderer);
-
-    return scene;
-}
-
 int main() {
     Engine engine = Engine(1920, 1080, "starsystem");
     if (!engine.getWindow())
         return 0;
 
-    // create plane
     Scene *scene = createPlane(&engine);
-
-    // Scene *scene = test(&engine);
 
     if (!scene)
         return 0;

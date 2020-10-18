@@ -86,7 +86,10 @@ void TerrainNode::update() {
     ;
 }
 
-TerrainNode_::TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec3 pos) : nodeDimension_(nodeDimension), nodePos_(pos), lodLevel_(lod) {
+/* TODO: getMaxMinValuesFromArea -> call when reached lowest level of current heightmap, instead of global 0 
+ *          -> that means a heightMap needs a range of lod levels it covers.
+ */
+TerrainNode_::TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec2 pos) : nodeDimension_(nodeDimension), nodePos_(pos), lodLevel_(lod) {
     heightMapIndex_ = heightMap->getIndex();
     
     if (lod == 0) {
@@ -109,20 +112,26 @@ void TerrainNode_::createChildren(HeightMap *heightMap, int dim, int lod) {
     int half = dim / 2;
     --lod;
 
-    children_[0] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x, 0, nodePos_.z));
-    children_[1] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x + half, 0, nodePos_.z));
-    children_[2] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x, 0, nodePos_.z + half));
-    children_[3] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x + half, 0, nodePos_.z + half));
+    children_[0] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x, 0, nodePos_.y));
+    children_[1] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x + half, 0, nodePos_.y));
+    children_[2] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x, 0, nodePos_.y + half));
+    children_[3] = new TerrainNode_(heightMap, half, lod, glm::vec3(nodePos_.x + half, 0, nodePos_.y + half));
+
+    childrenCreated_ = true;
 }
 
-bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist) {
+/* Add argument that represents a list of heightmaps that need to be created 
+ * Needed parameters: heightmapindex, parentPosition (as heightmap Origin), axis
+ * !! In that case, terrainNode needs a new variable, the heightmapdimension...
+ */
+bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::unordered_map<int, std::vector<TerrainNode_ *>> *nodeMap, ) {
     currentLodRange_ = ranges[lodLevel];
 
-    BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.z), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.z + nodeDimension_));
+    BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.y), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.y + nodeDimension_));
 
     if (!bBox.intersectSphereSq(view->getCameraPosition(), currentLodRange_*currentLodRange_))
         return false;
-    
+
     /*
     if (!view->isInsideFrustum(bBox)) {
         fprintf(stdout, "NotInFrustum. LodLevel: %i\n", lodLevel);
@@ -131,17 +140,27 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
     */
 
     if (lodLevel == 0) {
-        tlist->push_back(this);
+        (*nodeMap)[heightMapIndex_].push_back(this);
         return true;
     } else {
         if (!bBox.intersectSphereSq(view->getCameraPosition(), ranges[lodLevel-1] * ranges[lodLevel-1])) {
             tlist->push_back(this);
         } else {
-            for (TerrainNode_ *child : children_) {
-                if (!child->lodSelect(ranges, lodLevel - 1, view, tlist)) {
-                    //child->currentLodRange_ = currentLodRange_;
-                    tlist->push_back(child);
+            if (childrenCreated_) {
+                for (TerrainNode_ *child : children_) {
+                    if (!child->lodSelect(ranges, lodLevel - 1, view, tlist)) {
+                        //child->currentLodRange_ = currentLodRange_;
+                        (*nodeMap)[heightMapIndex_].push_back(child); // this should actually be the area covered by the child represented in the current lodlevel
+                    }
                 }
+            } else {
+                if (!childrenCreationScheduled_) {
+                    heightMapCreationList.push_back(this);
+                    childrenCreationScheduled_ = true;
+                }
+
+                /* Cover the are with ourself, while we wait for children to be created */
+                (*nodeMap)[heightMapIndex_].push_back(this);
             }
         }
 
@@ -161,7 +180,7 @@ float TerrainNode_::getRange() {
     return currentLodRange_;
 }
 
-glm::vec3 &TerrainNode_::getPosition() {
+glm::vec2 &TerrainNode_::getPosition() {
     return nodePos_;
 }
 

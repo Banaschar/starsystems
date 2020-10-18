@@ -12,16 +12,6 @@ Game::Game(View view) : view_(view) {
 }
 
 Game::~Game() {
-    if (terrainManager_)
-        delete terrainManager_;
-    else {
-        for (Drawable *m : terrain_) {
-            delete m;
-        }
-        for (Drawable *m : water_) {
-            delete m;
-        }
-    }
     for (Drawable *m : entities_) {
         delete m;
     }
@@ -36,18 +26,6 @@ Game::~Game() {
 
 void Game::update() {
     view_.update();
-    /*
-     * Update terrain tree and update drawable list
-     * if neccessary
-     */ 
-    if (terrainManager_)
-        terrainManager_->update(&view_, &terrain_, &water_);
-}
-
-void Game::addTerrainManager(TerrainManager *terrainManager) {
-    if (terrainManager_)
-        delete terrainManager_;
-    terrainManager_ = terrainManager;
 }
 
 void Game::addEntity(Drawable *entity) {
@@ -98,14 +76,6 @@ std::vector<Drawable *> &Game::getEntities() {
     return entities_;
 }
 
-std::vector<Drawable *> &Game::getTerrain() {
-    return terrain_;
-}
-
-std::vector<Drawable *> &Game::getWater() {
-    return water_;
-}
-
 Drawable *Game::getSun() {
     if (sun_)
         return sun_;
@@ -129,11 +99,4 @@ std::vector<Drawable *> &Game::getSky() {
 
 float Game::getWaterLevel() {
     return waterLevel_;
-}
-
-TerrainType Game::getTerrainManagerType() {
-    if (terrainManager_)
-        return terrainManager_->getType();
-    else
-        return TerrainType::DEFAULT;
 }

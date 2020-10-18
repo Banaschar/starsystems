@@ -15,8 +15,6 @@ class Game {
     Game(View view);
     ~Game();
 
-    void addTerrainManager(TerrainManager *terrainManager);
-
     void addEntity(Drawable *entity);
 
     void addLight(Drawable *light);
@@ -49,17 +47,12 @@ class Game {
 
     float getWaterLevel();
 
-    TerrainType getTerrainManagerType();
-
   private:
     View view_;
     Drawable *sun_ = NULL;
     float waterLevel_ = 0.0;
-    TerrainManager *terrainManager_ = NULL;
     std::vector<Drawable *> sky_;
     std::vector<Drawable *> lights_;
-    std::vector<Drawable *> terrain_;
     std::vector<Drawable *> entities_;
-    std::vector<Drawable *> water_;
 };
 #endif

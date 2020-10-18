@@ -53,12 +53,12 @@ class View;
 
 class TerrainNode_ {
 public:
-    TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec3 pos);
+    TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec2 pos);
     ~TerrainNode_();
     bool lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist);
     float getNodeMaxHeight();
     float getNodeMinHeight();
-    glm::vec3 &getPosition();
+    glm::vec2 &getPosition();
     float getRange();
     int getSize();
     int getLodLevel();
@@ -69,9 +69,12 @@ private:
     int lodLevel_;
     float nodeMaxHeight_ = 0;
     float nodeMinHeight_ = 0;
-    int heightMapIndex_;
+    int heightMapIndex_; // We need a mutex for this
     std::array<TerrainNode_ *, 4> children_{nullptr};
     void createChildren(HeightMap *heightMap, int dim, int lod);
     float currentLodRange_;
+
+    bool childrenCreationScheduled_ = false;
+    bool childrenCreated_ = false; // We need a mutex for this
 };
 #endif

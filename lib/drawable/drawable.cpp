@@ -96,7 +96,7 @@ void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec
 
     if (rotationAxis) {
         if (degree == 0.0f) {
-            fprintf(stderr, "Rotation axis specified but no degree\n");
+            ;
         } else {
             rotationAxis_[index] = *rotationAxis;
             rotationDegree_[index] = degree;

@@ -52,6 +52,8 @@ View::View(GLFWwindow *window, glm::vec3 camPos, glm::vec3 camDir, float yaw, fl
     bottomPlane_.normal = glm::vec3(glm::rotate(glm::mat4(), -angle, camRight_) * glm::vec4(camDirection_, 1.0f));
 
     frustumPlanes_.insert(frustumPlanes_.begin(), {&farPlane_, &nearPlane_, &leftPlane_, &rightPlane_, &topPlane_, &bottomPlane_});
+
+    setupInput();
 }
 
 void View::setupInput() {

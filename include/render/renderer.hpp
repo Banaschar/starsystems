@@ -32,8 +32,8 @@ class Renderer {
     /*
      *
      */
-    void render(DrawableList &lights, DrawableList &terrain, DrawableList &entities, DrawableList &sky,
-                DrawableList &water, DrawableList *gui, Game *game);
+    void render(TerrainDrawDataContainer &terrainDrawDataContainer, DrawableList &lights, DrawableList &entities, DrawableList &sky,
+                DrawableList *gui, SceneRenderData &sceneRenderData);
 
     void resolutionChange(int width, int height);
 

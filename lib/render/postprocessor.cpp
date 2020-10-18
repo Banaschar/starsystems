@@ -41,12 +41,20 @@ void PostProcessor::resolutionChange(int width, int height) {
     //mainTexture_ = mainFrameBuffer_->resolutionChange(width, height);
 }
 
-void PostProcessor::render(Game *game, std::vector<Drawable *> &terrains) {
-    TerrainTile *t;
-    if (!terrains.empty() && !(t = dynamic_cast<TerrainTile*>(terrains[0]))) {
-        fprintf(stdout, "[POSTPROCESSOR::render] CRITICAL ERROR: Drawable is not a TerrainTile\n");
-        return;
+void PostProcessor::render(std::vector<TerrainDrawData *> land, Game *game) {
+    glm::vec3 radius, origin;
+    bool hasAtmosphere = false;
+    for (TerrainDrawData *d : land) {
+        PlanetDrawData *planet = std::dynamic_cast<PlanetDrawData *>(d);
+        if (planet && planet->getPlanetAttributes().hasAtmosphere) {
+            hasAtmosphere = true;
+            origin = planet->getPlanetAttributes().planetOrigin;
+            radius = planet->getPlanetAttributes().planetRadius;
+        }
     }
+
+    if (!hasAtmosphere)
+        return;
 
     glDisable(GL_DEPTH_TEST);
 
@@ -56,8 +64,8 @@ void PostProcessor::render(Game *game, std::vector<Drawable *> &terrains) {
     shader_->bindTexture("mainDepthTexture", mainDepthBuffer_);
     shader_->uniform("worldSpaceCamPos", game->getView().getCameraPosition());
     shader_->uniform("camDirection", game->getView().getCameraDirection());
-    shader_->uniform("planetOrigin", t->getSphereOrigin());
-    shader_->uniform("planetRadius", t->getSphereRadius());
+    shader_->uniform("planetOrigin", origin);
+    shader_->uniform("planetRadius", radius);
     shader_->uniform("nearPlane", game->getView().getNearPlane());
     shader_->uniform("farPlane", game->getView().getFarPlane());
     shader_->uniform("scatterCoeffs", scatterCoeffs_);
