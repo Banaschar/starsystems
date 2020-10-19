@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-#include "enginetypes.hpp"
+#include "meshdatatypes.hpp"
+#include "basetypes.hpp"
 
 class Mesh {
   private:

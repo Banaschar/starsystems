@@ -3,11 +3,12 @@
 
 #include "shader.hpp"
 #include "vaorenderer.hpp"
+#include "scenerenderdata.hpp"
 
 class GuiRenderer {
   public:
     GuiRenderer(Shader *shader, VaoRenderer *vaoRenderer);
-    void render(std::vector<Drawable *> *guiElements, Game *game);
+    void render(std::vector<Drawable *> *guiElements, SceneRenderData &sceneData);
 
   private:
     Shader *shader_;

@@ -28,7 +28,6 @@ set(ENGINE_LIBRARY_SOURCE_FILES
     lib/scene/scene.cpp
     lib/scene/gui.cpp
     lib/scene/view.cpp
-    lib/scene/game.cpp
     lib/terrain/terraintile.cpp
     lib/terrain/terrainnode.cpp
     lib/terrain/terraingenerator.cpp

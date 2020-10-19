@@ -1,6 +1,8 @@
 #include "waterrenderer.hpp"
 #include "oglheader.hpp"
 #include "textureloader.hpp"
+#include "global.hpp"
+#include "drawable.hpp"
 
 const float WATER_WAVE_SPEED = 0.03f;
 
@@ -55,11 +57,18 @@ void WaterRenderer::initPerformanceShader() {
     normalTexturePerformance_ = TextureLoader::loadTextureFromFile("assets/waterNormal.png");
 }
 
-void WaterRenderer::render(std::vector<Drawable *> water, Game *game) {
+void WaterRenderer::render(TerrainRenderDataVector &renderDataVector, SceneRenderData &sceneData) {
+    for (TerrainObjectRenderData &tObj : renderDataVector) {
+        if (tObj.attributes->hasWater)
+            render_(tObj, sceneData);
+    }
+}
+
+void WaterRenderer::render_(TerrainObjectRenderData &renderData, SceneRenderData &sceneData) {
     moveFactor_ += WATER_WAVE_SPEED * g_deltaTime;
     moveFactor_ = moveFactor_ >= 1.0 ? 0.0 : moveFactor_;
 
-    bool quality = water[0]->type() == ShaderType::SHADER_TYPE_WATER ? true : false;
+    bool quality = renderData.attributes->waterShaderType == ShaderType::SHADER_TYPE_WATER ? true : false;
     Shader *shaderTmp = quality ? shaderQ_ : shaderP_;
 
     if (!shaderTmp) {
@@ -69,21 +78,22 @@ void WaterRenderer::render(std::vector<Drawable *> water, Game *game) {
 
     shaderTmp->use();
     shaderTmp->uniform("moveFactor", moveFactor_);
+    shaderTmp->setSceneUniforms(sceneData, nullptr);
 
     if (quality)
         prepareQuality();
     else
         preparePerformance();
-        
-    for (Drawable *drawable : water) {
-        if (drawable) {
-            drawable->update(game);
-            shaderTmp->prepare(drawable, game);
+
+    for (int i = 0; i < renderData.water->size; ++i) {
+        for (Drawable *drawable : renderData.water->getDrawableListAtIndex(i)) {
+            shaderTmp->setDrawableUniforms(sceneData, drawable, nullptr);
 
             for (Mesh *mesh : drawable->getMeshes())
                 vaoRenderer_->draw(mesh);
         }
     }
+
     shaderTmp->end();
 
     if (quality)

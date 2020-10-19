@@ -2,6 +2,7 @@
 #include "framebuffer.hpp"
 #include "global.hpp"
 #include "oglheader.hpp"
+#include "scenerenderdata.hpp"
 
 /*
  * TODO: Move shader specific code to a shader subClass (or the callback function), so I can use the postProcessor
@@ -41,34 +42,24 @@ void PostProcessor::resolutionChange(int width, int height) {
     //mainTexture_ = mainFrameBuffer_->resolutionChange(width, height);
 }
 
-void PostProcessor::render(std::vector<TerrainDrawData *> land, Game *game) {
-    glm::vec3 radius, origin;
-    bool hasAtmosphere = false;
-    for (TerrainDrawData *d : land) {
-        PlanetDrawData *planet = std::dynamic_cast<PlanetDrawData *>(d);
-        if (planet && planet->getPlanetAttributes().hasAtmosphere) {
-            hasAtmosphere = true;
-            origin = planet->getPlanetAttributes().planetOrigin;
-            radius = planet->getPlanetAttributes().planetRadius;
-        }
+void PostProcessor::render(TerrainRenderDataVector &renderDataVector, SceneRenderData &sceneData) {
+    for (TerrainObjectRenderData &tObj : renderDataVector) {
+        if (tObj.attributes->hasAtmosphere)
+            render_(tObj, sceneData);
     }
+}
 
-    if (!hasAtmosphere)
-        return;
-
+void PostProcessor::render_(TerrainObjectRenderData &renderData, SceneRenderData &sceneData) {
     glDisable(GL_DEPTH_TEST);
 
     shader_->use();
-    shader_->prepare(screen_, game);
+    
     shader_->bindTexture("mainScreenTex", mainTexture_);
     shader_->bindTexture("mainDepthTexture", mainDepthBuffer_);
-    shader_->uniform("worldSpaceCamPos", game->getView().getCameraPosition());
-    shader_->uniform("camDirection", game->getView().getCameraDirection());
-    shader_->uniform("planetOrigin", origin);
-    shader_->uniform("planetRadius", radius);
-    shader_->uniform("nearPlane", game->getView().getNearPlane());
-    shader_->uniform("farPlane", game->getView().getFarPlane());
+    shader_->setSceneUniforms(sceneData, renderData.attributes);
+    shader_->setDrawableUniforms(sceneData, screen_, nullptr);
     shader_->uniform("scatterCoeffs", scatterCoeffs_);
+    
     for (Mesh *mesh : screen_->getMeshes()) {
         vaoRenderer_->draw(mesh);
     }

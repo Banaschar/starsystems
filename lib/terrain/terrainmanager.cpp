@@ -9,19 +9,18 @@
 
 #include "global.hpp"
 #include "drawablefactory.hpp"
-TerrainManager::TerrainManager() {
-    addTerrainTree(new TerrainChunkTree());
-}
-TerrainManager::TerrainManager(BaseTerrainTree *tree) {
-    addTerrainTree(tree);
+TerrainManager::TerrainManager() {}
+TerrainManager::TerrainManager(TerrainObject *obj) {
+    addTerrainObject(obj);
 }
 
 TerrainManager::~TerrainManager() {
-    delete baseTerrainTree_;
+    for (TerrainObject *t : terrainObjectList)
+        delete t;
 }
 
-void TerrainManager::addTerrainTree(BaseTerrainTree *tree) {
-    baseTerrainTreeList_.push_back(tree);
+void TerrainManager::addTerrainObject(TerrainObject *obj) {
+    terrainObjectList.push_back(obj);
     terrainObjectRenderDataVector_.emplace_back();
 }
 
@@ -34,7 +33,7 @@ void TerrainManager::update(View *view) {
     for (int i = 0; i < terrainObjectRenderDataVector_.size(); ++i) {
         terrainObjectRenderDataVector_[i].land.clear();
         terrainObjectRenderDataVector_[i].water.clear();
-        baseTerrainTreeList_[i]->update(view, &terrainObjectRenderDataVector_[i]);
+        terrainObjectList[i]->update(view, &terrainObjectRenderDataVector_[i]);
     }
 }
 
@@ -62,8 +61,8 @@ void TerrainChunkTree::addTerrainChunk(Drawable *drawable) {
  *      size of 2*planet radius (But with a detail level of 12)
  * 3. Close up: 3*3 grid with current pos in the middle. Only one inside the atmosphere. Maybe radius + 0.7 * atmosphereHeight
  */
-PlanetTree::PlanetTree(TerrainGenerator *terrainGen) {
-
+PlanetTree::PlanetTree(TerrainGenerator *terrainGen) terrainGen_(terrainGen) {
+    initPlanet();
 }
 
 void PlanetTree::initPlanet() {

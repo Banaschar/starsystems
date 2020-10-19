@@ -45,8 +45,8 @@ void Renderer::setPolygonRenderModeWireFrame(bool set) {
         }
 }
 
-void Renderer::render(TerrainDrawDataContainer &terrainDrawDataContainer, DrawableList &lights, DrawableList &entities, DrawableList &sky,
-                      DrawableList *gui, SceneRenderData &sceneRenderData) {
+void Renderer::render(TerrainRenderDataVector &terrainRenderData, DrawableList &lights, DrawableList &entities, DrawableList &sky,
+                      DrawableList *gui, SceneRenderData &sceneData) {
     
     processEntities(entities);
     
@@ -103,41 +103,48 @@ void Renderer::render(TerrainDrawDataContainer &terrainDrawDataContainer, Drawab
     }
     */
 
-    if (postProcessorAtmosphere_ && !terrainDrawDataContainer.land.empty())
+    if (postProcessorAtmosphere_)
         postProcessorAtmosphere_->start(); // render to postProcess texture
 
-    if (waterRenderer_ && !terrainDrawDataContainer.water.empty())
-        waterRenderer_->render(terrainDrawDataContainer.water, game);
+    if (waterRenderer_)
+        waterRenderer_->render(terrainRenderData, sceneData);
 
-    renderScene(lights, terrainDrawData.land, sky, game, glm::vec4(0, -1, 0, 10000));
+    renderScene(terrainRenderData, lights, sky, sceneData);
 
-    if (postProcessorAtmosphere_ && !terrainDrawDataContainer.land.empty()) {
+    if (postProcessorAtmosphere_) {
         postProcessorAtmosphere_->end();
-        postProcessorAtmosphere_->render(terrainDrawDataContainer.land, game);
+        postProcessorAtmosphere_->render(terrainRenderData, sceneData);
     }
 
     if (debugShader_)
-        renderDebug(terrainDrawDataContainer, game);
+        renderDebug(terrainRenderData, sceneData);
     
     if (gui && guiRenderer_)
-        guiRenderer_->render(gui, game);
+        guiRenderer_->render(gui, sceneData);
     
     entityMap_.clear();
+
+    if (sceneData.clipPlane)
+        delete sceneData.clipPlane;
 }
 
-void Renderer::renderDebug(terrainDrawDataContainer &terrainDrawDataContainer, Game *game) {
+void Renderer::renderDebug(TerrainRenderDataVector &terrainRenderData, SceneRenderData &sceneData) {
     debugShader_->use();
 
-    for (Drawable *drawable : terrainDrawDataContainer.land[0]->getDrawableListAtIndex(0)) {
-        debugShader_->prepare(drawable, game);
-        for (Mesh *m : drawable->getMeshes())
-            vaoRenderer_->draw(m);
-    }
+    for (TerrainObjectRenderData &renderData : terrainRenderData) {
+        for (int i = 0; i < renderData.land->size; ++i) {
+            for (Drawable *drawable : renderData.land->getDrawableListAtIndex(i)) {
+                for (Mesh *m : drawable->getMeshes())
+                    vaoRenderer_->draw(m);
+            }
+        }
 
-    for (Drawable *drawable : terrainDrawDataContainer.water[0]->getDrawableListAtIndex(0)) {
-        debugShader_->prepare(drawable, game);
-        for (Mesh *m : drawable->getMeshes())
-            vaoRenderer_->draw(m);
+        for (int i = 0; i < renderData.water->size; ++i) {
+            for (Drawable *drawable : renderData.water->getDrawableListAtIndex(i)) {
+                for (Mesh *m : drawable->getMeshes())
+                    vaoRenderer_->draw(m);
+            }
+        }
     }
 
     debugShader_->end();
@@ -201,7 +208,7 @@ void Renderer::setupRenderer(std::vector<Shader *> shaders) {
  * Puts entities not in the base types (terrain, water, sky, lights)
  * in a hash map for batched drawing
  */
-void Renderer::processEntities(std::vector<Drawable *> &entities) {
+void Renderer::processEntities(DrawableList &entities) {
     EntityMap::iterator it;
 
     for (Drawable *drawable : entities) {
@@ -216,30 +223,29 @@ void Renderer::processEntities(std::vector<Drawable *> &entities) {
     }
 }
 
-void Renderer::renderScene(DrawableList &lights, DrawableList &terrain, DrawableList &sky, Game *game,
-                           glm::vec4 clipPlane) {
-    renderList(lightShader_, lights, game, clipPlane); // render lights
+void Renderer::renderScene(TerrainRenderDataVector &terrainRenderData, DrawableList &lights, DrawableList &sky, SceneRenderData &sceneData) {
+    renderList(lightShader_, lights, sceneData); // render lights
 
     if (terrainRenderer_)
-        terrainRenderer_->render(terrain, game, clipPlane); // render terrain
+        terrainRenderer_->render(terrainRenderData, sceneData); // render terrain
 
-    renderEntities(game, clipPlane);                        // render models
+    renderEntities(sceneData);                        // render models
     
     if (skyRenderer_)
-        skyRenderer_->render(sky, game, clipPlane); // render skybox
+        skyRenderer_->render(sky, sceneData); // render skybox
 }
 
 /*
  * TODO: Should call shader->resetTextureCount() after each mesh is drawn if every mesh has it's own textures.
  * How likely is that? 
  */
-void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, glm::vec4 clipPlane) {
+void Renderer::renderList(Shader *shader, DrawableList &drawables, SceneRenderData &sceneData) {
     if (!drawables.empty() && shader) {
         shader->use();
-        shader->uniform("clipPlane", clipPlane);
+        shader->setSceneUniforms(sceneData, nullptr);
         for (Drawable *drawable : drawables) {
-            drawable->update(game);
-            shader->prepare(drawable, game);
+            drawable->update(sceneData.view);
+            shader->setDrawableUniforms(sceneData, drawable, nullptr);
 
             for (Mesh *mesh : drawable->getMeshes()) {
                 shader->handleMeshTextures(mesh->getTextures());
@@ -251,8 +257,8 @@ void Renderer::renderList(Shader *shader, DrawableList &drawables, Game *game, g
     }
 }
 
-void Renderer::renderEntities(Game *game, glm::vec4 clipPlane) {
+void Renderer::renderEntities(SceneRenderData &sceneData) {
     for (auto &kv : entityMap_) {
-        renderList(shaderMap_[kv.first], kv.second, game, clipPlane);
+        renderList(shaderMap_[kv.first], kv.second, sceneData);
     }
 }

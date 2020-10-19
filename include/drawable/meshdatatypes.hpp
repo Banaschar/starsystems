@@ -1,5 +1,5 @@
-#ifndef ENGINETYPES_H
-#define ENGINETYPES_H
+#ifndef MESHDATATYPES_HPP
+#define MESHDATATYPES_HPP
 
 #include <glm/glm.hpp>
 #include <string>
@@ -27,15 +27,6 @@ struct Vertex2d {
     glm::vec2 position;
     glm::vec2 textureCoords;
 };
-
-struct Texture {
-    unsigned int id;
-    std::string type;
-    
-    Texture() {}
-    Texture(unsigned int id_, std::string type_) : id(id_), type(type_) {}
-};
-
 
 enum class VertexType {VERTEX_DEFAULT, VERTEX_3D_SINGLE, VERTEX_2D};
 

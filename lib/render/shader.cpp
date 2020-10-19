@@ -10,35 +10,32 @@
 #include <vector>
 #include <memory>
 
-#include "drawable.hpp"
 #include "oglheader.hpp"
 #include "shader.hpp"
 
-Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, const char *tessControlShaderPath, const char *tessEvalShaderPath, 
-                const char *geometryShaderPath, ShaderType type, const callback_t cb) : type_(type), drawCallback_(cb) {
-    openShaders(vertexShaderPath, fragmentShaderPath, tessControlShaderPath, tessEvalShaderPath, geometryShaderPath);
-}
-
-Shader::Shader(const char *vertexShaderPath, const char *fragmentShaderPath, ShaderType type,
-               const callback_t cb) : type_(type), drawCallback_(cb) {
-    openShaders(vertexShaderPath, fragmentShaderPath, nullptr, nullptr, nullptr);
+Shader::Shader(std::vector<const char *> &shaderFiles, ShaderType type) : type_(type) {
+    openShaders(shaderFiles);
 
 }
 
-void Shader::openShaders(const char *vertexShaderPath, const char *fragmentShaderPath, const char *tessControlShaderPath, 
-                            const char *tessEvalShaderPath, const char *geometryShaderPath) {
+void Shader::openShaders(std::vector<const char *> &shaderFiles) {
+    int numShaders = shaderFiles.size();
+    if (numShaders < 2) {
+        fprintf(stdout, "[SHADER::openShaders] Error: A shader program needs at least a vertex and fragment shader. Num files: %i\n", numShaders);
+        return;
+    }
 
     std::vector<GLuint> shaderIds;
     bool compiled = true;
 
-    compiled = attachShader(vertexShaderPath, GL_VERTEX_SHADER, shaderIds);
-    compiled = attachShader(fragmentShaderPath, GL_FRAGMENT_SHADER, shaderIds);
-    if (tessControlShaderPath)
-        compiled = attachShader(tessControlShaderPath, GL_TESS_CONTROL_SHADER, shaderIds);
-    if (tessEvalShaderPath)
-        compiled = attachShader(tessEvalShaderPath, GL_TESS_EVALUATION_SHADER, shaderIds);
-    if (geometryShaderPath)
-        compiled = attachShader(geometryShaderPath, GL_GEOMETRY_SHADER, shaderIds);
+    compiled = attachShader(shaderFiles[0], GL_VERTEX_SHADER, shaderIds);
+    compiled = attachShader(shaderFiles[1], GL_FRAGMENT_SHADER, shaderIds);
+    if (numShaders > 2 && shaderFiles[2])
+        compiled = attachShader(shaderFiles[2], GL_TESS_CONTROL_SHADER, shaderIds);
+    if (numShaders > 3 && shaderFiles[3])
+        compiled = attachShader(shaderFiles[3], GL_TESS_EVALUATION_SHADER, shaderIds);
+    if (numShaders > 4 && shaderFiles[4])
+        compiled = attachShader(shaderFiles[4], GL_GEOMETRY_SHADER, shaderIds);
 
     if (compiled)
         compiled = linkProgram(shaderIds);
@@ -132,10 +129,6 @@ void Shader::resetTextureCount() {
     textureCounter_ = 0;
 }
 
-void Shader::prepare(Drawable *drawable, Game *game) {
-    drawCallback_(this, drawable, game);
-}
-
 void Shader::bindTexture(const std::string &name, unsigned int texId) {
     glActiveTexture(GL_TEXTURE0 + textureCounter_);
     if (name.substr(0, name.size() - 1) == "texture_cubemap")
@@ -148,7 +141,6 @@ void Shader::bindTexture(const std::string &name, unsigned int texId) {
 }
 
 void Shader::handleMeshTextures(std::vector<Texture> &textures) {
-    // bind textures if any
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
     unsigned int normalNr = 1;
@@ -210,9 +202,4 @@ ShaderType Shader::type() {
 
 unsigned int Shader::id() {
     return shaderProgramId_;
-}
-
-/* Specific Shader Implementations */
-TerrainInstanceShader::TerrainInstanceShader() {
-
 }

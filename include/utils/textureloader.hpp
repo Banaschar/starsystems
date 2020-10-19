@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "enginetypes.hpp"
+#include "meshdatatypes.hpp"
 
 class TextureLoader {
   public:

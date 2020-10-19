@@ -3,11 +3,12 @@
 
 #include "shader.hpp"
 #include "vaorenderer.hpp"
+#include "scenerenderdata.hpp"
 
 class SkyRenderer {
   public:
     SkyRenderer(Shader *shader, VaoRenderer *vaoRenderer);
-    void render(std::vector<Drawable *> skies, Game *game, glm::vec4 clipPlane);
+    void render(std::vector<Drawable *> skies, SceneRenderData &sceneData);
 
   private:
     Shader *shader_;

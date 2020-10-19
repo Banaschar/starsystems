@@ -6,6 +6,7 @@
 #include "shader.hpp"
 #include "vaorenderer.hpp"
 #include "waterframebuffer.hpp"
+#include "terraindatatypes.hpp"
 /*
  * Water Renderer
  * TODO: Load dudv texture somewhere else and pass it to the renderer
@@ -14,7 +15,7 @@ class WaterRenderer {
   public:
     WaterRenderer(VaoRenderer *vaoRenderer, int width, int height);
     ~WaterRenderer();
-    void render(std::vector<Drawable *> water, Game *game);
+    void render(TerrainRenderDataVector &renderDataVector, SceneRenderData &sceneData);
     void addShader(Shader *shader);
     void bindReflectionFrameBuffer();
     void bindRefractionFrameBuffer();
@@ -41,5 +42,6 @@ class WaterRenderer {
     void initQualityShader();
     void preparePerformance();
     void prepareQuality();
+    void render_(TerrainObjectRenderData &renderData, SceneRenderData &sceneData);
 };
 #endif

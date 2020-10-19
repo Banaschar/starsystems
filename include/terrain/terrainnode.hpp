@@ -1,9 +1,10 @@
 #ifndef TERRAINNODE_H
 #define TERRAINNODE_H
 
+#include <array>
 #include "terraintile.hpp"
 #include "heightmap.hpp"
-#include <array>
+#include "terraindatatypes.hpp"
 
 /*
  * Terrainchunk used in the Quad tree.
@@ -32,7 +33,7 @@ class TerrainNode {
 
     int getLod();
 
-    glm::vec3 &getPosition();
+    glm::vec2 &getPosition();
 
     int getIndex();
 
@@ -55,7 +56,7 @@ class TerrainNode_ {
 public:
     TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm::vec2 pos);
     ~TerrainNode_();
-    bool lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::vector<TerrainNode_ *> *tlist);
+    bool lodSelect(std::vector<float> &ranges, int lodLevel, View *view, IndexedTerrainNodeListMap &nodeMap, HeigthMapCreationList &creationList);
     float getNodeMaxHeight();
     float getNodeMinHeight();
     glm::vec2 &getPosition();
@@ -64,7 +65,7 @@ public:
     int getLodLevel();
     
 private:
-    glm::vec3 nodePos_;
+    glm::vec2 nodePos_;
     int nodeDimension_;
     int lodLevel_;
     float nodeMaxHeight_ = 0;

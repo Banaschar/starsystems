@@ -5,21 +5,26 @@
 #include "renderer.hpp"
 #include "view.hpp"
 #include "terrainmanager.hpp"
+#include "gui.hpp"
 
 Scene::Scene(Renderer *renderer, View *view) : renderer_(renderer), view_(view) {
     terrainManager_ = new TerrainManager();
     setupScene();
 }
 
-Scene::Scene(Renderer *renderer, View *view, TerrainManager *terrainmanager) : renderer_(renderer), view_(view), terrainManager_(terrainManager) {
+Scene::Scene(Renderer *renderer, View *view, TerrainManager *terrainManager) : renderer_(renderer), view_(view), terrainManager_(terrainManager) {
     setupScene();
 }
 
 Scene::~Scene() {
-    delete game_;
     delete renderer_;
     delete terrainManager_;
     delete gui_;
+
+    for (Drawable *d : sceneRenderData_.sceneLightList) {
+        Light *tmp = dynamic_cast<Light *>(d);
+        delete tmp;
+    }
 }
 
 void Scene::setupScene() {
@@ -28,14 +33,14 @@ void Scene::setupScene() {
 }
 
 void Scene::update() {
-    game_->update();
+    view_->update();
     if (gui_)
-        gui_->update(game_);
-    terrainManager_->update(game_->getView());
+        gui_->update();
+    terrainManager_->update(view_);
 }
 
 void Scene::render() {
-    renderer_->render(terrainManager_->getTerrainRenderData(), lights_, entities_, sky_, gui_ ? gui_->getGuiElements() : NULL, sceneRenderData_);
+    renderer_->render(terrainManager_->getTerrainRenderData(), lightsRenderList_, entities_, sky_, gui_ ? gui_->getGuiElements() : NULL, sceneRenderData_);
 }
 
 void Scene::addEntity(Drawable *entity) {
@@ -45,8 +50,11 @@ void Scene::addEntity(Drawable *entity) {
 
 void Scene::addLight(Drawable *light) {
     Light *tmp = dynamic_cast<Light *>(light);
-    if (tmp)
-        lights_.push_back(light);
+    if (tmp) {
+        sceneRenderData_.sceneLightList.push_back(light);
+        if (tmp->hasModel())
+            lightsRenderList_.push_back(light);
+    }
     else
         fprintf(stdout, "Model added as light is not actually of class Light\n");
 }
@@ -54,9 +62,10 @@ void Scene::addLight(Drawable *light) {
 void Scene::addSun(Drawable *sun) {
     Light *tmp = dynamic_cast<Light *>(sun);
     if (tmp) {
-        sun_ = sun;
+        sceneRenderData_.sun = sun;
+        sceneRenderData_.sceneLightList.push_back(sun);
         if (tmp->hasModel())
-            lights_.push_back(sun);
+            lightsRenderList_.push_back(sun);
     } else {
         fprintf(stdout, "Model added as sun is not actually of class Light\n");
     }
@@ -66,14 +75,18 @@ void Scene::addSky(Drawable *sky) {
     sky_.push_back(sky);
 }
 
-Drawable *getSun() {
-    return sceneRenderData.sun;
+Drawable *Scene::getSun() {
+    return sceneRenderData_.sun;
 }
 
-Gui *getGui() {
+Gui *Scene::getGui() {
     return gui_;
 }
 
-View *getView() {
+View *Scene::getView() {
     return view_;
+}
+
+TerrainManager *Scene::getTerrainManager() {
+    return terrainManager_;
 }

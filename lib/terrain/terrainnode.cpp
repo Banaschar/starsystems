@@ -1,7 +1,7 @@
+#include <glm/gtx/string_cast.hpp>
 #include "terrainnode.hpp"
 #include "view.hpp"
 #include "mathutils.hpp"
-#include <glm/gtx/string_cast.hpp>
 
 TerrainNode::TerrainNode(TerrainTile *terrain, TerrainTile *water) : terrain_(terrain), water_(water) {}
 
@@ -35,7 +35,7 @@ int TerrainNode::getDimension() {
     return terrain_->getDimension();
 }
 
-glm::vec3 &TerrainNode::getPosition() {
+glm::vec2 &TerrainNode::getPosition() {
     return terrain_->getPosition();
 }
 
@@ -124,7 +124,7 @@ void TerrainNode_::createChildren(HeightMap *heightMap, int dim, int lod) {
  * Needed parameters: heightmapindex, parentPosition (as heightmap Origin), axis
  * !! In that case, terrainNode needs a new variable, the heightmapdimension...
  */
-bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, std::unordered_map<int, std::vector<TerrainNode_ *>> *nodeMap, ) {
+bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, IndexedTerrainNodeListMap &nodeMap, HeigthMapCreationList &creationList) {
     currentLodRange_ = ranges[lodLevel];
 
     BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.y), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.y + nodeDimension_));
@@ -140,27 +140,27 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
     */
 
     if (lodLevel == 0) {
-        (*nodeMap)[heightMapIndex_].push_back(this);
+        nodeMap[heightMapIndex_].push_back(this);
         return true;
     } else {
         if (!bBox.intersectSphereSq(view->getCameraPosition(), ranges[lodLevel-1] * ranges[lodLevel-1])) {
-            tlist->push_back(this);
+            nodeMap[heightMapIndex_].push_back(this);
         } else {
             if (childrenCreated_) {
                 for (TerrainNode_ *child : children_) {
-                    if (!child->lodSelect(ranges, lodLevel - 1, view, tlist)) {
+                    if (!child->lodSelect(ranges, lodLevel - 1, view, nodeMap, creationList)) {
                         //child->currentLodRange_ = currentLodRange_;
-                        (*nodeMap)[heightMapIndex_].push_back(child); // this should actually be the area covered by the child represented in the current lodlevel
+                        nodeMap[heightMapIndex_].push_back(child); // this should actually be the area covered by the child represented in the current lodlevel
                     }
                 }
             } else {
                 if (!childrenCreationScheduled_) {
-                    heightMapCreationList.push_back(this);
+                    creationList.emplace_back(nodePos_, nodeDimension_, heightMapIndex_); // create heightmap size of this dimension, so it covers all children
                     childrenCreationScheduled_ = true;
                 }
 
                 /* Cover the are with ourself, while we wait for children to be created */
-                (*nodeMap)[heightMapIndex_].push_back(this);
+                nodeMap[heightMapIndex_].push_back(this);
             }
         }
 

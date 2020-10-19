@@ -26,6 +26,7 @@ class Scene {
     Gui *getGui();
     View *getView();
     Drawable *getSun();
+    TerrainManager *getTerrainManager();
 
   private:
     void setupScene();
@@ -34,7 +35,7 @@ class Scene {
     View *view_;
     TerrainManager *terrainManager_;
     Gui *gui_;
-    std::vector<Drawable *> lights_;
+    std::vector<Drawable *> lightsRenderList_;
     std::vector<Drawable *> entities_;
     std::vector<Drawable *> sky_;
 };

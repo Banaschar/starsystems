@@ -6,7 +6,7 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/string_cast.hpp>
 #include "perlinnoise.hpp"
-#include "enginetypes.hpp"
+#include "meshdatatypes.hpp"
 
 class TerrainMeshData {
 public:

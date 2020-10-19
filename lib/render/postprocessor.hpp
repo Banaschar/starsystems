@@ -5,6 +5,7 @@
 #include "vaorenderer.hpp"
 #include "drawablefactory.hpp"
 #include "terraintile.hpp"
+#include "terraindatatypes.hpp"
 
 class PostProcessor {
 public:
@@ -12,7 +13,7 @@ public:
     ~PostProcessor();
     void start();
     void end();
-    void render(std::vector<TerrainDrawData *> land, Game *game);
+    void render(TerrainRenderDataVector &renderDataVector, SceneRenderData &sceneData);
     void resolutionChange(int width, int height);
 
     unsigned int DEBUG_getTexture();
@@ -32,5 +33,6 @@ private:
     glm::vec3 scatterCoeffs_;
 
     void init();
+    void render_(TerrainObjectRenderData &renderData, SceneRenderData &sceneData);
 };
 #endif

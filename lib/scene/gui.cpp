@@ -17,6 +17,11 @@ Gui::~Gui() {
         delete m;
     }
 }
+
+void Gui::update() {
+    /* Update all gui elements. Should create an abstract class GuiElement (that inherits from drawable) with an update function. */
+    ;
+}
 /*
  * Adds a new gui element to be rendered.
  * TODO: Keep track of gui elements and warn if they overlap
@@ -29,10 +34,6 @@ void Gui::addGuiElement(Texture tex, glm::vec2 position, glm::vec2 scale) {
     glm::vec3 tmpscale = glm::vec3(scale.x, scale.y, 0.0f);
     tmp->transform(&tmpscale, &tmptrans, NULL);
     guiElements_.push_back(tmp);
-}
-
-void Gui::update(Game *game) {
-    ;
 }
 
 std::vector<Drawable *> *Gui::getGuiElements() {

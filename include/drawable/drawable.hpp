@@ -5,10 +5,9 @@
 #include <string>
 
 #include "mesh.hpp"
-#include "global.hpp"
+#include "basetypes.hpp"
 
-class Game;
-
+class View;
 /*
  *
  */
@@ -21,7 +20,7 @@ class Drawable {
 
     ~Drawable();
 
-    virtual void update(Game *game);
+    virtual void update(View *view);
     ShaderType type();
     void setType(ShaderType type);
     void addTexture(Texture tex, int index = 0);

@@ -29,10 +29,6 @@ Drawable::~Drawable() {
     }
 }
 
-void Drawable::update(Game *game) {
-    ;
-}
-
 ShaderType Drawable::type() {
     return type_;
 }

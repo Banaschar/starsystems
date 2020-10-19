@@ -45,7 +45,7 @@ void Engine::initWindow(int width, int height, const std::string &name) {
     // Init GLEW
     GLenum glewinit = glewInit();
     if (glewinit != GLEW_OK) {
-        std::cout << "GlEW init failed! " << glewGetErrorString(glewinit);
+        fprintf(stdout, "GlEW init failed! Error: %s\n", glewGetErrorString(glewinit));
         glfwTerminate();
         return;
     }

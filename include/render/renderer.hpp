@@ -7,9 +7,9 @@
 #include <vector>
 
 #include "drawable.hpp"
-#include "game.hpp"
 #include "global.hpp"
 #include "shader.hpp"
+#include "terraindatatypes.hpp"
 
 /*
  * Forward declaration of classes from private headers
@@ -32,7 +32,7 @@ class Renderer {
     /*
      *
      */
-    void render(TerrainDrawDataContainer &terrainDrawDataContainer, DrawableList &lights, DrawableList &entities, DrawableList &sky,
+    void render(TerrainRenderDataVector &terrainRenderData, DrawableList &lights, DrawableList &entities, DrawableList &sky,
                 DrawableList *gui, SceneRenderData &sceneRenderData);
 
     void resolutionChange(int width, int height);
@@ -61,22 +61,22 @@ class Renderer {
     /*
      * Puts entities in a hash map for batched drawing
      */
-    void processEntities(std::vector<Drawable *> &entities);
+    void processEntities(DrawableList &entities);
     /*
      *
      */
-    void renderScene(DrawableList &lights, DrawableList &terrain, DrawableList &sky, Game *game, glm::vec4 clipPlane);
+    void renderScene(TerrainRenderDataVector &terrainRenderData, DrawableList &lights, DrawableList &sky, SceneRenderData &sceneData);
     /*
      *
      */
-    void renderList(Shader *shader, DrawableList &drawables, Game *game, glm::vec4 clipPlane);
+    void renderList(Shader *shader, DrawableList &drawables, SceneRenderData &sceneData);
     /*
      *
      */
-    void renderEntities(Game *game, glm::vec4 clipPlane);
+    void renderEntities(SceneRenderData &sceneData);
     /*
      *
      */
-    void renderDebug(DrawableList &terrain, DrawableList &water, Game *game);
+    void renderDebug(TerrainRenderDataVector &terrainRenderData, SceneRenderData &sceneData);
 };
 #endif

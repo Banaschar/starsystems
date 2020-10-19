@@ -4,7 +4,6 @@
 #include <string>
 
 #include "drawablefactory.hpp"
-#include "game.hpp"
 
 class Gui {
   public:
@@ -13,8 +12,8 @@ class Gui {
     Gui(Texture tex, glm::vec2 position, glm::vec2 scale = glm::vec2(0.5f));
     ~Gui();
     void addGuiElement(Texture tex, glm::vec2 position, glm::vec2 scale = glm::vec2(0.5f));
-    void update(Game *game);
     std::vector<Drawable *> *getGuiElements();
+    void update();
 
   private:
     std::vector<Drawable *> guiElements_;

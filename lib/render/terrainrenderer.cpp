@@ -31,64 +31,34 @@ void TerrainRenderer::bindTextures() {
     }
 }
 
-/*
-void TerrainRenderer::render(TerrainObjectRenderData &renderData, SceneRenderData &sceneRenderData, glm::vec4 &clipPlane) {
-    if (!renderData.land->size)
-        return;
-    
-    TerrainType type = game->getTerrainManagerType();
-    if (type == TerrainType::SPHERE || type == TerrainType::PLANE) {
-        glDepthFunc(GL_LEQUAL);
-        shader_->use();
-        shader_->uniform("clipPlane", clipPlane);
-        shader_->uniform("waterLevel", game->getWaterLevel());
-        bindTextures();
-        for (Drawable *drawable : terrains) {
-            if (drawable) {
-                TerrainTile *terrain = static_cast<TerrainTile *>(drawable);
-                shader_->uniform("amplitude", terrain->getAmplitude());
-                shader_->uniform("tiling", (float)terrain->getDimension() / 2.0f);
-                shader_->uniform("sphereRadius", terrain->getSphereRadius());
-                shader_->uniform("sphereOrigin", terrain->getSphereOrigin());
-                drawable->update(game);
-                shader_->prepare(drawable, game);
-
-                
-                for (Mesh *mesh : drawable->getMeshes())
-                    vaoRenderer_->draw(mesh);
-            }
-        }
-        shader_->end();
-        glDepthFunc(GL_LESS);
-    } else if (type == TerrainType::CDLOD || type == TerrainType::DEFAULT) {
-        shader_->use();
-        shader_->handleMeshTextures(terrains[0]->getMeshes()[0]->getTextures());
-        shader_->prepare(terrains[0], game);
-        vaoRenderer_->draw(terrains[0]->getMeshes()[0]);
-        shader_->end();
-    }
-}
-*/
-
 void TerrainRenderer::bindTextureList(TextureList &textureList) {
     for (Texture &tex : textureList) {
         shader_->bindTexture(tex.type, tex.id);
     }
 }
 
-void TerrainRenderer::render(TerrainObjectRenderData &renderData, SceneRenderData &sceneRenderData, glm::vec4 &clipPlane) {
+void TerrainRenderer::render(TerrainRenderDataVector &renderDataVector, SceneRenderData &sceneData) {
+    for (TerrainObjectRenderData &tObj : renderDataVector) {
+        if (tObj.land->size)
+            render_(tObj, sceneData);
+    }
+}
+
+void TerrainRenderer::render_(TerrainObjectRenderData &renderData, SceneRenderData &sceneData) {
     shader_->use();
 
     bindTextureList(renderData.land->getGlobalTextureList());
-    // handle global Uniforms! -> shader->setGlobalUniforms(sceneRenderData)
+    shader_->setSceneUniforms(sceneData, nullptr);
 
     for (int i = 0; i < renderData.land->size; ++i) {
         bindTextureList(renderData.land->getTextureListAtIndex(i));
-        DrawableList &currentList = renderData.land->getDrawableListAtIndex(i);
 
-        for (Drawable *drawable : currentList) {
-            shader_->setLocalUniforms(drawable);
-            vaoRenderer_->draw(drawable->getMeshes());
+        for (Drawable *drawable : renderData.land->getDrawableListAtIndex(i)) {
+            shader_->setDrawableUniforms(sceneData, drawable, nullptr);
+
+            for (Mesh *mesh : drawable->getMeshes()) {
+                vaoRenderer_->draw(mesh);
+            }
         }
     }
 

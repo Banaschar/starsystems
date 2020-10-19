@@ -4,12 +4,13 @@
 #include "assetloader.hpp"
 #include "drawable.hpp"
 #include "drawablefactory.hpp"
-#include "game.hpp"
 #include "global.hpp"
 #include "gui.hpp"
 #include "scene.hpp"
 #include "terrainmanager.hpp"
 #include "view.hpp"
+#include "shaderimplementations.hpp"
+#include "basetypes.hpp"
 
 struct GLFWwindow;
 

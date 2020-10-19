@@ -3,188 +3,6 @@
 
 #include "engine.hpp"
 #include "utils/textureloader.hpp"
-#include "planet.hpp"
-
-/*
- *
- */
-void standardShadingCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
-                               drawable->getModelMatrix());
-
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("normalMatrix", drawable->getNormalMatrix());
-    shader->uniform("cameraPos", game->getView().getCameraPosition());
-
-    // shader_.uniform("objectColor", glm::vec3(1.0f, 0.5f, 0.31f));
-    shader->uniform("material.ambient", glm::vec3(1.0f, 0.5f, 0.31f));
-    shader->uniform("material.diffuse", glm::vec3(1.0f, 0.5f, 0.31f));
-    shader->uniform("material.specular", glm::vec3(0.5f, 0.5f, 0.5f));
-    shader->uniform("material.shininess", 32.0f);
-    shader->uniform("light.position", game->getLightSource()->getPosition());
-    shader->uniform("light.ambient", glm::vec3(0.1f, 0.1f, 0.1f));
-    shader->uniform("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
-    shader->uniform("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-}
-
-void sunShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    Light *light = dynamic_cast<Light *>(drawable);
-    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
-                               drawable->getModelMatrix());
-    shader->uniform("color", light->getColor());
-}
-
-void skyBoxShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    glm::mat4 mvp = game->getView().getProjectionMatrix() * glm::mat4(glm::mat3(game->getView().getCameraMatrix())) *
-                    drawable->getModelMatrix();
-
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("MVP", mvp);
-}
-
-Scene *createStarSystems(Engine *engine) {
-
-    std::vector<std::string> cubetex = {"assets/skyboxSpace/right.png", "assets/skyboxSpace/left.png",
-                                        "assets/skyboxSpace/top.png",   "assets/skyboxSpace/bottom.png",
-                                        "assets/skyboxSpace/front.png", "assets/skyboxSpace/back.png"};
-
-    // Create and compile shaders
-    std::vector<Shader *> shaders = {
-        new Shader("shader/StandardShading.vs", "shader/StandardShading.fs", ShaderType::SHADER_TYPE_DEFAULT, standardShadingCb),
-        new Shader("shader/sun.vs", "shader/sun.fs", ShaderType::SHADER_TYPE_LIGHT, sunShaderCb),
-        new Shader("shader/skybox.vs", "shader/skybox.fs", ShaderType::SHADER_TYPE_SKY, skyBoxShaderCb)};
-
-    View view = View(engine->getWindow(), glm::vec3(0.0f, 20.0f, -40.0f));
-
-    // Sun
-    Drawable *sun = new Light("assets/PlanetFirstTry.obj");
-    glm::vec3 pos1 = glm::vec3(0, 1000, 1000);
-    glm::vec3 scale1 = glm::vec3(100,100,100);
-    sun->transform(&scale1, &pos1, NULL);
-
-    // Skybox
-    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
-
-    // Add planets
-    // These could be instances
-    std::vector<Mesh*> planetMeshes;
-    if (!AssetLoader::loadModel("assets/PlanetFirstTry.obj", &planetMeshes)) {
-        std::cout << "Could not load model" << std::endl;
-        return NULL;
-    }
-
-    Planet *planet1 = new Planet(planetMeshes, 0.7f, glm::vec3(10, 0, 0));
-    Planet *planet2 = new Planet(planetMeshes, 0.5f, glm::vec3(20, 0, 20));
-    Planet *planet3 = new Planet(planetMeshes, 0.2f, glm::vec3(30, 0, 40));
-
-    glm::vec3 scale = glm::vec3(0.5f, 0.5f, 0.5f);
-    planet1->transform(&scale, NULL, NULL);
-    planet2->transform(&scale, NULL, NULL);
-    planet3->transform(&scale, NULL, NULL);
-
-    Game *game = new Game(view);
-    game->addLight(sun);
-    game->addSky(skybox);
-    game->addEntity(planet1);
-    game->addEntity(planet2);
-    game->addEntity(planet3);
-
-    int width,height;
-    view.getWindowSize(&width, &height);
-    Renderer *renderer = new Renderer(shaders, width, height);
-    Scene *scene = new Scene(game, renderer);
-
-    return scene;
-}
-
-void planeShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
-                               drawable->getModelMatrix());
-    shader->uniform("normalMatrix", drawable->getNormalMatrix());
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("cameraPos", game->getView().getCameraPosition());
-    shader->uniform("light.position", game->getSun()->getPosition());
-    shader->uniform("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-    shader->uniform("light.ambient", glm::vec3(0.1, 0.1, 0.1));
-    shader->uniform("light.diffuse", glm::vec3(0.8, 0.8, 0.8));
-    shader->uniform("light.specular", glm::vec3(1.0, 1.0, 1.0));
-}
-
-void flatColorCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("sunPos", game->getSun()->getPosition());
-    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
-                               drawable->getModelMatrix());
-    shader->uniform("VP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix());
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
-    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
-    shader->uniform("cameraPos", game->getView().getCameraPosition());
-    shader->uniform("lowerBound", -10.0f);
-    shader->uniform("upperBound", 20.0f);
-    shader->uniform("heightMapDimension", 256.0f);
-    shader->uniform("meshDimension", 16.0f);
-    shader->uniform("gridOrigin", glm::vec3(0,0,0));
-}
-
-void instanceShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("projection", game->getView().getProjectionMatrix());
-    shader->uniform("camera", game->getView().getCameraMatrix());
-}
-
-void waterShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    Light *light = dynamic_cast<Light *>(game->getSun());
-    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
-                               drawable->getModelMatrix());
-    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
-    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
-    shader->uniform("worldNormal", game->getView().getWorldNormal());
-    shader->uniform("normalMatrix", drawable->getNormalMatrix());
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("cameraPos", game->getView().getCameraPosition());
-    shader->uniform("light.position", light->getPosition());
-    shader->uniform("light.color", light->getColor());
-    shader->uniform("light.ambient", light->getAmbient());
-    shader->uniform("light.diffuse", light->getDiffuse());
-    shader->uniform("light.specular", light->getSpecular());
-    shader->uniform("tilingSize", drawable->getScale().x / 4.0f);
-    shader->uniform("nearPlane", game->getView().getNearPlane());
-    shader->uniform("farPlane", game->getView().getFarPlane());
-}
-
-void guiShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", game->getView().getOrthoProjection() * drawable->getModelMatrix());
-}
-
-void postProcessorAtmoCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("MVP", game->getView().getProjectionMatrix() * game->getView().getCameraMatrix() *
-                               drawable->getModelMatrix());
-    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
-    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("positionOriginal", drawable->getPosition());
-    //shader->uniform("sunPosition", game->getSun()->getPosition());
-    shader->uniform("sunPosition", glm::vec3(10000000.0f, 10000000.0f, 10000000.0f));
-}
-
-void debugShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
-    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
-}
-
-void tessShaderCb(Shader *shader, Drawable *drawable, Game *game) {
-    Light *light = dynamic_cast<Light *>(game->getSun());
-    shader->uniform("modelMatrix", drawable->getModelMatrix());
-    shader->uniform("cameraMatrix", game->getView().getCameraMatrix());
-    shader->uniform("cameraPos", game->getView().getCameraPosition());
-    shader->uniform("projectionMatrix", game->getView().getProjectionMatrix());
-    shader->uniform("light.position", light->getPosition());
-    shader->uniform("light.color", light->getColor());
-    shader->uniform("light.ambient", light->getAmbient());
-    shader->uniform("light.diffuse", light->getDiffuse());
-    shader->uniform("light.specular", light->getSpecular());
-    shader->uniform("frameTime", g_currentFrameTime);
-}
 
 Scene *createPlane(Engine *engine) {
     std::cout << "Create Plane." << std::endl;
@@ -197,11 +15,8 @@ Scene *createPlane(Engine *engine) {
         "assets/skyboxSpace/front.png",
         "assets/skyboxSpace/back.png"
     };
+
     /*
-    std::vector<std::string> cubetex = {"assets/skyboxSky2/right.png", "assets/skyboxSky2/left.png",
-                                        "assets/skyboxSky2/top.png",   "assets/skyboxSky2/bottom.png",
-                                        "assets/skyboxSky2/front.png", "assets/skyboxSky2/back.png"};
-    */
     std::vector<Shader *> shaders = {
         //new Shader("shader/plane.vs", "shader/plane.fs", ShaderType::SHADER_TYPE_TERRAIN, planeShaderCb),
         new Shader("shader/sun.vs", "shader/sun.fs", ShaderType::SHADER_TYPE_LIGHT, sunShaderCb),
@@ -215,41 +30,71 @@ Scene *createPlane(Engine *engine) {
         //new Shader("shader/tessVertexShader.vs", "shader/tessFragmentShader.fs", "shader/tessControlShader.tcs", "shader/tessEvalShader.tes", nullptr, ShaderType::SHADER_TYPE_DEFAULT, tessShaderCb),
         new Shader("shader/guiShader.vs", "shader/guiShader.fs", ShaderType::SHADER_TYPE_GUI, guiShaderCb)
     };
+    */
 
-    //Light *sun = new Light(glm::vec3(200000, 200000, 10000));
+    std::vector<const char *> terrainInstanceshaderFiles{"shader/instanceTerrainTest.vs", "shader/flatColor.fs"};
+    std::vector<const char *> waterShaderFilesQuality{"shader/waterShader.vs", "shader/waterShader.fs"};
+    std::vector<const char *> waterShaderFilesPerf{"shader/waterShader.vs", "shader/waterShaderPerformance.fs"};
+    std::vector<const char *> skyBoxShaderFiles{"shader/skybox.vs", "shader/skybox.fs"};
+    std::vector<const char *> sunShaderFiles{"shader/sun.vs", "shader/sun.fs"};
+    std::vector<const char *> guiShaderFiles{"shader/guiShader.vs", "shader/guiShader.fs"};
+
+    std::vector<Shader *> shaders = {
+        new TerrainInstanceShader(terrainInstanceshaderFiles, ShaderType::SHADER_TYPE_TERRAIN),
+        new SunShader(sunShaderFiles, ShaderType::SHADER_TYPE_LIGHT),
+        new SkyBoxShader(skyBoxShaderFiles, ShaderType::SHADER_TYPE_SKY),
+        new GuiShader(guiShaderFiles, ShaderType::SHADER_TYPE_GUI)
+    };
+
+    /* Renderer */
+    int width,height;
+    view.getWindowSize(&width, &height);
+    Renderer *renderer = new Renderer(shaders, width, height);
+    //DEBUG
+    renderer->setPolygonRenderModeWireFrame(true);
+
+
+    /* Camera */
+    glm::vec3 camPos = glm::vec3(5, 15, 5);
+    View *view = new View(engine->getWindow(), camPos);
+
+    /* Scene */
+    Scene *scene = new Scene(renderer, view);
+
+    /* Gui */
+    Gui *gui = new Gui();
+    //Texture tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
+    //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(500,500));
+    /*
+    Texture tex2;
+    tex2.id = renderer->DEBUG_getPostProcessingTexture();
+    tex2.type = "texture_gui";
+    gui->addGuiElement(tex2, glm::vec2(0,0), glm::vec2(640,360));
+    */
+    scene->addGui(gui);
+
+    /* Skybox */
+    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
+    scene->addSky(skybox);
+
+    /* Sun */
     Light *sun = new Light("assets/PlanetFirstTry.obj");
     glm::vec3 pos = glm::vec3(5000, 5000, 5000);
     glm::vec3 scale = glm::vec3(100,100,100);
     sun->transform(&scale, &pos, NULL);
     sun->setSpecular(glm::vec3(1.0,1.0,1.0));
-
     Texture sunT = TextureLoader::loadTextureFromFile("assets/sunTexture.jpg", "texture_diffuse");
     sun->addTexture(sunT);
-    
+    scene->addSun(sun);
 
-    //glm::vec3 camPos = glm::vec3(0, 20, -20);
-    glm::vec3 camPos = glm::vec3(5, 15, 5);
-    //glm::vec3 camPos = glm::vec3(0, 700, -1300);
-    View view = View(engine->getWindow(), camPos);
-    Game *game = new Game(view);
-    game->addSun(sun);
-
-    //PerlinNoise pNoise = PerlinNoise(6, 10.0f, 0.01f, 0);
+    /* Terraingeneration */
     PerlinNoise pNoise = PerlinNoise(6, 15.0f, 0.3f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
 
-    // CDLOD test
-    TerrainManager *terr = new TerrainManager(terrainGen, 960, 0, TerrainType::CDLOD, glm::vec3(0,0,0));
-    game->addTerrainManager(terr);
-    
-    // SKYBOX
-    Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);
-    game->addSky(skybox);
-
-    // GUI
-    Gui *gui = new Gui();
-    Texture tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
-    //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(500,500));
+    /* Terrainmanager */
+    TerrainChunkTree *tObj = new TerrainChunkTree();
+    tObj->addTerrainChunk(DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_TERRAIN, 16));
+    scene->getTerrainManager()->addTerrainObject((TerrainObject*) tObj);
 
     // Water Tessellation test
     /*
@@ -261,37 +106,25 @@ Scene *createPlane(Engine *engine) {
     game->addWater(waterTile);
     */
 
-    int width,height;
-    view.getWindowSize(&width, &height);
-    Renderer *renderer = new Renderer(shaders, width, height);
-    //DEBUG
-    renderer->setPolygonRenderModeWireFrame(true);
-    /*
-    Texture tex2;
-    tex2.id = renderer->DEBUG_getPostProcessingTexture();
-    tex2.type = "texture_gui";
-    gui->addGuiElement(tex2, glm::vec2(0,0), glm::vec2(640,360));
-    */
-    // End Debug
-    Scene *scene = new Scene(game, renderer);
-    scene->addGui(gui);
-
     return scene;
 }
 
 int main() {
     Engine engine = Engine(1920, 1080, "starsystem");
-    if (!engine.getWindow())
+    if (!engine.getWindow()) {
+        fprintf(stdout, "Unable to create window\n");
         return 0;
+    }
 
     Scene *scene = createPlane(&engine);
 
-    if (!scene)
+    if (!scene) {
+        fprintf(stdout, "Scene creation failed\n");
         return 0;
-
-    std::cout << "Starting render loop..." << std::endl;
+    }
 
     engine.addScene(scene);
+    fprintf(stdout, "Starting render loop...\n");
 
     engine.render();
 

@@ -64,10 +64,6 @@ class Light : public Drawable {
         return color_;
     }
 
-    void update(Game *game) override {
-        ;
-    }
-
   private:
     glm::vec3 ambient_ = DEFAULT_AMBIENT;
     glm::vec3 diffuse_ = DEFAULT_DIFFUSE;
