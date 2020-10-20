@@ -29,6 +29,15 @@ Mesh *DrawableFactory::createPrimitiveMesh(PrimitiveType prim, int size) {
     return NULL;
 }
 
+Drawable *DrawableFactory::createPrimitivePlane(glm::vec3 &axis, int size) {
+    Mesh *mesh = Primitives::createPlane(size, axis);
+
+    if (!mesh)
+        return nullptr;
+    else
+        return new Drawable(mesh, ShaderType::SHADER_TYPE_DEFAULT);
+}
+
 Drawable *DrawableFactory::createPrimitive(PrimitiveType prim, ShaderType type, int size) {
     Mesh *mesh;
     if (!(mesh = createPrimitiveMesh(prim, size)))

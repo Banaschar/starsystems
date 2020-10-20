@@ -36,8 +36,8 @@ class Shader {
     void uniform(const std::string &name, glm::vec4 value);
     void uniform(const std::string &name, int value);
     void uniform(const std::string &name, float value);
-    virtual void setSceneUniforms(SceneRenderData &sceneData, void *data);
-    virtual void setDrawableUniforms(SceneRenderData &sceneData, Drawable *drawable, void *data);
+    virtual void setSceneUniforms(SceneRenderData &sceneData, void *data) = 0;
+    virtual void setDrawableUniforms(SceneRenderData &sceneData, Drawable *drawable, void *data) = 0;
 
   private:
     unsigned int shaderProgramId_;

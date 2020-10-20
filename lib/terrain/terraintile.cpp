@@ -69,3 +69,7 @@ void TerrainTile::initTerrain(TerrainGenerator *terrainGen) {
 
     Drawable::addMesh(terrainGen->generateTerrain(&genAttr_));
 }
+
+void TerrainTile::update(View *view) {
+    ;
+}

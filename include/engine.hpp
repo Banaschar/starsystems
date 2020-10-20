@@ -11,6 +11,7 @@
 #include "view.hpp"
 #include "shaderimplementations.hpp"
 #include "basetypes.hpp"
+#include "renderer.hpp"
 
 struct GLFWwindow;
 

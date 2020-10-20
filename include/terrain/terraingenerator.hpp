@@ -44,7 +44,8 @@ class TerrainGenerator {
     int sphereRadius_ = 0;
     glm::vec3 sphereOrigin_ = glm::vec3(0,0,0);
 
-    void generateTerrainData(TerrainMeshData &meshData, glm::vec2 &pos, int dimension, int lod, glm::vec3 &axis, bool flat);
+    void generateTerrainHeightMapData(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat);
+    void generateTerrainMeshData(TerrainMeshData &meshData, glm::vec2 &pos, int dimension, int lod, glm::vec3 &axis, bool flat);
     glm::vec3 getVertexPosition(glm::vec3 vertPos, float height);
     glm::vec3 getAxisPos(glm::vec3 &axis, int x, int y);
     float getHeightValue(glm::vec3 &pos);

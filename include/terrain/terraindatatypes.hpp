@@ -42,15 +42,6 @@ struct TerrainObjectRenderData {
 
 typedef std::vector<TerrainObjectRenderData> TerrainRenderDataVector;
 
-struct HeightMapCreationData {
-    glm::vec2 cornerPos;
-    int size;
-    int currentHeightMapIndex;
-    HeightMapCreationData(glm::vec2 &corner, int sizeC, int index) 
-        : cornerPos(corner), size(sizeC), currentHeightMapIndex(index) {}
-};
-
 typedef std::unordered_map<int, std::vector<TerrainNode_ *>> IndexedTerrainNodeListMap;
-typedef std::vector<HeightMapCreationData> HeigthMapCreationList;
 
 #endif

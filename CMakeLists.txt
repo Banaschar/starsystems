@@ -43,7 +43,7 @@ set(ENGINE_LIBRARY_SOURCE_FILES
 
 set(EXECUTABLE_SOURCE_FILES
     src/starsystems.cpp
-    src/common/planet.cpp)
+    )
 
 set(DEPENDENCY_LIBS
         ${OPENGL_LIBRARY}
@@ -95,7 +95,6 @@ add_executable(stars
 
 target_include_directories(stars
         PUBLIC
-        src/common/
         include/
         include/drawable/
         include/render/

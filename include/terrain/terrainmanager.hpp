@@ -59,41 +59,11 @@ public:
     void addTerrainChunk(Drawable *drawable);
 
 private:
-    BaseDrawData terrainDrawData;
+    BaseDrawData terrainDrawData_;
     TerrainObjectAttributes terrainAttributes_;
 };
 
-/*
- * Implementation of CDLOD
- * https://github.com/fstrugar/CDLOD
- */
-class TerrainCDLODTree : public TerrainObject {
-public:
-  TerrainCDLODTree(TerrainGenerator *terrainGen);
-  ~TerrainCDLODTree();
-  void update(View *view, DrawableList *terrainList, DrawableList *waterList);
-  
-private:
-    TerrainGenerator *terrainGen_;
-    std::vector<float> ranges_;
-    VertexAttributeData rangeAttribData_;
-    std::vector<glm::vec3> instanceVecMorphAttribs_;
-    std::vector<std::vector<TerrainNode_ *>> grid_;
-    std::vector<TerrainNode_ *> nodesToDraw_;
-
-    std::unordered_map<glm::vec2, TerrainNode_ *> rootNodeMap_;
-    std::unordered_map<int, std::vector<TerrainNode_ *>> nodeDrawMap_;
-    std::unordered_map<int, HeightMap *> heightMaps_;
-    int heightMapIndex_ = 0;
-    int lodLevelCount_;
-    int rootNodeDimension_;
-    Drawable *basePatch_;
-
-    float getPrevRange(int lodLevel);
-    void createNode(glm::vec3 rootNodeOrigin, glm::vec3 rootNodeAxis);
-};
-
-class PlanetDrawData : public TerrainDrawData {
+class CdlodDrawData : public TerrainDrawData {
 public:
     TextureList &getGlobalTextureList() {
         return globalTextureList;
@@ -107,14 +77,9 @@ public:
         return *(listOfDrawableLists[i]);
     }
 
-    TerrainObjectAttributes &getTerrainAttributes() {
-        return planetAttributes;
-    }
-private:
   std::vector<DrawableList *> listOfDrawableLists;
   std::vector<TextureList *> listOfTextureLists;
   TextureList globalTextureList;
-  TerrainObjectAttributes planetAttributes; // Holds things like origin, radius, hasAtmosphere (for global uniforms and stuff)
 };
 
 struct MeshInstanceData {
@@ -124,8 +89,12 @@ struct MeshInstanceData {
     std::vector<glm::vec3>::iterator attribIt;
     std::vector<glm::vec3> *currVec;
 
-    void createNewInstance(int index, Drawable *baseMesh) {
-        baseMeshListMap[index] = DrawableList(1, baseMesh);
+    void createNewInstance(int index) {
+        if (baseMeshListMap.find(index) == baseMeshListMap.end()) {
+            fprintf(stdout, "[MESHINSTANCEDATA::createNewInstance] Error: New instance has no base mesh\n");
+            return;
+        }
+
         instanceAttribListMap[index];
         instanceAttributeDataMap[index];
     }
@@ -149,35 +118,97 @@ struct MeshInstanceData {
     }
 };
 
-class PlanetTree : public TerrainObject {
+struct CdlodTreeData {
+    std::vector<TerrainNode_ *> *rootNodes;
+    std::unordered_map<int, HeightMap *> *heightMaps;
+    IndexedTextureListMap *heightMapTextures;
+    IndexedDrawableListMap *baseMeshListMap;
+    TextureList *globalTextureList;
+    std::vector<float> *ranges;
+    int *heightMapIndex;
+    int *leafNodeSize; 
+    int *lodLevelCount;
+};
+
+class CdlodTreeImplementation {
 public:
-    PlanetTree();
-    ~PlanetTree();
-    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
-    TerrainDrawData *getDrawData();
+    /* Fill CdlodTreeData */
+    virtual void createTree(CdlodTreeData &treeData) = 0;
+    /* Called when a child requires a new heightmap */
+    virtual void updateRootNodes(CdlodTreeData &treeData, std::vector<TerrainNode_ *> &heightMapDemandList) = 0;
+};
 
+class PlanetCdlodImplementation : public CdlodTreeImplementation {
+public:
+    PlanetCdlodImplementation(TerrainGenerator *terrainGen, TerrainObjectAttributes *terrainAttribs);
+    void createTree(CdlodTreeData &data);
+    void updateRootNodes(CdlodTreeData &data, std::vector<TerrainNode_ *> &heightMapDemandList);
 private:
-    int planetOrigin_;
-    int planetRadius_;
     int rootNodeDimension_;
-    int lodLevelCount_;
-    int leafNodeSize_;
-    std::vector<float> planetRanges_;
-    std::vector<TerrainNode_ *> rootNodeList_;
-    IndexedTerrainNodeListMap selectedNodes_;
-    HeigthMapCreationList heightMapCreateList_; // vec4(mapIndex, vec3 pos)
-    MeshInstanceData meshInstanceData_;
-    std::unordered_map<int, HeightMap *> heightMaps_;
-    IndexedTextureListMap heightMapTextures_;
-    PlanetDrawData planetDrawData_;
-    TerrainObjectAttributes planetAttributes_;
+    TerrainObjectAttributes *planetAttributes_;
+    TerrainGenerator *terrainGen_;
 
-    void initPlanet();
-    void initGlobalTextures();
-    TerrainNode_ *createRootNode(glm::vec2 &cornerPos, glm::vec3 &axis);
-    float getPrevRange(int lodLevel);
+    void createRootNode(CdlodTreeData &treeData, glm::vec2 &cornerPos, glm::vec3 &axis);
     glm::vec2 vec3ToVec2CubeSide(glm::vec3 &pos, glm::vec3 &axis);
+};
+
+class PlaneCdlodImplementation : public CdlodTreeImplementation {
+public:
+    PlaneCdlodImplementation(TerrainGenerator *terrainGen, TerrainObjectAttributes *terrainAttribs);
+    void createTree(CdlodTreeData &data);
+    void updateRootNodes(CdlodTreeData &data, std::vector<TerrainNode_ *> &heightMapDemandList);
+private:
+    int rootNodeDimension_;
+    TerrainObjectAttributes *planetAttributes_;
+};
+
+/*
+ * Needs a background thread as garbage collector:
+ * Need to remove instances in MeshInstanceData if the corresponding heightmap and drawable have been deleted
+ * during a call to ->updateRootNodes();
+ */
+class CdlodTree : public TerrainObject {
+public:
+  CdlodTree(CdlodTreeImplementation *imple, TerrainObjectAttributes *attribs);
+  ~CdlodTree();
+
+  void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+  
+private:
+    int leafNodeSize_;
+    int heightMapIndex_;
+    int lodLevelCount_;
+    std::vector<float> ranges_;
+    std::vector<TerrainNode_ *> rootNodeList_; // List of root nodes
+    std::unordered_map<int, HeightMap *> heightMaps_; // List of heightmaps
+    IndexedTextureListMap heightMapTextures_; // Map of Texture lists with heightmap + normalmap
+    CdlodDrawData landDrawData_; // out draw data for land
+    CdlodDrawData waterDrawData_; // out draw data for water
+    IndexedTerrainNodeListMap selectedNodes_; // Map filled each frame with TerrainNodes in range
+    MeshInstanceData meshInstanceData_; // Data structures for mesh instances
+    CdlodTreeData publicTreeData_; // struct to pass the relevant tree data to the implementing class
+    std::vector<TerrainNode_ *> heightMapCreationList_; // List filled by node->lodSelect, heightMaps that need to be created
+    TerrainObjectAttributes *terrainAttributes_; // Attributes provided by Constructor
+    CdlodTreeImplementation *treeImplementation_;
+
+    void init();
+    void createRootNodes();
     glm::vec3 vec2ToVec3CubeSide(glm::vec2 &pos, glm::vec3 &axis);
     glm::vec3 getRotationAxis(glm::vec3 &axis, float *degree);
+    float getPrevRange(int lodLevel);
+};
+
+class Planet : public TerrainObject {
+public:
+    Planet(TerrainGenerator *terrainGen);
+    ~Planet();
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+
+private:
+    CdlodTree *lodTree_;
+    TerrainGenerator *terrainGen_;
+    TerrainObjectAttributes terrainAttributes_;
+
+    void initPlanet();
 };
 #endif

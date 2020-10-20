@@ -120,11 +120,20 @@ void TerrainNode_::createChildren(HeightMap *heightMap, int dim, int lod) {
     childrenCreated_ = true;
 }
 
+void TerrainNode_::insertNode(IndexedTerrainNodeListMap &nodeMap, TerrainNode_ *node) {
+    auto it = nodeMap.find(heightMapIndex_);
+
+    if (it == nodeMap.end())
+        nodeMap.emplace(std::make_pair(heightMapIndex_, std::vector<TerrainNode_ *>(1, node)));
+    else
+        it->second.push_back(node);
+}
+
 /* Add argument that represents a list of heightmaps that need to be created 
  * Needed parameters: heightmapindex, parentPosition (as heightmap Origin), axis
  * !! In that case, terrainNode needs a new variable, the heightmapdimension...
  */
-bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, IndexedTerrainNodeListMap &nodeMap, HeigthMapCreationList &creationList) {
+bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, IndexedTerrainNodeListMap &nodeMap, std::vector<TerrainNode_ *> &creationList) {
     currentLodRange_ = ranges[lodLevel];
 
     BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.y), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.y + nodeDimension_));
@@ -140,27 +149,27 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
     */
 
     if (lodLevel == 0) {
-        nodeMap[heightMapIndex_].push_back(this);
+        insertNode(nodeMap, this);
         return true;
     } else {
         if (!bBox.intersectSphereSq(view->getCameraPosition(), ranges[lodLevel-1] * ranges[lodLevel-1])) {
-            nodeMap[heightMapIndex_].push_back(this);
+            insertNode(nodeMap, this);
         } else {
             if (childrenCreated_) {
                 for (TerrainNode_ *child : children_) {
                     if (!child->lodSelect(ranges, lodLevel - 1, view, nodeMap, creationList)) {
                         //child->currentLodRange_ = currentLodRange_;
-                        nodeMap[heightMapIndex_].push_back(child); // this should actually be the area covered by the child represented in the current lodlevel
+                        insertNode(nodeMap, child); // this should actually be the area covered by the child represented in the current lodlevel
                     }
                 }
             } else {
                 if (!childrenCreationScheduled_) {
-                    creationList.emplace_back(nodePos_, nodeDimension_, heightMapIndex_); // create heightmap size of this dimension, so it covers all children
+                    creationList.push_back(this); // create heightmap size of this node, so it covers all children
                     childrenCreationScheduled_ = true;
                 }
 
                 /* Cover the are with ourself, while we wait for children to be created */
-                nodeMap[heightMapIndex_].push_back(this);
+                insertNode(nodeMap, this);
             }
         }
 

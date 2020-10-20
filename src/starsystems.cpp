@@ -46,23 +46,22 @@ Scene *createPlane(Engine *engine) {
         new GuiShader(guiShaderFiles, ShaderType::SHADER_TYPE_GUI)
     };
 
-    /* Renderer */
-    int width,height;
-    view.getWindowSize(&width, &height);
-    Renderer *renderer = new Renderer(shaders, width, height);
-    //DEBUG
-    renderer->setPolygonRenderModeWireFrame(true);
-
-
     /* Camera */
     glm::vec3 camPos = glm::vec3(5, 15, 5);
     View *view = new View(engine->getWindow(), camPos);
+
+    /* Renderer */
+    int width,height;
+    view->getWindowSize(&width, &height);
+    Renderer *renderer = new Renderer(shaders, width, height);
+    //DEBUG
+    renderer->setPolygonRenderModeWireFrame(true);
 
     /* Scene */
     Scene *scene = new Scene(renderer, view);
 
     /* Gui */
-    Gui *gui = new Gui();
+    Gui *gui = scene->getGui();
     //Texture tex = TextureLoader::loadTextureFromFile("assets/seaGround.jpg", "texture_gui");
     //gui->addGuiElement(tex, glm::vec2(0,0), glm::vec2(500,500));
     /*
@@ -71,7 +70,6 @@ Scene *createPlane(Engine *engine) {
     tex2.type = "texture_gui";
     gui->addGuiElement(tex2, glm::vec2(0,0), glm::vec2(640,360));
     */
-    scene->addGui(gui);
 
     /* Skybox */
     Drawable *skybox = DrawableFactory::createCubeMap(cubetex, ShaderType::SHADER_TYPE_SKY);

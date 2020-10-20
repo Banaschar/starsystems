@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "meshdatatypes.hpp"
+#include "basetypes.hpp"
 
 class TextureLoader {
   public:

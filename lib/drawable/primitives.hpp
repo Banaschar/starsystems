@@ -6,7 +6,7 @@
 
 class Primitives {
   public:
-    static Mesh *createPlane(int dimension);
+    static Mesh *createPlane(int dimension, glm::vec3 axis = glm::vec3(0,1,0));
 
     static Mesh *createQuad();
 

@@ -125,7 +125,6 @@ std::vector<Texture> loadMatTexture(aiMaterial *mat, aiTextureType type, std::st
         Texture texture;
         texture.id = TextureLoader::loadTextureFromFile(str.C_Str());
         texture.type = typeName;
-        texture.path = str.C_Str();
         textures.push_back(texture);
     }
 

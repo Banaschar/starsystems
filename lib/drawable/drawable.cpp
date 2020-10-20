@@ -29,6 +29,10 @@ Drawable::~Drawable() {
     }
 }
 
+void Drawable::update(View *view) {
+    ;
+}
+
 ShaderType Drawable::type() {
     return type_;
 }

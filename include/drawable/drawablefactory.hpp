@@ -9,6 +9,7 @@ enum class PrimitiveType { QUAD, QUAD2D, PLANE, CUBE };
 
 class DrawableFactory {
   public:
+    static Drawable *createPrimitivePlane(glm::vec3 &axis, int size = 1);
     static Drawable *createPrimitive(PrimitiveType prim, ShaderType type, int size = 1);
     static Drawable *createTexturedPrimitive(PrimitiveType primType, ShaderType type, Texture texture);
     static Drawable *createCubeMap(std::vector<std::string> cubeTexPaths, ShaderType type);

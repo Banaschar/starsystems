@@ -23,6 +23,10 @@ int HeightMap::getIndex() {
     return index_;
 }
 
+glm::vec3 &HeightMap::getAxis() {
+    return axis_;
+}
+
 unsigned int HeightMap::getHeightTexture() {
     return heightTextureId_;
 }

@@ -61,7 +61,7 @@ Mesh *TerrainGenerator::generateTerrain(GenerationAttributes *attr) {
 Mesh *TerrainGenerator::generateTerrainMesh(GenerationAttributes *attr) {
     int dimension = attr->dimension + 3;
     TerrainMeshData meshData(dimension, attr->lod, attr->vertexType);
-    generateTerrainData(meshData, attr->position, dimension, attr->lod, attr->axis, attr->isFlat);
+    generateTerrainMeshData(meshData, attr->position, dimension, attr->lod, attr->axis, attr->isFlat);
     meshData.calculateNormals(false);
     return new Mesh(meshData.vertexData);
 }
@@ -69,7 +69,7 @@ Mesh *TerrainGenerator::generateTerrainMesh(GenerationAttributes *attr) {
 void TerrainGenerator::generateTerrainHeightMap(GenerationAttributes *attr) {
     int dimension = attr->dimension + 2;
     TerrainMeshData meshData(dimension, 1, pNoise_, attr->heightData, attr->normalData, attr->vertexType);
-    generateTerrainData(meshData, attr->position, dimension, 1, attr->axis, false);
+    generateTerrainHeightMapData(meshData, attr->position, dimension, 1, attr->axis, false);
     meshData.calculateNormals(true);
     meshData.destroy();
 }
@@ -114,7 +114,7 @@ glm::vec3 TerrainGenerator::getVertexPosition(glm::vec3 vertPos, float height) {
 }
 
 /* Generates height map */
-void TerrainGenerator::generateHeightMap(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
+void TerrainGenerator::generateTerrainHeightMapData(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
     int offsetX = pos.x;
     int offsetY = pos.y;
 
@@ -156,7 +156,7 @@ void TerrainGenerator::generateHeightMap(TerrainMeshData &meshData, glm::vec2 &p
                 bool createTriangle = x < numVertsPerLine - 1 && y < numVertsPerLine - 1;
 
                 if (createTriangle) {
-                    currentIncrement = (x == 0 || y == 0) ? 1 : skipIncrement;
+                    int currentIncrement = (x == 0 || y == 0) ? 1 : skipIncrement;
                     int a = vertexIndicesMap[x][y];
                     int b = vertexIndicesMap[x + currentIncrement][y];
                     int c = vertexIndicesMap[x][y + currentIncrement];
@@ -173,7 +173,7 @@ void TerrainGenerator::generateHeightMap(TerrainMeshData &meshData, glm::vec2 &p
 /*
  * Generates Mesh with stichting for skipIncrement > 1. 
  */
-void TerrainGenerator::generateTerrainData(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
+void TerrainGenerator::generateTerrainMeshData(TerrainMeshData &meshData, glm::vec2 &pos, int numVertsPerLine, int skipIncrement, glm::vec3 &axis, bool isFlat) {
     if (skipIncrement != 1 && (numVertsPerLine - 3) % 60 != 0) {
         fprintf(stdout, "[TERRAINGENERATOR::generateMesh] Error: Terrain Dimension has to be divisible by 60 if lod > 1\n");
     }

@@ -15,12 +15,12 @@ TerrainManager::TerrainManager(TerrainObject *obj) {
 }
 
 TerrainManager::~TerrainManager() {
-    for (TerrainObject *t : terrainObjectList)
+    for (TerrainObject *t : terrainObjectList_)
         delete t;
 }
 
 void TerrainManager::addTerrainObject(TerrainObject *obj) {
-    terrainObjectList.push_back(obj);
+    terrainObjectList_.push_back(obj);
     terrainObjectRenderDataVector_.emplace_back();
 }
 
@@ -31,28 +31,31 @@ TerrainType TerrainManager::getType() {
 void TerrainManager::update(View *view) {
 
     for (int i = 0; i < terrainObjectRenderDataVector_.size(); ++i) {
-        terrainObjectRenderDataVector_[i].land.clear();
-        terrainObjectRenderDataVector_[i].water.clear();
-        terrainObjectList[i]->update(view, &terrainObjectRenderDataVector_[i]);
+        terrainObjectList_[i]->update(view, &terrainObjectRenderDataVector_[i]);
     }
 }
 
-TerrainDrawDataContainer &TerrainManager::getTerrainRenderData() {
-    return terrainRenderData_;
+TerrainRenderDataVector &TerrainManager::getTerrainRenderData() {
+    return terrainObjectRenderDataVector_;
 }
 
 /* Terrain Chunk Tree (Test tree) */
 TerrainChunkTree::TerrainChunkTree() {
-    baseDrawData.size = 1;
+    terrainDrawData_.size = 1;
+    terrainAttributes_.bodyOrigin = glm::vec3(0,0,0);
+    terrainAttributes_.bodyRadius = 0.0f;
+    terrainAttributes_.hasAtmosphere = false;
+    terrainAttributes_.hasWater = false;
+    terrainAttributes_.landShaderType = ShaderType::SHADER_TYPE_TERRAIN;
 }
 
 void TerrainChunkTree::update(View *view, TerrainObjectRenderData *terrainObjectRenderData) {
-    terrainObjectRenderData->land = &terrainDrawData;
+    terrainObjectRenderData->land = &terrainDrawData_;
     terrainObjectRenderData->attributes = &terrainAttributes_;
 }
 
 void TerrainChunkTree::addTerrainChunk(Drawable *drawable) {
-    terrainDrawData.drawableList.push_back(drawable);
+    terrainDrawData_.drawableList.push_back(drawable);
 }
 
 /* A planet has 3 levels: 
@@ -61,26 +64,27 @@ void TerrainChunkTree::addTerrainChunk(Drawable *drawable) {
  *      size of 2*planet radius (But with a detail level of 12)
  * 3. Close up: 3*3 grid with current pos in the middle. Only one inside the atmosphere. Maybe radius + 0.7 * atmosphereHeight
  */
-PlanetTree::PlanetTree(TerrainGenerator *terrainGen) terrainGen_(terrainGen) {
-    initPlanet();
-}
+PlanetCdlodImplementation::PlanetCdlodImplementation(TerrainGenerator *terrainGen, TerrainObjectAttributes *terrainAttribs) 
+                                                        : terrainGen_(terrainGen), planetAttributes_(terrainAttribs) {}
 
-void PlanetTree::initPlanet() {
-    int rootNodeDimension_ = terrainGen_->getSphereRadius() * 2;
-    int lodLevelCount_ = 6;
-    float maxViewDistance = terrainGen_->getSphereRadius() * 25; // Distance from which the planet is visible in lod detail
+void PlanetCdlodImplementation::createTree(CdlodTreeData &treeData) {
+    rootNodeDimension_ = planetAttributes_->bodyRadius * 2;
+    int lodLevelCount = 6;
+    float maxViewDistance = planetAttributes_->bodyRadius * 25; // Distance from which the planet is visible in lod detail
 
-    leafNodeSize_ = rootNodeDimension_;
-    for (int i = 0; i < lodLevelCount_; ++i) {
-        leafNodeSize_ /= 2;
+    int leafNodeSize = rootNodeDimension_;
+    for (int i = 0; i < lodLevelCount; ++i) {
+        leafNodeSize /= 2;
     }
 
-    float minLodDist = (float)leafNodeSize_;
-    planetRanges_.resize(lodLevelCount_);
-    for (int i = 0; i < lodLevelCountMedium; ++i)
-        planetRanges_[i] = planetRanges_ * pow(2, i);
+    float minLodDist = (float)leafNodeSize;
+    treeData.ranges->resize(lodLevelCount);
+    for (int i = 0; i < lodLevelCount; ++i)
+        (*treeData.ranges)[i] = minLodDist * pow(2, i);
 
-    planetRanges_[lodLevelCount_ - 1] = maxViewDistance;
+    (*treeData.ranges)[lodLevelCount - 1] = maxViewDistance;
+
+    *treeData.lodLevelCount = lodLevelCount;
 
     /* Create initial root nodes for each cube side */
     glm::vec3 axis;
@@ -88,93 +92,32 @@ void PlanetTree::initPlanet() {
     for (int i = 0; i < 3; i++) {
         axis = glm::vec3(0,0,0);
         axis[i] = 1;
-        axisIntegerMap_[axis] = cnt++;
+        glm::vec2 planePos = vec3ToVec2CubeSide(planetAttributes_->bodyOrigin, axis);
+        createRootNode(treeData, planePos, axis);
         axis[i] = -1;
-        axisIntegerMap_[axis] = cnt++;
-    }
-
-    for (auto &kv : axisIntegerMap_) {
-        glm::vec2 planePos = vec3ToVec2CubeSide(planetOrigin - planetRadius, kv.first);
-        rootNodeList_.push_back(createRootNode(planePos, kv.first));
+        planePos = vec3ToVec2CubeSide(planetAttributes_->bodyOrigin, axis);
+        createRootNode(treeData, planePos, axis);
     }
 }
 
-void PlanetTree::initGlobalTextures() {
-
+void PlanetCdlodImplementation::updateRootNodes(CdlodTreeData &data, std::vector<TerrainNode_ *> &heightMapDemandList) {
+    ;
 }
 
-TerrainNode_ *PlanetTree::createRootNode(glm::vec2 &cornerPos, glm::vec3 &axis) {
-    HeightMap *heightMap = new HeightMap(terrainGen_, cornerPos, axis, rootNodeDimension_, heightMapIndex_);
-    TerrainNode_ *node = new TerrainNode_(heightMap, rootNodeDimension_, lodLevelCount_-1, cornerPos);
+void PlanetCdlodImplementation::createRootNode(CdlodTreeData &treeData, glm::vec2 &cornerPos, glm::vec3 &axis) {
+    HeightMap *heightMap = new HeightMap(terrainGen_, cornerPos, axis, rootNodeDimension_, *treeData.heightMapIndex);
+    treeData.rootNodes->push_back(new TerrainNode_(heightMap, rootNodeDimension_, *treeData.lodLevelCount - 1, cornerPos));
     heightMap->cleanUpMapData();
-    heightMaps_[heightMapIndex_] = heightMap;
+    (*treeData.heightMaps)[*treeData.heightMapIndex] = heightMap;
     
-    heightMapTextures_[heightMapIndex_];
-    heightMapTextures_[heightMapIndex_].emplace_back(heightMap->getHeightTexture(), "texture_height");
-    heightMapTextures_[heightMapIndex_].emplace_back(heightMap->getNormalTexture(), "texture_normal");
-    instanceData_.createNewInstance(heightMapIndex_, DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_TERRAIN, leafNodeSize_));
-    ++heightMapIndex_;
-
-    return node;
+    (*treeData.heightMapTextures)[*treeData.heightMapIndex];
+    (*treeData.heightMapTextures)[*treeData.heightMapIndex].emplace_back(heightMap->getHeightTexture(), "texture_height");
+    (*treeData.heightMapTextures)[*treeData.heightMapIndex].emplace_back(heightMap->getNormalTexture(), "texture_normal");
+    (*treeData.baseMeshListMap)[*treeData.heightMapIndex] = DrawableList(1, DrawableFactory::createPrimitivePlane(axis, *treeData.leafNodeSize));
+    ++(*treeData.heightMapIndex);
 }
 
-void PlanetTree::update(View *view, TerrainObjectRenderData *renderData) {
-    planetDrawData_.listOfDrawableLists.clear();
-    planetDrawData_.listOfTextureLists.clear();
-
-    for (auto &kv : rootNodeMap_) {
-        kv.second->lodSelect(planetRanges_, lodLevelCount_-1, view, selectedNodes_, heighMapCreateList_);
-    }
-
-    glm::vec3 currentAxis;
-    glm::vec3 rotationAxis = glm::vec3(1,0,0);
-    float rotationDegree = 0.0f;
-    int instanceIndex = 0;
-    for (auto &mapIndexNodeList : selectedNodes_) {
-        if (mapIndexNodeList.second.empty())
-            continue;
-        
-        instanceData_.updateInstanceSize(mapIndexNodeList.first, mapIndexNodeList.second.size());
-        glm::vec3 currentAxis = heightMaps_[currentHeightMapIndex]->getAxis();
-        glm::vec3 rotationAxis = getRotationAxis(currentAxis, &rotationDegree);
-        int instanceIndex = 0;
-
-        for (TerrainNode_ *node : mapIndexNodeList.second) {
-            float scale = node->getSize() / leafNodeSize_;
-            glm::vec3 translate = vec2ToVec3CubeSide(node->getPosition(), currentAxis);
-            glm::vec3 scale = glm::vec3(scale);
-            baseMesh_->transform(instanceIndex++, &scale, &translate, &rotationAxis, rotationDegree);
-            instanceData_.insertAttribute(node->getRange(), getPrevRange(node->getLodLevel()), scale);
-        }
-
-        instanceData_.finishInstance(mapIndexNodeList.first);
-        mapIndexNodeList.second.clear(); /* Clear list for next frame */
-
-        planetDrawData_.listOfDrawableLists.push_back(&instanceData_.baseMeshListMap[mapIndexNodeList.first]);
-        planetDrawData_.listOfTextureLists.push_back(&heightMapTextures_[mapIndexNodeList.first]);
-    }
-
-    renderData->land = &planetDrawData_;
-    renderData->attributes = &planetAttributes_;
-}
-
-float PlanetTree::getPrevRange(int lodLevel) {
-    return lodLevel == 0 ? 0.0f : ranges_[lodLevel - 1];
-}
-
-glm::vec3 PlanetTree::vec2ToVec3CubeSide(glm::vec2 &pos, glm::vec3 &axis) {
-    glm::vec3 ret;
-    if (axis.x)
-        ret = glm::vec3(planetOrigin_ + axis.x * planetRadius_, pos.y, pos.x);
-    else if (axis.y)
-        ret = glm::vec3(pos.x, planetOrigin_ + axis.y * planetRadius_, pos.y);
-    else
-        ret = glm::vec3(pos.x, pos.y, planetOrigin_ + axis.z * planetRadius_);
-
-    return ret;
-}
-
-glm::vec2 PlanetTree::vec3ToVec2CubeSide(glm::vec3 &pos, glm::vec3 &axis) {
+glm::vec2 PlanetCdlodImplementation::vec3ToVec2CubeSide(glm::vec3 &pos, glm::vec3 &axis) {
     glm::vec2 ret;
 
     if (axis.x)
@@ -187,34 +130,10 @@ glm::vec2 PlanetTree::vec3ToVec2CubeSide(glm::vec3 &pos, glm::vec3 &axis) {
     return ret;
 }
 
-glm::vec3 PlanetTree::getRotationAxis(glm::vec3 &axis, float *degree) {
-    glm::vec3 rotAx;
-
-    if (axis.x) {
-        rotAx = glm::vec3(0,0,1);
-        *degree = 90.0f;
-    }
-    else if (axis.y) {
-        rotAx = glm::vec3(0,1,0);
-        *degree = 0.0f;
-    }
-    else {
-        rotAx = glm::vec3(1,0,0);
-        *degree = 90.0f;
-    }
-
-    return rotAx;
-}
-
 /*
- * Based on paper CDLOD by strugar
- * 
- * I need a grid of root trees for every side. So from space only the root nodes
- * of the tree sides visible are rendered. Coming closer, parts of the cube sides need to be culled as well.
- * Very close up, it should be the 9 root nodes moving over the cube.
- */
-TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) : terrainGen_(terrainGen) {
-    fprintf(stdout, "Creating CDLOD Tree\n");
+PlaneCdlodImplementation::PlaneCdlodImplementation(TerrainGenerator *terrainGen) : terrainGen_(terrainGen) {}
+
+PlaneCdlodImplementation::createTree(CdlodTreeData &data) {
     nodesToDraw_.reserve(32);
 
     int leafNodeSize = 16.0f;
@@ -223,9 +142,6 @@ TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) : terrainGen_(t
 
     int rootNodeSize = leafNodeSize * pow(2, lodLevelCount_-1);
 
-    /* TODO: I have to either create one basePatch per root node, with the height and normal map added as textures
-     * Or the renderer has to apply the textures based on heightmapindex...hm, doesn't work...
-     */
     HeightMap *heightMap = new HeightMap(terrainGen, glm::vec3(0,0,0), glm::vec3(0,1,0), heightMapSize, heightMapIndex_++);
     glm::vec3 nodePos = glm::vec3(0,0,0);
 
@@ -257,60 +173,141 @@ TerrainCDLODTree::TerrainCDLODTree(TerrainGenerator *terrainGen) : terrainGen_(t
     rangeAttribData_.numElements = 3;
     rangeAttribData_.sizeOfDataType = sizeof(glm::vec3);
 }
+*/
 
-void TerrainCDLODTree::init(glm::vec3 pos) {
-
+CdlodTree::CdlodTree(CdlodTreeImplementation *imple, TerrainObjectAttributes *attribs) : treeImplementation_(imple), terrainAttributes_(attribs){
+    init();
 }
 
-TerrainNode_ *TerrainCDLODTree::createNode(glm::vec2 rootNodeOrigin, glm::vec3 rootNodeAxis) {
-
+CdlodTree::~CdlodTree() {
+    // TODO: Delete everything
+    delete treeImplementation_;
 }
 
-TerrainCDLODTree::~TerrainCDLODTree() {
-    delete basePatch_;
+void CdlodTree::init() {
+    publicTreeData_.rootNodes = &rootNodeList_;
+    publicTreeData_.heightMaps = &heightMaps_;
+    publicTreeData_.heightMapTextures = &heightMapTextures_;
+    publicTreeData_.baseMeshListMap = &meshInstanceData_.baseMeshListMap;
+    publicTreeData_.ranges = &ranges_;
+    publicTreeData_.heightMapIndex = &heightMapIndex_;
+    publicTreeData_.leafNodeSize = &leafNodeSize_;
+    publicTreeData_.lodLevelCount = &lodLevelCount_;
+    treeImplementation_->createTree(publicTreeData_);
 }
 
-float TerrainCDLODTree::getPrevRange(int lodLevel) {
+void CdlodTree::createRootNodes() {
+    treeImplementation_->updateRootNodes(publicTreeData_, heightMapCreationList_);
+}
+
+
+void CdlodTree::update(View *view, TerrainObjectRenderData *renderData) {
+    landDrawData_.listOfDrawableLists.clear();
+    landDrawData_.listOfTextureLists.clear();
+    landDrawData_.size = 0;
+    selectedNodes_.clear();
+
+    for (TerrainNode_ *node : rootNodeList_) {
+        node->lodSelect(ranges_, lodLevelCount_-1, view, selectedNodes_, heightMapCreationList_);
+    }
+
+    glm::vec3 currentAxis;
+    glm::vec3 rotationAxis = glm::vec3(1,0,0);
+    float rotationDegree = 0.0f;
+    for (auto &mapIndexNodeList : selectedNodes_) {
+        if (mapIndexNodeList.second.empty())
+            continue;
+        
+        ++landDrawData_.size;
+        // Todo: Bad and costly lookup. This has to go.
+        if (meshInstanceData_.instanceAttribListMap.find(mapIndexNodeList.first) == meshInstanceData_.instanceAttribListMap.end())
+            meshInstanceData_.createNewInstance(mapIndexNodeList.first);
+        meshInstanceData_.updateInstanceSize(mapIndexNodeList.first, mapIndexNodeList.second.size());
+        glm::vec3 currentAxis = heightMaps_[mapIndexNodeList.first]->getAxis();
+        glm::vec3 rotationAxis = getRotationAxis(currentAxis, &rotationDegree);
+        int instanceIndex = 0;
+
+        /* Update model matrices and additional attributes for each instance belonging to the current heightmap */
+        for (TerrainNode_ *node : mapIndexNodeList.second) {
+            float scale = node->getSize() / leafNodeSize_;
+            glm::vec3 translate = terrainAttributes_->bodyRadius ? vec2ToVec3CubeSide(node->getPosition(), currentAxis) : glm::vec3(node->getPosition().x, 0, node->getPosition().y);
+            glm::vec3 scaleVec = glm::vec3(scale);
+            meshInstanceData_.baseMeshListMap[mapIndexNodeList.first][0]->transform(instanceIndex++, &scaleVec, &translate, &rotationAxis, rotationDegree);
+            meshInstanceData_.insertAttribute(node->getRange(), getPrevRange(node->getLodLevel()), scale);
+        }
+
+        meshInstanceData_.finishInstance(mapIndexNodeList.first);
+
+        landDrawData_.listOfDrawableLists.push_back(&meshInstanceData_.baseMeshListMap[mapIndexNodeList.first]);
+        landDrawData_.listOfTextureLists.push_back(&heightMapTextures_[mapIndexNodeList.first]);
+    }
+
+    renderData->land = &landDrawData_;
+    renderData->attributes = terrainAttributes_;
+
+    /* Handle heightmap creation list */
+    if (heightMapCreationList_.size()) {
+        //gl_threadPool.addJob();
+        ;
+    }
+}
+
+glm::vec3 CdlodTree::vec2ToVec3CubeSide(glm::vec2 &pos, glm::vec3 &axis) {
+    glm::vec3 ret;
+    if (axis.x)
+        ret = glm::vec3(terrainAttributes_->bodyOrigin.x + axis.x * terrainAttributes_->bodyRadius, pos.y, pos.x);
+    else if (axis.y)
+        ret = glm::vec3(pos.x, terrainAttributes_->bodyOrigin.y + axis.y * terrainAttributes_->bodyRadius, pos.y);
+    else
+        ret = glm::vec3(pos.x, pos.y, terrainAttributes_->bodyOrigin.z + axis.z * terrainAttributes_->bodyRadius);
+
+    return ret;
+}
+
+glm::vec3 CdlodTree::getRotationAxis(glm::vec3 &axis, float *degree) {
+    glm::vec3 rotAx;
+
+    if (axis.x) {
+        rotAx = glm::vec3(0,0,1);
+        *degree = 90.0f;
+    }
+    else if (axis.y) {
+        rotAx = glm::vec3(0,1,0);
+        *degree = 0.0f;
+    }
+    else {
+        rotAx = glm::vec3(1,0,0);
+        *degree = 90.0f;
+    }
+
+    return rotAx;
+}
+
+float CdlodTree::getPrevRange(int lodLevel) {
     return lodLevel == 0 ? 0.0f : ranges_[lodLevel - 1];
 }
 
-void TerrainCDLODTree::updateRootNodes(glm::vec3 &camPos) {
+// TODO: Radius and origin at 2 different positions in memory...think about it and change
+// TODO: Provide terrainAttributes to the class
+Planet::Planet(TerrainGenerator *terrainGen) : terrainGen_(terrainGen) {
+    terrainAttributes_.bodyOrigin = terrainGen_->getSphereOrigin();
+    terrainAttributes_.bodyRadius = terrainGen_->getSphereRadius();
+    terrainAttributes_.hasAtmosphere = false;
+    terrainAttributes_.hasWater = false;
+    terrainAttributes_.landShaderType = ShaderType::SHADER_TYPE_TERRAIN;
 
+    initPlanet();
 }
 
-void TerrainCDLODTree::update(View *view) {
-    terrainList->clear();
-    nodesToDraw_.clear();
-    
-    /* Select nodes */
-    for (std::vector<TerrainNode_ *> &gridRow : grid_) {
-        for (TerrainNode_ *root : gridRow) {
-            root->lodSelect(ranges_, lodLevelCount_-1, view, &nodesToDraw_);
-        }
-    }
-    
-    if (nodesToDraw_.empty()) {
-        return;
-    }
-
-    /* Build the instance model matrices (translation and scale) and the list of ranges*/
-    /* TODO: Use emplace_back for better performance! */
-    basePatch_->updateInstanceSize(nodesToDraw_.size());
-    instanceVecMorphAttribs_.resize(nodesToDraw_.size());
-    rangeAttribData_.size = nodesToDraw_.size();
-    for (int i = 0; i < nodesToDraw_.size(); ++i) {
-        glm::vec3 translate = nodesToDraw_[i]->getPosition();
-        glm::vec3 scale = glm::vec3(nodesToDraw_[i]->getSize() / 16.0f); // Node dimension / mesh dimension
-        basePatch_->transform(i, &scale, &translate, NULL);
-        instanceVecMorphAttribs_[i] = glm::vec3(nodesToDraw_[i]->getRange(), getPrevRange(nodesToDraw_[i]->getLodLevel()), nodesToDraw_[i]->getSize() / 16.0f);
-    }
-
-    rangeAttribData_.data = static_cast<void *>(instanceVecMorphAttribs_.data());
-    basePatch_->updateMeshInstances(&rangeAttribData_);
-
-    terrainList->push_back(basePatch_);
+Planet::~Planet() {
+    //TODO: delete everything
 }
 
-CdlodRenderer::update() {
+void Planet::initPlanet() {
+    PlanetCdlodImplementation *imple = new PlanetCdlodImplementation(terrainGen_, &terrainAttributes_);
+    lodTree_ = new CdlodTree(imple, &terrainAttributes_);
+}
 
+void Planet::update(View *view, TerrainObjectRenderData *terrainObjectRenderData) {
+    lodTree_->update(view, terrainObjectRenderData);
 }

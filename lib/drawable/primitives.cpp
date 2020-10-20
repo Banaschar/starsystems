@@ -1,6 +1,6 @@
 #include "primitives.hpp"
 
-Mesh *Primitives::createPlane(int dimension) {
+Mesh *Primitives::createPlane(int dimension, glm::vec3 axis) {
     dimension = dimension + 1;
     VertexData *vertexData = new VertexData(dimension * dimension, (dimension - 1) * (dimension - 1) * 6);
 
@@ -15,16 +15,30 @@ Mesh *Primitives::createPlane(int dimension) {
         }
     }
 
+    bool inverted = false;
+    if (axis.x == -1 || axis.z == 1 || axis.y == -1)
+        inverted = true;
+
     int cnt = 0;
     for (int row = 0; row < dimension - 1; row++) {
         for (int col = 0; col < dimension - 1; col++) {
-            vertexData->indices[cnt++] = dimension * row + col;
-            vertexData->indices[cnt++] = dimension * row + col + dimension;
-            vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
+            if (inverted) {
+                vertexData->indices[cnt++] = dimension * row + col;
+                vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
+                vertexData->indices[cnt++] = dimension * row + col + dimension;
 
-            vertexData->indices[cnt++] = dimension * row + col;
-            vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
-            vertexData->indices[cnt++] = dimension * row + col + 1;
+                vertexData->indices[cnt++] = dimension * row + col;
+                vertexData->indices[cnt++] = dimension * row + col + 1;
+                vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
+            } else {
+                vertexData->indices[cnt++] = dimension * row + col;
+                vertexData->indices[cnt++] = dimension * row + col + dimension;
+                vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
+
+                vertexData->indices[cnt++] = dimension * row + col;
+                vertexData->indices[cnt++] = dimension * row + col + dimension + 1;
+                vertexData->indices[cnt++] = dimension * row + col + 1;
+            }
         }
     }
 

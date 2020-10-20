@@ -9,6 +9,7 @@ public:
     int getIndex();
     unsigned int getHeightTexture();
     unsigned int getNormalTexture();
+    glm::vec3 &getAxis();
     void cleanUpMapData();
     void getMaxMinValuesFromArea(glm::vec2 &pos, int dimension, float *nodeMinHeight_, float *nodeMaxHeight_);
 private:
