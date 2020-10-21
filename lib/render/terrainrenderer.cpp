@@ -51,7 +51,9 @@ void TerrainRenderer::render_(TerrainObjectRenderData &renderData, SceneRenderDa
     shader_->setSceneUniforms(sceneData, nullptr);
 
     for (int i = 0; i < renderData.land->size; ++i) {
-        bindTextureList(renderData.land->getTextureListAtIndex(i));
+        TextureList &texList = renderData.land->getTextureListAtIndex(i);
+        int numTex = texList.size();
+        bindTextureList(texList);
 
         for (Drawable *drawable : renderData.land->getDrawableListAtIndex(i)) {
             shader_->setDrawableUniforms(sceneData, drawable, nullptr);
@@ -60,6 +62,8 @@ void TerrainRenderer::render_(TerrainObjectRenderData &renderData, SceneRenderDa
                 vaoRenderer_->draw(mesh);
             }
         }
+
+        shader_->decreaseTextureCount(numTex);
     }
 
     shader_->end();

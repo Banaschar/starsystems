@@ -88,6 +88,7 @@ struct MeshInstanceData {
     std::unordered_map<int, VertexAttributeData> instanceAttributeDataMap;
     std::vector<glm::vec3>::iterator attribIt;
     std::vector<glm::vec3> *currVec;
+    int instanceIndex = 0;
 
     void createNewInstance(int index) {
         if (baseMeshListMap.find(index) == baseMeshListMap.end()) {
@@ -102,14 +103,20 @@ struct MeshInstanceData {
     void updateInstanceSize(int index, int size) {
         baseMeshListMap[index][0]->updateInstanceSize(size);
         instanceAttribListMap[index].resize(size);
-        instanceAttributeDataMap[index].size = size;
+        VertexAttributeData *instanceAttribs = &instanceAttributeDataMap[index];
+        instanceAttribs->size = size;
+        instanceAttribs->numElements = 3;
+        instanceAttribs->sizeOfDataType = sizeof(glm::vec3);
 
         currVec = &instanceAttribListMap[index];
-        attribIt = currVec->begin();
+        //attribIt = currVec->begin();
+        instanceIndex = 0;
     }
 
     void insertAttribute(float x, float y, float z) {
-        currVec->emplace(attribIt++, x, y, z);
+        //currVec->emplace(attribIt, x, y, z);
+        //++attribIt;
+        (*currVec)[instanceIndex++] = glm::vec3(x,y,z);
     }
 
     void finishInstance(int index) {
@@ -141,8 +148,8 @@ public:
 class PlanetCdlodImplementation : public CdlodTreeImplementation {
 public:
     PlanetCdlodImplementation(TerrainGenerator *terrainGen, TerrainObjectAttributes *terrainAttribs);
-    void createTree(CdlodTreeData &data);
-    void updateRootNodes(CdlodTreeData &data, std::vector<TerrainNode_ *> &heightMapDemandList);
+    void createTree(CdlodTreeData &treeData);
+    void updateRootNodes(CdlodTreeData &treeData, std::vector<TerrainNode_ *> &heightMapDemandList);
 private:
     int rootNodeDimension_;
     TerrainObjectAttributes *planetAttributes_;
@@ -155,11 +162,13 @@ private:
 class PlaneCdlodImplementation : public CdlodTreeImplementation {
 public:
     PlaneCdlodImplementation(TerrainGenerator *terrainGen, TerrainObjectAttributes *terrainAttribs);
-    void createTree(CdlodTreeData &data);
-    void updateRootNodes(CdlodTreeData &data, std::vector<TerrainNode_ *> &heightMapDemandList);
+    void createTree(CdlodTreeData &treeData);
+    void updateRootNodes(CdlodTreeData &treeData, std::vector<TerrainNode_ *> &heightMapDemandList);
 private:
     int rootNodeDimension_;
-    TerrainObjectAttributes *planetAttributes_;
+    TerrainGenerator *terrainGen_;
+    TerrainObjectAttributes *planeAttributes_;
+    void createRootNode(CdlodTreeData &treeData, glm::vec2 pos);
 };
 
 /*
@@ -210,5 +219,18 @@ private:
     TerrainObjectAttributes terrainAttributes_;
 
     void initPlanet();
+};
+
+class EndlessPlane : public TerrainObject {
+public:
+    EndlessPlane(TerrainGenerator *terrainGen);
+    ~EndlessPlane();
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+
+private:
+    CdlodTree *lodTree_;
+    TerrainGenerator *terrainGen_;
+    TerrainObjectAttributes terrainAttributes_;
+    void initPlane();
 };
 #endif

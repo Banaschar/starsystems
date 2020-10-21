@@ -32,6 +32,7 @@ Scene *createPlane(Engine *engine) {
     };
     */
 
+    std::vector<const char *> planeShaderFiles{"shader/plane.vs", "shader/plane.fs"};
     std::vector<const char *> terrainInstanceshaderFiles{"shader/instanceTerrainTest.vs", "shader/flatColor.fs"};
     std::vector<const char *> waterShaderFilesQuality{"shader/waterShader.vs", "shader/waterShader.fs"};
     std::vector<const char *> waterShaderFilesPerf{"shader/waterShader.vs", "shader/waterShaderPerformance.fs"};
@@ -41,6 +42,7 @@ Scene *createPlane(Engine *engine) {
 
     std::vector<Shader *> shaders = {
         new TerrainInstanceShader(terrainInstanceshaderFiles, ShaderType::SHADER_TYPE_TERRAIN),
+        //new TerrainPlaneShader(planeShaderFiles, ShaderType::SHADER_TYPE_TERRAIN),
         new SunShader(sunShaderFiles, ShaderType::SHADER_TYPE_LIGHT),
         new SkyBoxShader(skyBoxShaderFiles, ShaderType::SHADER_TYPE_SKY),
         new GuiShader(guiShaderFiles, ShaderType::SHADER_TYPE_GUI)
@@ -48,6 +50,7 @@ Scene *createPlane(Engine *engine) {
 
     /* Camera */
     glm::vec3 camPos = glm::vec3(5, 15, 5);
+    //glm::vec3 camPos = glm::vec3(5, 50, -200);
     View *view = new View(engine->getWindow(), camPos);
 
     /* Renderer */
@@ -89,10 +92,35 @@ Scene *createPlane(Engine *engine) {
     PerlinNoise pNoise = PerlinNoise(6, 15.0f, 0.3f, 3);
     TerrainGenerator *terrainGen = new TerrainGenerator(pNoise);
 
-    /* Terrainmanager */
+
+    /* Terrainmanager Test Plane */
+    /*
     TerrainChunkTree *tObj = new TerrainChunkTree();
-    tObj->addTerrainChunk(DrawableFactory::createPrimitive(PrimitiveType::PLANE, ShaderType::SHADER_TYPE_TERRAIN, 16));
+    glm::vec3 axis = glm::vec3(0,1,0);
+    Drawable *d = DrawableFactory::createPrimitivePlane(axis, 16);
+    d->updateInstanceSize(3);
+    pos = glm::vec3(0,0,0);
+    d->transform(0, NULL, &pos, NULL);
+    pos = glm::vec3(16,0,0);
+    d->transform(1, NULL, &pos, NULL);
+    pos = glm::vec3(0,0,16);
+    d->transform(2, NULL, &pos, NULL);
+    d->updateMeshInstances();
+    tObj->addTerrainChunk(d);
     scene->getTerrainManager()->addTerrainObject((TerrainObject*) tObj);
+    */
+
+    /* Terrainmanager EndlessPlane */
+    EndlessPlane *p = new EndlessPlane(terrainGen);
+    scene->getTerrainManager()->addTerrainObject((TerrainObject *) p);
+
+    /* Terrainmanager Planet */
+    /*
+    terrainGen->setSphereOrigin(glm::vec3(0,0,0));
+    terrainGen->setSphereRadius(64);
+    Planet *planet = new Planet(terrainGen);
+    scene->getTerrainManager()->addTerrainObject((TerrainObject*) planet);
+    */
 
     // Water Tessellation test
     /*

@@ -26,6 +26,7 @@ class Shader {
     void use();
     void end();
     void resetTextureCount();
+    void decreaseTextureCount(int i);
     ShaderType type();
     unsigned int id();
     void bindTexture(const std::string &name, unsigned int texId);

@@ -12,7 +12,6 @@ out VS_OUT {
 } vs_out;
 
 uniform mat4 VP;
-uniform mat4 modelMatrix;
 uniform sampler2D texture_height1;
 uniform sampler2D texture_normal1;
 uniform vec3 camPos;
@@ -24,7 +23,6 @@ uniform float upperBound;
 
 uniform vec3 cameraPos;
 uniform mat4 cameraMatrix;
-uniform mat4 projectionMatrix;
 
 float getMorphFactor(float dist, float low, float high) {
     float delta = high - low;
@@ -97,6 +95,6 @@ void main()
 
     // Debug normal stuff:
     //gl_Position = cameraMatrix * vPos;
-    //mat3 normalMatrix = mat3(transpose(inverse(cameraMatrix * modelMatrix)));
+    //mat3 normalMatrix = mat3(transpose(inverse(cameraMatrix * aInstanceModelMat)));
     //vs_out.normal = normalize(vec3(vec4(normalMatrix * normal, 1.0)));
 } 

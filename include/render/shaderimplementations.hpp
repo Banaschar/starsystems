@@ -13,7 +13,7 @@ public:
     void setSceneUniforms(SceneRenderData &sceneData, void *data) override {
         uniform("sunPos", sceneData.sun->getPosition());
         uniform("cameraMatrix", sceneData.view->getCameraMatrix());
-        uniform("projectionMatrix", sceneData.view->getProjectionMatrix());
+        uniform("VP", sceneData.view->getProjectionMatrix() * sceneData.view->getCameraMatrix());
         uniform("cameraPos", sceneData.view->getCameraPosition());
         uniform("lowerBound", -10.0f);
         uniform("upperBound", 20.0f);
@@ -22,8 +22,7 @@ public:
         uniform("gridOrigin", glm::vec3(0,0,0));
     }
     void setDrawableUniforms(SceneRenderData &sceneData, Drawable *drawable, void *data) override {
-        uniform("MVP", sceneData.view->getProjectionMatrix() * sceneData.view->getCameraMatrix() * drawable->getModelMatrix());
-        uniform("modelMatrix", drawable->getModelMatrix());
+        ;
     }
 };
 

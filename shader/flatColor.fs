@@ -23,6 +23,6 @@ void main()
 {
     //FragColor = vec4(0.2,0.2,0.8,1.0) * calculateLighting();
     //FragColor = vec4(normal_frag_in, 1.0);
-    FragColor = fColor;
-    //FragColor = vec4(1.0,0.0,0.0,1.0);
+    //FragColor = fColor;
+    FragColor = vec4(1.0,0.0,0.0,1.0);
 }

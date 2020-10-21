@@ -19,7 +19,7 @@ void VaoRenderer::draw(Mesh *mesh) {
     else 
         glDrawElements(mesh->getDrawMode(), mesh->getIndicesSize(), GL_UNSIGNED_INT, 0);
 
-    g_triangleCount += mesh->getTriangleCount();
+    g_triangleCount += mesh->getTriangleCount() * (mesh->isInstanced() ? mesh->getInstanceSize() : 1);
 
     glBindVertexArray(0);
 }

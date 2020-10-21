@@ -95,7 +95,7 @@ TerrainNode_::TerrainNode_(HeightMap *heightMap, int nodeDimension, int lod, glm
     if (lod == 0) {
         heightMap->getMaxMinValuesFromArea(nodePos_, nodeDimension_, &nodeMinHeight_, &nodeMaxHeight_);
     } else {
-        createChildren(heightMap, nodeDimension, lod);
+        createChildren(heightMap, nodeDimension_, lod);
         for (TerrainNode_ *child : children_) {
             nodeMaxHeight_ = std::max(child->getNodeMaxHeight(), nodeMaxHeight_);
             nodeMinHeight_ = std::min(child->getNodeMinHeight(), nodeMinHeight_);
@@ -129,9 +129,8 @@ void TerrainNode_::insertNode(IndexedTerrainNodeListMap &nodeMap, TerrainNode_ *
         it->second.push_back(node);
 }
 
-/* Add argument that represents a list of heightmaps that need to be created 
- * Needed parameters: heightmapindex, parentPosition (as heightmap Origin), axis
- * !! In that case, terrainNode needs a new variable, the heightmapdimension...
+/*
+ * TODO: Fix frustum culling && Add culling of nodes that are not visible due to being on the other side of the sphere
  */
 bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *view, IndexedTerrainNodeListMap &nodeMap, std::vector<TerrainNode_ *> &creationList) {
     currentLodRange_ = ranges[lodLevel];
@@ -159,7 +158,7 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
                 for (TerrainNode_ *child : children_) {
                     if (!child->lodSelect(ranges, lodLevel - 1, view, nodeMap, creationList)) {
                         //child->currentLodRange_ = currentLodRange_;
-                        insertNode(nodeMap, child); // this should actually be the area covered by the child represented in the current lodlevel
+                        insertNode(nodeMap, child); // this should actually be the area covered by the child represented in the current lodlevel -> Hm...
                     }
                 }
             } else {

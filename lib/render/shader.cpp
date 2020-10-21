@@ -129,6 +129,10 @@ void Shader::resetTextureCount() {
     textureCounter_ = 0;
 }
 
+void Shader::decreaseTextureCount(int i) {
+    textureCounter_ = textureCounter_ - i < 0 ? 0 : textureCounter_ - i; 
+}
+
 void Shader::bindTexture(const std::string &name, unsigned int texId) {
     glActiveTexture(GL_TEXTURE0 + textureCounter_);
     if (name.substr(0, name.size() - 1) == "texture_cubemap")
