@@ -244,7 +244,6 @@ void Renderer::renderList(Shader *shader, DrawableList &drawables, SceneRenderDa
         shader->use();
         shader->setSceneUniforms(sceneData, nullptr);
         for (Drawable *drawable : drawables) {
-            drawable->update(sceneData.view);
             shader->setDrawableUniforms(sceneData, drawable, nullptr);
 
             for (Mesh *mesh : drawable->getMeshes()) {

@@ -14,13 +14,13 @@ const glm::vec3 DEFAULT_COLOR = glm::vec3(0.98f, 0.83f, 0.25f);
 
 class Light : public Drawable {
   public:
-    Light(glm::vec3 lightPos, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
-        Drawable::transform(NULL, &lightPos, NULL);
+    explicit Light(glm::vec3 lightPos, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
+        Drawable::transform(nullptr, &lightPos, nullptr);
         Drawable::setType(type);
     }
-    Light(Mesh *mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
-    Light(std::vector<Mesh*> &meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
-    Light(const std::string &path, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
+    explicit Light(Mesh *mesh, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(mesh, type) {}
+    explicit Light(std::vector<Mesh*> &meshes, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) : Drawable(meshes, type) {}
+    explicit Light(const std::string &path, ShaderType type = ShaderType::SHADER_TYPE_LIGHT) {
         std::vector<Mesh*> meshes;
         AssetLoader::loadModel(path, &meshes);
 
@@ -29,7 +29,7 @@ class Light : public Drawable {
     }
 
     bool hasModel() {
-        return Drawable::meshes_.size();
+        return !Drawable::meshes_.empty();
     }
 
     void setAmbient(glm::vec3 a) {

@@ -18,9 +18,8 @@ class Drawable {
     Drawable(std::vector<Mesh*> meshes, ShaderType type);
     Drawable(Mesh *mesh, Texture texture, ShaderType type);
 
-    ~Drawable();
+    virtual ~Drawable();
 
-    virtual void update(View *view);
     ShaderType type();
     void setType(ShaderType type);
     void addTexture(Texture tex, int index = 0);
@@ -37,7 +36,7 @@ class Drawable {
     void transform(int index, glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree = 0.0f);
     void setPosition(glm::vec3 pos, int index = 0);
     std::vector<Mesh*> &getMeshes();
-    int getTriangleCount(int index = 0);
+    unsigned int getTriangleCount(int index = 0);
     void setMeshDrawMode(MeshDrawMode mode, int index = 0);
     void updateMeshInstances(VertexAttributeData *attrData = nullptr);
     void updateInstanceSize(int size);

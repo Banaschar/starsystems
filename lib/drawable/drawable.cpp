@@ -1,4 +1,5 @@
 #include <glm/gtc/matrix_transform.hpp>
+#include <utility>
 
 #include "drawable.hpp"
 
@@ -12,25 +13,20 @@ Drawable::Drawable(Mesh *mesh, ShaderType type) : type_(type) {
 }
 
 Drawable::Drawable(std::vector<Mesh*> meshes, ShaderType type) : type_(type) {
-    meshes_ = meshes;
+    meshes_ = std::move(meshes);
     initDrawable();
 }
 
 Drawable::Drawable(Mesh *mesh, Texture texture, ShaderType type) : type_(type) {
     meshes_.push_back(mesh);
-    addTexture(texture);
+    addTexture(std::move(texture));
     initDrawable();
 }
 
 Drawable::~Drawable() {
     for (Mesh *mesh : meshes_) {
-        if (mesh)
-            delete mesh;
+        delete mesh;
     }
-}
-
-void Drawable::update(View *view) {
-    ;
 }
 
 ShaderType Drawable::type() {
@@ -42,7 +38,7 @@ void Drawable::setType(ShaderType type) {
 }
 
 void Drawable::addTexture(Texture tex, int index) {
-    meshes_.at(index)->addTexture(tex);
+    meshes_.at(index)->addTexture(std::move(tex));
 }
 
 void Drawable::addMesh(Mesh *mesh) {
@@ -64,7 +60,7 @@ glm::vec3 Drawable::getPosition(int index) {
     return modelPositions_.at(index);
 }
 
-int Drawable::getTriangleCount(int index) {
+unsigned int Drawable::getTriangleCount(int index) {
     return meshes_.at(index)->getTriangleCount();
 }
 
@@ -95,9 +91,7 @@ void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec
     }
 
     if (rotationAxis) {
-        if (degree == 0.0f) {
-            ;
-        } else {
+        if (degree != 0.0f) {
             rotationAxis_[index] = *rotationAxis;
             rotationDegree_[index] = degree;
         }
@@ -111,7 +105,7 @@ void Drawable::transform(int index, glm::vec3 *scaleVec, glm::vec3 *translateVec
 
 void Drawable::setPosition(glm::vec3 pos, int index) {
     modelPositions_.at(index) = pos;
-    transform(index, NULL, NULL, NULL);
+    transform(index, nullptr, nullptr, nullptr);
 }
 
 std::vector<Mesh*> &Drawable::getMeshes() {
@@ -136,9 +130,9 @@ void Drawable::updateInstanceSize(int size) {
 }
 
 void Drawable::initDrawable() {
-    modelPositions_.push_back(glm::vec3(0.0f, 0.0f, 0.0f));
-    modelMatrices_.push_back(glm::mat4(1.0f));
-    scale_.push_back(glm::vec3(1.0f));
-    rotationAxis_.push_back(glm::vec3(1.0f));
-    rotationDegree_.push_back(0.0f);
+    modelPositions_.emplace_back(0.0f, 0.0f, 0.0f);
+    modelMatrices_.emplace_back(1.0f);
+    scale_.emplace_back(1.0f);
+    rotationAxis_.emplace_back(1.0f);
+    rotationDegree_.emplace_back(0.0f);
 }

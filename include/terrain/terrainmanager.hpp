@@ -31,6 +31,8 @@ public:
 
 class TerrainObject {
 public:
+    //TODO: Refactor, should be called something like provideFrameRenderData
+  virtual ~TerrainObject() {}
   virtual void update(View *view, TerrainObjectRenderData *terrainObjectRenderData) = 0;
 };
 
@@ -54,11 +56,12 @@ private:
 class TerrainChunkTree : public TerrainObject {
 public:
     TerrainChunkTree();
-    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData) override;
     TerrainDrawData *getDrawData();
     void addTerrainChunk(Drawable *drawable);
+    ~TerrainChunkTree() override;
 
-private:
+  private:
     BaseDrawData terrainDrawData_;
     TerrainObjectAttributes terrainAttributes_;
 };
@@ -87,41 +90,45 @@ struct MeshInstanceData {
     std::unordered_map<int, std::vector<glm::vec3>> instanceAttribListMap;
     std::unordered_map<int, VertexAttributeData> instanceAttributeDataMap;
     std::vector<glm::vec3>::iterator attribIt;
-    std::vector<glm::vec3> *currVec;
-    int instanceIndex = 0;
+    std::vector<glm::vec3> *currAttribVec;
+    Drawable *currBaseMesh;
 
-    void createNewInstance(int index) {
-        if (baseMeshListMap.find(index) == baseMeshListMap.end()) {
+    void createNewInstance(int mapIndex) {
+        if (baseMeshListMap.find(mapIndex) == baseMeshListMap.end()) {
             fprintf(stdout, "[MESHINSTANCEDATA::createNewInstance] Error: New instance has no base mesh\n");
             return;
         }
 
-        instanceAttribListMap[index];
-        instanceAttributeDataMap[index];
+        instanceAttribListMap[mapIndex];
+        instanceAttributeDataMap[mapIndex];
     }
 
-    void updateInstanceSize(int index, int size) {
-        baseMeshListMap[index][0]->updateInstanceSize(size);
-        instanceAttribListMap[index].resize(size);
-        VertexAttributeData *instanceAttribs = &instanceAttributeDataMap[index];
+    void updateInstanceSize(int mapIndex, int size) {
+        baseMeshListMap[mapIndex][0]->updateInstanceSize(size);
+        instanceAttribListMap[mapIndex].resize(size);
+        VertexAttributeData *instanceAttribs = &instanceAttributeDataMap[mapIndex];
         instanceAttribs->size = size;
         instanceAttribs->numElements = 3;
         instanceAttribs->sizeOfDataType = sizeof(glm::vec3);
 
-        currVec = &instanceAttribListMap[index];
-        //attribIt = currVec->begin();
-        instanceIndex = 0;
+        currBaseMesh = baseMeshListMap[mapIndex][0];
+        currAttribVec = &instanceAttribListMap[mapIndex];
+        //attribIt = currAttribVec->begin();
     }
 
-    void insertAttribute(float x, float y, float z) {
-        //currVec->emplace(attribIt, x, y, z);
+    void insertModelMatrix(int instanceIndex, glm::vec3 *scale, glm::vec3 *translate, glm::vec3 *rotate, float degree) {
+        currBaseMesh->transform(instanceIndex, scale, translate, rotate, degree);
+    }
+
+    void insertAttribute(int instanceIndex, float x, float y, float z) {
+        //currAttribVec->emplace(attribIt, x, y, z);
         //++attribIt;
-        (*currVec)[instanceIndex++] = glm::vec3(x,y,z);
+        (*currAttribVec)[instanceIndex] = glm::vec3(x,y,z);
     }
 
-    void finishInstance(int index) {
-        instanceAttributeDataMap[index].data = static_cast<void *>(instanceAttribListMap[index].data());
-        baseMeshListMap[index][0]->updateMeshInstances(&instanceAttributeDataMap[index]);
+    void finishInstance(int mapIndex) {
+        instanceAttributeDataMap[mapIndex].data = static_cast<void *>(currAttribVec->data());
+        currBaseMesh->updateMeshInstances(&instanceAttributeDataMap[mapIndex]);
     }
 };
 
@@ -137,6 +144,10 @@ struct CdlodTreeData {
     int *lodLevelCount;
 };
 
+/*
+ * TODO: Remove. Add the methods as private virtual methods to CdlodTree (call it CdlodTreeBase)
+ *              -> Override in sub classes -> NO NEED FOR CDLODTREEDAT. WRONG: Can't access private base class members. Have to make all members Protected instead
+ */
 class CdlodTreeImplementation {
 public:
     /* Fill CdlodTreeData */
@@ -163,6 +174,7 @@ class PlaneCdlodImplementation : public CdlodTreeImplementation {
 public:
     PlaneCdlodImplementation(TerrainGenerator *terrainGen, TerrainObjectAttributes *terrainAttribs);
     void createTree(CdlodTreeData &treeData);
+    /* TODO: Make changes in treeData thread safe. Need mutex for treeData.rootNodes */
     void updateRootNodes(CdlodTreeData &treeData, std::vector<TerrainNode_ *> &heightMapDemandList);
 private:
     int rootNodeDimension_;
@@ -179,9 +191,9 @@ private:
 class CdlodTree : public TerrainObject {
 public:
   CdlodTree(CdlodTreeImplementation *imple, TerrainObjectAttributes *attribs);
-  ~CdlodTree();
+  ~CdlodTree() override;
 
-  void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+  void update(View *view, TerrainObjectRenderData *terrainObjectRenderData) override;
   
 private:
     int leafNodeSize_;
@@ -201,7 +213,7 @@ private:
     CdlodTreeImplementation *treeImplementation_;
 
     void init();
-    void createRootNodes();
+    void handleRootNodeUpdate(std::vector<TerrainNode_ *> creationList);
     glm::vec3 vec2ToVec3CubeSide(glm::vec2 &pos, glm::vec3 &axis);
     glm::vec3 getRotationAxis(glm::vec3 &axis, float *degree);
     float getPrevRange(int lodLevel);
@@ -210,8 +222,8 @@ private:
 class Planet : public TerrainObject {
 public:
     Planet(TerrainGenerator *terrainGen);
-    ~Planet();
-    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+    ~Planet() override;
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData) override;
 
 private:
     CdlodTree *lodTree_;
@@ -224,8 +236,8 @@ private:
 class EndlessPlane : public TerrainObject {
 public:
     EndlessPlane(TerrainGenerator *terrainGen);
-    ~EndlessPlane();
-    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData);
+    ~EndlessPlane() override;
+    void update(View *view, TerrainObjectRenderData *terrainObjectRenderData) override;
 
 private:
     CdlodTree *lodTree_;

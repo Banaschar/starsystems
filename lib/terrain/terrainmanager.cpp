@@ -57,6 +57,7 @@ void TerrainChunkTree::update(View *view, TerrainObjectRenderData *terrainObject
 void TerrainChunkTree::addTerrainChunk(Drawable *drawable) {
     terrainDrawData_.drawableList.push_back(drawable);
 }
+TerrainChunkTree::~TerrainChunkTree() {}
 
 /* A planet has 3 levels: 
  * 1. Very high distance: Just a small sphere with minimal details 
@@ -140,7 +141,7 @@ PlaneCdlodImplementation::PlaneCdlodImplementation(TerrainGenerator *terrainGen,
 
 void PlaneCdlodImplementation::createTree(CdlodTreeData &treeData) {
     rootNodeDimension_ = 128;
-    int lodLevelCount = 3;
+    int lodLevelCount = 4; // THERE IS NO NODE WITH SIZE 16 CREATED
     float maxViewDistance = 1200.0f; // Distance from which the plane is visible in lod detail
 
     int leafNodeSize = rootNodeDimension_;
@@ -204,6 +205,7 @@ CdlodTree::~CdlodTree() {
 }
 
 void CdlodTree::init() {
+    //TODO ceifert Just use the tree data struct internally as well to avoid these silly assignments
     publicTreeData_.rootNodes = &rootNodeList_;
     publicTreeData_.heightMaps = &heightMaps_;
     publicTreeData_.heightMapTextures = &heightMapTextures_;
@@ -215,8 +217,11 @@ void CdlodTree::init() {
     treeImplementation_->createTree(publicTreeData_);
 }
 
-void CdlodTree::createRootNodes() {
-    treeImplementation_->updateRootNodes(publicTreeData_, heightMapCreationList_);
+/* This function is called on the thread pool, so we need to copy the list
+ * The list should be very small anyways
+ */
+void CdlodTree::handleRootNodeUpdate(std::vector<TerrainNode_ *> creationList) {
+    treeImplementation_->updateRootNodes(publicTreeData_, creationList);
 }
 
 
@@ -227,7 +232,10 @@ void CdlodTree::update(View *view, TerrainObjectRenderData *renderData) {
     selectedNodes_.clear();
 
     /* TODO: Once I get to the level closeup to the planet where I need to create more detailed heightmaps,
-     * 
+     *          this should start with a lower level root node.
+     * Example: Let the implementation decide!
+     * treeImplementation_->selectStartNode()
+     *      Choses one or more nodes from the list to be used.
      */
     for (TerrainNode_ *node : rootNodeList_) {
         node->lodSelect(ranges_, lodLevelCount_-1, view, selectedNodes_, heightMapCreationList_);
@@ -248,13 +256,18 @@ void CdlodTree::update(View *view, TerrainObjectRenderData *renderData) {
         int instanceIndex = 0;
 
         /* Update model matrices and additional attributes for each instance belonging to the current heightmap */
+        fprintf(stdout, "List size: %lu\n", mapIndexNodeList.second.size());
+        for (TerrainNode_ *node : mapIndexNodeList.second)
+            fprintf(stdout, "(R: %f, Dim: %i, L: %i, Pos: %s), ", node->getRange(), node->getSize(), node->getLodLevel(), glm::to_string(node->getPosition()).c_str());
+        fprintf(stdout, "\n");
+
         for (TerrainNode_ *node : mapIndexNodeList.second) {
             float scale = node->getSize() / leafNodeSize_;
             glm::vec3 translate = terrainAttributes_->bodyRadius ? vec2ToVec3CubeSide(node->getPosition(), currentAxis) : glm::vec3(node->getPosition().x, 0, node->getPosition().y);
             glm::vec3 scaleVec = glm::vec3(scale);
-            //meshInstanceData_.baseMeshListMap[mapIndexNodeList.first][0]->transform(instanceIndex++, &scaleVec, &translate, &rotationAxis, rotationDegree);
-            meshInstanceData_.baseMeshListMap[mapIndexNodeList.first][0]->transform(instanceIndex++, &scaleVec, &translate, NULL);
-            meshInstanceData_.insertAttribute(node->getRange(), getPrevRange(node->getLodLevel()), scale);
+            meshInstanceData_.insertModelMatrix(instanceIndex, &scaleVec, &translate, &rotationAxis, rotationDegree);
+            meshInstanceData_.insertAttribute(instanceIndex, node->getRange(), getPrevRange(node->getLodLevel()), scale);
+            ++instanceIndex;
         }
 
         meshInstanceData_.finishInstance(mapIndexNodeList.first);
@@ -266,12 +279,9 @@ void CdlodTree::update(View *view, TerrainObjectRenderData *renderData) {
     renderData->land = &landDrawData_;
     renderData->attributes = terrainAttributes_;
 
-    //fprintf(stdout, "DrawDataSize: %i, listOfDrawableListsSize: %lu, listOfTextureLists.size: %lu\n", landDrawData_.size, landDrawData_.listOfDrawableLists.size(), landDrawData_.listOfTextureLists.size());
-
-    //fprintf(stdout, "First attrib: %s\n", meshInstanceData_.instanceAttribListMap);
     /* Handle heightmap creation list */
     if (heightMapCreationList_.size()) {
-        //gl_threadPool.addJob();
+        g_threadPool->addJob(std::bind(&CdlodTree::handleRootNodeUpdate, this, heightMapCreationList_));
         ;
     }
 }

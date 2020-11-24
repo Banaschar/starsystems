@@ -6,7 +6,7 @@ float g_deltaTime = 0.0f;
 float g_currentFrameTime;
 unsigned int g_triangleCount = 0;
 bool g_debugPolygonMode = false;
-ThreadPool *threadPool = NULL;
+ThreadPool *g_threadPool = nullptr;
 
 Engine::Engine(int width, int height, const std::string &name) {
     initWindow(width, height, name);
@@ -17,8 +17,8 @@ Engine::~Engine() {
     if (scene_)
         delete scene_;
 
-    if (threadPool)
-        delete threadPool;
+    if (g_threadPool)
+        delete g_threadPool;
 }
 
 void Engine::initWindow(int width, int height, const std::string &name) {
@@ -34,8 +34,8 @@ void Engine::initWindow(int width, int height, const std::string &name) {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     // Open windows and create its opengl context
-    window_ = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
-    if (window_ == NULL) {
+    window_ = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+    if (window_ == nullptr) {
         fprintf(stderr, "Failed to open GLFW window\n");
         glfwTerminate();
         return;
@@ -72,7 +72,7 @@ void Engine::initWindow(int width, int height, const std::string &name) {
 
 void Engine::initThreadPool() {
     int numThreads = std::thread::hardware_concurrency();
-    threadPool = new ThreadPool(numThreads == 0 ? 4 : numThreads);
+    g_threadPool = new ThreadPool(numThreads == 0 ? 4 : numThreads);
     fprintf(stdout, "[ENGINE::initThreadPool]: ThreadPool created with %i threads.\n", numThreads);
 }
 

@@ -137,10 +137,11 @@ bool TerrainNode_::lodSelect(std::vector<float> &ranges, int lodLevel, View *vie
 
     BoundingBox bBox(glm::vec3(nodePos_.x, nodeMinHeight_, nodePos_.y), glm::vec3(nodePos_.x + nodeDimension_, nodeMaxHeight_, nodePos_.y + nodeDimension_));
 
-    if (!bBox.intersectSphereSq(view->getCameraPosition(), currentLodRange_*currentLodRange_))
+    if (!bBox.intersectSphereSq(view->getCameraPosition(), currentLodRange_ * currentLodRange_))
         return false;
 
     /*
+    //TODO ceifert: FIXME
     if (!view->isInsideFrustum(bBox)) {
         fprintf(stdout, "NotInFrustum. LodLevel: %i\n", lodLevel);
         return true;

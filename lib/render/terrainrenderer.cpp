@@ -25,6 +25,7 @@ void TerrainRenderer::setupTextures() {
     textures_.push_back(tex);
 }
 
+//TODO ceifert Remove this and setupTextures. Textures should only be provided by the TerrainObjectRenderData
 void TerrainRenderer::bindTextures() {
     for (int i = 0; i < textures_.size(); i++) {
         shader_->bindTexture(textures_[i].type + std::to_string(i + 1), textures_[i].id);

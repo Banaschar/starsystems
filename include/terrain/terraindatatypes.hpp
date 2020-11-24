@@ -26,6 +26,11 @@ struct TerrainObjectAttributes {
     ShaderType landShaderType;
 };
 
+/*
+ * Object contains all data for a single frame
+ * GlobalTextureList contains textures which remain the same for all terrain draw calls this frame
+ * Each DrawableList has a corresponding textureList with the textures required for the drawables in the list at that index
+ */
 class TerrainDrawData {
 public:
     int size = 0;
@@ -34,6 +39,9 @@ public:
     virtual DrawableList &getDrawableListAtIndex(int i) = 0;
 };
 
+/*
+ * Contains all terrain draw data for an astronomical object in one frame
+ */
 struct TerrainObjectRenderData {
     TerrainDrawData *land = nullptr;
     TerrainDrawData *water = nullptr;

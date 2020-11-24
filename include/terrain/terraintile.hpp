@@ -12,7 +12,6 @@ public:
     TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec2 position, int lod, glm::vec3 axis, GenerationType genType, ShaderType shaderType);
     TerrainTile(TerrainGenerator *terrainGen, int dimension, glm::vec2 position, int lod, GenerationType genType, ShaderType shaderType);
 
-    void update(View *view) override;
     float getAmplitude();
     int getDimension();
     glm::vec2 &getPosition();

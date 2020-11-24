@@ -4,6 +4,11 @@
 #include "engine.hpp"
 #include "utils/textureloader.hpp"
 
+/*
+ * This is only an example application to test and show features.
+ * All functionality should be in the engine library.
+ */
+
 Scene *createPlane(Engine *engine) {
     std::cout << "Create Plane." << std::endl;
     

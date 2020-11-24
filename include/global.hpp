@@ -8,6 +8,6 @@ extern float g_currentFrameTime;
 extern unsigned int g_triangleCount;
 extern bool g_debugPolygonMode;
 
-extern ThreadPool *threadPool;
+extern ThreadPool *g_threadPool;
 
 #endif
