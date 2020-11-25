@@ -60,3 +60,5 @@ option(ASSIMP_BUILD_ALL_EXPORTERS_BY_DEFAULT "" OFF)
 option(ASSIMP_BUILD_OBJ_IMPORTER "" ON)
 
 add_subdirectory(assimp-5.0.1)
+
+add_subdirectory(googletest)

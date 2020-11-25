@@ -1,5 +1,5 @@
-#ifndef DRAWABLE_H
-#define DRAWABLE_H
+#ifndef DRAWABLE_HPP
+#define DRAWABLE_HPP
 
 #include <glm/glm.hpp>
 #include <string>

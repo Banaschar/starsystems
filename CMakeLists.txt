@@ -61,10 +61,11 @@ add_definitions(
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -ggdb")
 
 # Engine library
-add_library(engine STATIC
+set(ENGINE_LIBRARY engine)
+add_library(${ENGINE_LIBRARY} STATIC
             ${ENGINE_LIBRARY_SOURCE_FILES})
 
-target_include_directories(engine
+target_include_directories(${ENGINE_LIBRARY}
         PUBLIC
         include/
         include/drawable/
@@ -84,7 +85,7 @@ target_include_directories(engine
         lib/
         )
 
-target_link_libraries(engine
+target_link_libraries(${ENGINE_LIBRARY}
         ${DEPENDENCY_LIBS}
         assimp)
 
@@ -106,7 +107,7 @@ target_include_directories(stars
         )
 
 target_link_libraries(stars
-        engine)
+        ${ENGINE_LIBRARY})
 
 add_custom_command(
         TARGET stars POST_BUILD
@@ -165,3 +166,9 @@ endif()
 #                    COMMAND ${CMAKE_COMMAND} -E copy_directory
 #                    ${CMAKE_SOURCE_DIR}/assets/ 
 #                    $<TARGET_FILE_DIR:stars>/assets)
+
+# Add tests
+add_subdirectory(test)
+
+
+
