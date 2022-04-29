@@ -1,10 +1,9 @@
-#include <string>
 #include <vector>
 
 #include "mesh.hpp"
 #include "oglheader.hpp"
 
-Mesh::Mesh() {}
+Mesh::Mesh() = default;
 Mesh::Mesh(VertexData *vertexData, std::vector<Texture> textures) : vertexData_(vertexData), textures_(textures) {
     drawMode_ = GL_TRIANGLES;
     vertexData_->optimize();
@@ -63,7 +62,7 @@ void Mesh::makeInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttribu
     drawInstances_ = instanceMatrices->size();
     glGenBuffers(1, &ibo_);
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
-    glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
 
     glBindVertexArray(vao_);
     glEnableVertexAttribArray(vertexAttributeIndex_);
@@ -103,12 +102,12 @@ void Mesh::updateInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttri
 
     drawInstances_ = instanceMatrices->size();
     glBindBuffer(GL_ARRAY_BUFFER, ibo_);
-    glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), NULL, GL_STREAM_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, drawInstances_ * sizeof(glm::mat4), nullptr, GL_STREAM_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * sizeof(glm::mat4), &instanceMatrices->front());
 
     if (attribData) {
         glBindBuffer(GL_ARRAY_BUFFER, abo_);
-        glBufferData(GL_ARRAY_BUFFER, drawInstances_ * attribData->sizeOfDataType, NULL, GL_STREAM_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, drawInstances_ * attribData->sizeOfDataType, nullptr, GL_STREAM_DRAW);
         glBufferSubData(GL_ARRAY_BUFFER, 0, drawInstances_ * attribData->sizeOfDataType, attribData->data);
     }
 
@@ -119,11 +118,11 @@ void Mesh::addTexture(Texture tex) {
     textures_.push_back(tex);
 }
 
-bool Mesh::incomplete() {
+bool Mesh::incomplete() const {
     return incomplete_;
 }
 
-unsigned int Mesh::getVao() {
+unsigned int Mesh::getVao() const {
     return vao_;
 }
 
@@ -131,7 +130,7 @@ unsigned int Mesh::getIndicesSize() {
     return vertexData_->indices.size();
 }
 
-unsigned int Mesh::getInstanceSize() {
+unsigned int Mesh::getInstanceSize() const {
     return drawInstances_;
 }
 
@@ -147,7 +146,7 @@ unsigned int Mesh::getTriangleCount() {
     return vertexData_->indices.size() / 3;
 }
 
-int Mesh::getDrawMode() {
+int Mesh::getDrawMode() const {
     return drawMode_;
 }
 

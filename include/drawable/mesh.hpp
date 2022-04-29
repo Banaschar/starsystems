@@ -29,13 +29,13 @@ class Mesh {
     void addTexture(Texture tex);
     std::vector<Texture> &getTextures();
     void makeInstances(std::vector<glm::mat4> *instanceMatrices, VertexAttributeData *attribData = nullptr);
-    unsigned int getVao();
+    unsigned int getVao() const;
     unsigned int getIndicesSize();
-    unsigned int getInstanceSize();
+    unsigned int getInstanceSize() const;
     bool &isInstanced();
-    bool incomplete();
+    bool incomplete() const;
     unsigned int getTriangleCount();
-    int getDrawMode();
+    int getDrawMode() const;
     void setDrawMode(MeshDrawMode mode);
 };
 #endif

@@ -5,7 +5,6 @@
 #include <glm/gtx/string_cast.hpp>
 #include <cmath>
 
-//#include <cstdlib>
 
 #include "global.hpp"
 #include "drawablefactory.hpp"

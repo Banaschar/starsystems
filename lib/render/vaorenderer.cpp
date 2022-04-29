@@ -2,7 +2,7 @@
 #include "oglheader.hpp"
 #include "global.hpp"
 
-VaoRenderer::VaoRenderer() {}
+VaoRenderer::VaoRenderer() = default;
 
 /*
  * Draws the vertex array objects

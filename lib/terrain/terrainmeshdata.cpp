@@ -73,7 +73,7 @@ glm::vec3 TerrainMeshData::calculateNormalFromIndices(int index0, int index1, in
 }
 
 void TerrainMeshData::calculateNormals(bool createHeightMap) {
-    int triangleCount = vertexData->indices.size() / 3;
+    unsigned int triangleCount = vertexData->indices.size() / 3;
 
     for (int i = 0; i < triangleCount; ++i) {
         int normalIndex = i * 3;
@@ -88,7 +88,7 @@ void TerrainMeshData::calculateNormals(bool createHeightMap) {
         vertexData->vertices[index2].normal += normal;
     }
 
-    int borderTriangleCount = outOfMeshTriangles.size() / 3;
+    unsigned int borderTriangleCount = outOfMeshTriangles.size() / 3;
     for (int i = 0; i < borderTriangleCount; ++i) {
         int normalIndex = i * 3;
         int index0 = outOfMeshTriangles[normalIndex];
@@ -105,8 +105,8 @@ void TerrainMeshData::calculateNormals(bool createHeightMap) {
             vertexData->vertices[index2].normal += normal;
     }
 
-    for (int i = 0; i < vertexData->vertices.size(); ++i) {
-        vertexData->vertices[i].normal = glm::normalize(vertexData->vertices[i].normal);
+    for (auto& vertex : vertexData->vertices) {
+        vertex.normal = glm::normalize(vertex.normal);
     }
 
     if (createHeightMap) {

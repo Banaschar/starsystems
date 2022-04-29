@@ -15,7 +15,7 @@
  */
 class ThreadPool {
 public:
-    ThreadPool(int numThreads) {
+    explicit ThreadPool(int numThreads) {
         for (int i = 0; i < numThreads; i++) {
             pool_.push_back(new std::thread(&ThreadPool::workerFunction, this));
             //pool_.push_back(new std::thread([this]{workerFunction();}));
